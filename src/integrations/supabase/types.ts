@@ -14,16 +14,229 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          artist_id: string
+          created_at: string
+          follower_id: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          follower_id: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          follower_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          about: string
+          avatar_url: string | null
+          banner_url: string | null
+          created_at: string
+          display_name: string
+          handle: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          about?: string
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          display_name?: string
+          handle: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          about?: string
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          display_name?: string
+          handle?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          critique: string | null
+          id: string
+          lyrics: string | null
+          seo: Json | null
+          settings: Json
+          storyboard: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          critique?: string | null
+          id?: string
+          lyrics?: string | null
+          seo?: Json | null
+          settings?: Json
+          storyboard?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          critique?: string | null
+          id?: string
+          lyrics?: string | null
+          seo?: Json | null
+          settings?: Json
+          storyboard?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reactions: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks: {
+        Row: {
+          audio_url: string | null
+          cover_url: string | null
+          created_at: string
+          description: string
+          id: string
+          title: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          title: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          title?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "vip" | "creator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +363,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "vip", "creator"],
+    },
   },
 } as const

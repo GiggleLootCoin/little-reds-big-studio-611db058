@@ -12,41 +12,54 @@ import {
   Waves,
 } from "lucide-react";
 import { Chip, Note, Panel, Readout, StudioButton, StudioSlider } from "./ui";
+import { AiOutput, ErrorNote, Field, SignInPrompt, Spinner, TextArea, useAsyncAction } from "./AiOutput";
+import { useAuth } from "@/hooks/use-auth";
+import { buildStoryboard, councilChat, critiqueSong, writeLyrics } from "@/lib/studio.functions";
+import { uploadToStudio } from "@/lib/media";
 
 /* 3 — Honest Critiquer AI Song Coach */
 export function CoachPanel() {
+  const { user } = useAuth();
   const [honesty, setHonesty] = useState(85);
   const [depth, setDepth] = useState(70);
-  const [autoApply, setAutoApply] = useState(false);
+  const [title, setTitle] = useState("");
+  const [genre, setGenre] = useState("");
+  const [lyrics, setLyrics] = useState("");
+  const [notes, setNotes] = useState("");
+  const { loading, error, result, run } = useAsyncAction<string>();
+
   return (
     <Panel eyebrow="Module 03" title="Honest Critiquer AI Song Coach" icon={<Brain className="size-5" />}>
       <p className="text-sm text-muted-foreground">
-        Real-time listening pass over melody, arrangement, mix balance and lyric density — then
-        ranked, top-tier alternatives you can accept one by one or all at once.
+        A brutally honest pass over melody, arrangement, mix balance and lyric density — then ranked,
+        top-tier alternatives you can use straight away.
       </p>
+      <Field label="Track title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Crimson Lullaby" />
+      <Field label="Genre / reference" value={genre} onChange={(e) => setGenre(e.target.value)} placeholder="dark pop, Billie-adjacent" />
+      <TextArea label="Lyrics / structure" rows={4} value={lyrics} onChange={(e) => setLyrics(e.target.value)} placeholder="Paste your lyrics or song map..." />
+      <TextArea label="Producer notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What are you unsure about?" />
       <StudioSlider label="Brutal honesty" value={honesty} onChange={setHonesty} unit="%" />
       <StudioSlider label="Analysis depth" value={depth} onChange={setDepth} unit="%" />
-      <div className="grid grid-cols-2 gap-2">
-        <Readout label="Listening model" value="Audio-LLM v3" />
-        <Readout label="Pass length" value="Full track" />
-      </div>
-      <label className="flex items-center justify-between rounded-xl border border-border bg-background/50 p-3 text-sm">
-        <span>Auto-apply accepted fixes</span>
-        <input
-          type="checkbox"
-          checked={autoApply}
-          onChange={(e) => setAutoApply(e.target.checked)}
-          className="size-5 accent-[oklch(0.58_0.24_26)]"
-        />
-      </label>
-      <StudioButton className="w-full">Run critique pass</StudioButton>
-      <Note>
-        Presets are dialled to radio-ready defaults. The listening engine activates once the studio
-        backend and audio analysis models are connected.
-      </Note>
+      {!user && <SignInPrompt />}
+      <StudioButton
+        className="w-full"
+        disabled={!user || loading}
+        onClick={() =>
+          void run(async () => {
+            const r = await critiqueSong({ data: { title, genre, lyrics, notes, honesty, depth } });
+            return r.critique;
+          })
+        }
+      >
+        {loading ? "Listening…" : "Run critique pass"}
+      </StudioButton>
+      {loading && <Spinner label="The Honest Critiquer is working through your track…" />}
+      {error && <ErrorNote message={error} />}
+      {result && <AiOutput text={result} label="Copy critique" />}
     </Panel>
   );
 }
+
 
 /* 4 — Red'sLab Multi-Track & Stem Studio */
 const TRACKS = [

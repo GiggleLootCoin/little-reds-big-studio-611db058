@@ -11,6 +11,7 @@ export type StudioState = {
   storyboard: string;
   title: string;
   bpm: number;
+  seats: string[];
   qrange: { range: number; warmth: number; glue: number; ceiling: number };
 };
 
@@ -25,6 +26,7 @@ let state: StudioState = {
   storyboard: "",
   title: "",
   bpm: 120,
+  seats: [],
   qrange: { range: 64, warmth: 58, glue: 72, ceiling: -0.3 },
 };
 

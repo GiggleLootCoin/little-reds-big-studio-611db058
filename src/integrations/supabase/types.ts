@@ -64,6 +64,99 @@ export type Database = {
         }
         Relationships: []
       }
+      model_plugins: {
+        Row: {
+          capability: string
+          created_at: string
+          enabled: boolean
+          id: string
+          is_free: boolean
+          model_ref: string
+          name: string
+          notes: string
+          provider: string
+          quality: number
+          secret_name: string | null
+          slug: string
+          speed: number
+          updated_at: string
+          weekly_score: number
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_free?: boolean
+          model_ref: string
+          name: string
+          notes?: string
+          provider: string
+          quality?: number
+          secret_name?: string | null
+          slug: string
+          speed?: number
+          updated_at?: string
+          weekly_score?: number
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_free?: boolean
+          model_ref?: string
+          name?: string
+          notes?: string
+          provider?: string
+          quality?: number
+          secret_name?: string | null
+          slug?: string
+          speed?: number
+          updated_at?: string
+          weekly_score?: number
+        }
+        Relationships: []
+      }
+      plugin_runs: {
+        Row: {
+          capability: string
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          input: Json
+          output: Json | null
+          plugin_slug: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          plugin_slug: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          plugin_slug?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about: string
@@ -234,6 +327,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_plugin_weekly_scores: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "vip" | "creator"

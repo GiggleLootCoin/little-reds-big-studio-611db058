@@ -20,6 +20,7 @@ import {
   ProfilePanel,
   SeoPanel,
   SpotlightPanel,
+  PluginPanel,
 } from "@/components/studio/sections-community";
 import { SupportPanel } from "@/components/studio/sections-community";
 
@@ -98,6 +99,7 @@ function Studio() {
           <AccessPanel />
           <SeoPanel />
           <EnginePanel />
+          <PluginPanel />
           <SupportPanel />
         </div>
 

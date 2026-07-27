@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
@@ -34,7 +34,6 @@ function safeNext(next: string) {
 }
 
 function AuthPage() {
-  const navigate = useNavigate();
   const { next } = Route.useSearch();
   const destination = safeNext(next);
   const [mode, setMode] = useState<"signin" | "signup">("signin");

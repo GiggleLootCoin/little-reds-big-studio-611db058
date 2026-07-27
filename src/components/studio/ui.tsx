@@ -30,7 +30,10 @@ export function Panel({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-secondary/40"
       >
-        <span className="crimson-gloss flex size-10 shrink-0 items-center justify-center rounded-xl text-primary-foreground">
+        <span
+          aria-hidden
+          className="crimson-gloss flex size-10 shrink-0 items-center justify-center rounded-xl text-primary-foreground"
+        >
           {icon}
         </span>
         <span className="min-w-0 flex-1">
@@ -42,8 +45,10 @@ export function Panel({
           <span className="block truncate font-display text-base font-semibold">{title}</span>
         </span>
         <ChevronDown
+          aria-hidden
           className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
         />
+
       </button>
       <div
         id={`${panelId}-content`}

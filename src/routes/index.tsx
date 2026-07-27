@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";

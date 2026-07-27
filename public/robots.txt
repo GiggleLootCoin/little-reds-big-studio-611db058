@@ -1,2 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /auth
+Disallow: /mcp
+
+Sitemap: https://little-reds-big-studio.lovable.app/sitemap.xml

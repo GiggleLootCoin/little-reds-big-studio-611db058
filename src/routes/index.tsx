@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
@@ -23,24 +23,57 @@ import {
   PluginPanel,
 } from "@/components/studio/sections-community";
 import { SupportPanel } from "@/components/studio/sections-community";
+import { AnalyticsPanel, ModerationPanel } from "@/components/studio/sections-admin";
 
-const TITLE = "Little Red's Big Studio — Automated Music Video Production";
+const SITE_URL = "https://little-reds-big-studio.lovable.app";
+const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
 const DESCRIPTION =
-  "A crimson-lit, mobile-first creative suite: AI song critique, stem separation, Red's QRange, the Council of 9, storyboarding and video generation.";
+  "Free AI music studio: honest song critique, stem separation, lyrics writing, storyboards and video generation. Works inside ChatGPT and Claude.";
+const OG_IMAGE = `${SITE_URL}${logo.url}`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
+      {
+        name: "keywords",
+        content:
+          "AI music video, AI song critique, stem separation, AI lyrics generator, storyboard generator, music production app",
+      },
+      { property: "og:site_name", content: "Little Red's Big Studio" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Little Red's Big Studio",
+          url: SITE_URL,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          description: DESCRIPTION,
+          image: OG_IMAGE,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          author: { "@type": "Person", name: "LittleRedBigSmile", url: "https://youtube.com/@little-red-big-smile" },
+        }),
+      },
     ],
   }),
   component: Studio,
 });
+
 
 const VERSION = "Studio Version 3.6.9.12";
 
@@ -81,6 +114,15 @@ function Studio() {
           <Chip>Preset to perfection</Chip>
           <Chip>Always adjustable</Chip>
         </div>
+        <div className="mt-4 text-center">
+          <Link
+            to="/connect"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+          >
+            Use this studio inside ChatGPT &amp; Claude →
+          </Link>
+        </div>
+
 
         <div className="drip-divider my-6" />
 
@@ -100,6 +142,8 @@ function Studio() {
           <SeoPanel />
           <EnginePanel />
           <PluginPanel />
+          <ModerationPanel />
+          <AnalyticsPanel />
           <SupportPanel />
         </div>
 

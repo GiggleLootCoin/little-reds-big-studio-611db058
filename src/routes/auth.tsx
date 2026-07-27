@@ -22,11 +22,21 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : "",
+  }),
   component: AuthPage,
 });
 
+/** Only same-origin relative paths may be used as a post-login destination. */
+function safeNext(next: string) {
+  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const destination = safeNext(next);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,9 +47,9 @@ function AuthPage() {
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void navigate({ to: "/" });
+      if (data.session) window.location.replace(destination);
     });
-  }, [navigate]);
+  }, [destination]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,18 +62,18 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}${destination}`,
             data: { display_name: name || email.split("@")[0] },
           },
         });
         if (err) throw err;
         const { data } = await supabase.auth.getSession();
-        if (data.session) void navigate({ to: "/" });
+        if (data.session) window.location.replace(destination);
         else setNotice("Check your inbox to confirm your email, then sign in.");
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
-        void navigate({ to: "/" });
+        window.location.replace(destination);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -75,14 +85,14 @@ function AuthPage() {
   const google = async () => {
     setError(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${destination}`,
     });
     if (result.error) {
       setError(result.error.message);
       return;
     }
     if (result.redirected) return;
-    void navigate({ to: "/" });
+    window.location.replace(destination);
   };
 
   return (

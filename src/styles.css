@@ -228,6 +228,12 @@
   animation: sheen 6s linear infinite;
 }
 
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -237,6 +243,7 @@
     transition-duration: 0.001ms !important;
   }
 }
+
 
 /* ---------- Range slider styling ---------- */
 

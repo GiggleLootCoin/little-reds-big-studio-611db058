@@ -96,16 +96,12 @@ export const getStudioAnalytics = createServerFn({ method: "POST" })
     const db = context.supabase;
     const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
 
-    const count = (table: string, filter?: (q: never) => unknown) => {
-      const q = db.from(table).select("id", { count: "exact", head: true });
-      return filter ? (filter(q as never) as typeof q) : q;
-    };
-
     const [creators, tracksTotal, comments, follows, runsWeek, recentRuns] = await Promise.all([
       db.from("profiles").select("id", { count: "exact", head: true }),
-      count("tracks"),
-      count("comments"),
+      db.from("tracks").select("id", { count: "exact", head: true }),
+      db.from("comments").select("id", { count: "exact", head: true }),
       db.from("follows").select("artist_id", { count: "exact", head: true }),
+
       db.from("plugin_runs").select("status, duration_ms, plugin_slug").gte("created_at", weekAgo),
       db
         .from("plugin_runs")

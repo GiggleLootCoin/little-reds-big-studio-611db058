@@ -23,6 +23,7 @@ import {
   PluginPanel,
 } from "@/components/studio/sections-community";
 import { SupportPanel } from "@/components/studio/sections-community";
+import { AnalyticsPanel, ModerationPanel } from "@/components/studio/sections-admin";
 
 const SITE_URL = "https://little-reds-big-studio.lovable.app";
 const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
@@ -132,6 +133,8 @@ function Studio() {
           <SeoPanel />
           <EnginePanel />
           <PluginPanel />
+          <ModerationPanel />
+          <AnalyticsPanel />
           <SupportPanel />
         </div>
 

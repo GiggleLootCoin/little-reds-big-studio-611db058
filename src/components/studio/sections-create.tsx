@@ -292,7 +292,12 @@ export function LyricsPanel() {
 
   const [voiceText, setVoiceText] = useState("");
   const [speed, setSpeed] = useState(100);
+  const [voiceId, setVoiceId] = useState(VOICES[0].id);
   const voiceAction = useAsyncAction<{ url: string; engine: string }>();
+
+  const [musicBrief, setMusicBrief] = useState("");
+  const [musicSeconds, setMusicSeconds] = useState(30);
+  const musicAction = useAsyncAction<{ url: string; engine: string }>();
 
   return (
     <Panel eyebrow="Module 07" title="Elite Lyrics & Voice Cloning" icon={<Mic2 className="size-5" />}>

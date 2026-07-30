@@ -328,14 +328,6 @@ function CouncilEngines() {
   );
 }
 
-function CouncilPanelTail() {
-  return (
-    <Panel eyebrow="" title="" icon={null}>
-      <span />
-
-    </Panel>
-  );
-}
 
 /* 7 — Lyrics + voice clone */
 const VOICES = [

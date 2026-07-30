@@ -275,6 +275,64 @@ export function CouncilPanel() {
         })}
       </div>
       <Readout label="Council quorum" value={`${active.length} of 9 seated`} />
+      <CouncilEngines />
+    </Panel>
+  );
+}
+
+/** Live roster of the AI engines actually powering the seats. */
+function CouncilEngines() {
+  const [rows, setRows] = useState<
+    Array<{ slug: string; name: string; capability: string; available: boolean; reason: string }>
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listPlugins()
+      .then((all) => {
+        if (!cancelled) setRows(all.filter((p) => p.capability === "text"));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="font-display text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+        Live engines behind the seats
+      </p>
+      <div className="grid gap-1.5">
+        {rows.map((r) => (
+          <div
+            key={r.slug}
+            className="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/40 px-3 py-2 text-[0.7rem]"
+          >
+            <span className="truncate">{r.name}</span>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] ${
+                r.available
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {r.available ? "Ready" : r.reason}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CouncilPanelTail() {
+  return (
+    <Panel eyebrow="" title="" icon={null}>
+      <span />
+
     </Panel>
   );
 }

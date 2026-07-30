@@ -14,7 +14,7 @@ export const runPluginJob = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        capability: z.enum(["video", "voice", "stems", "image"]),
+        capability: z.enum(["video", "voice", "stems", "image", "music"]),
         slug: z.string().optional(),
         payload: z.record(z.string(), z.unknown()).default({}),
       })
@@ -38,8 +38,8 @@ export const savePlugin = createServerFn({ method: "POST" })
       .object({
         slug: z.string().min(2),
         name: z.string().min(2),
-        capability: z.enum(["video", "voice", "stems", "image", "text"]),
-        provider: z.enum(["replicate", "huggingface", "fal", "lovable"]),
+        capability: z.enum(["video", "voice", "stems", "image", "text", "music"]),
+        provider: z.enum(["replicate", "huggingface", "fal", "lovable", "elevenlabs"]),
         model_ref: z.string().min(2),
         secret_name: z.string().nullable().default("REPLICATE_API_TOKEN"),
         quality: z.number().min(0).max(100).default(75),

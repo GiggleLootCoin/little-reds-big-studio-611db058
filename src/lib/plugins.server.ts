@@ -133,12 +133,35 @@ async function runFal(modelRef: string, input: RunInput, token: string) {
   return await res.json();
 }
 
-async function runLovable(modelRef: string, input: RunInput, token: string) {
+async function runLovable(plugin: PluginRow, input: RunInput, token: string) {
+  if (plugin.capability === "text") {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": token,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify({
+        model: plugin.model_ref,
+        messages: [
+          ...(input.system ? [{ role: "system", content: String(input.system) }] : []),
+          { role: "user", content: String(input.prompt ?? input.text ?? "") },
+        ],
+        ...(plugin.model_ref.startsWith("openai/") ? { reasoning_effort: "none" } : {}),
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`${plugin.name} rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    }
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    return { text: json.choices?.[0]?.message?.content ?? "" };
+  }
+
   const { generateGatewayImage } = await import("./ai-gateway.server");
-  void modelRef;
-  void token;
   return await generateGatewayImage(String(input.prompt ?? ""), input.reference as string | undefined);
 }
+
 
 /** ElevenLabs: studio-grade voice, music and sound design. Returns a playable data URI. */
 async function runElevenLabs(plugin: PluginRow, input: RunInput, token: string) {
@@ -201,7 +224,7 @@ export async function invokePlugin(plugin: PluginRow, input: RunInput) {
     case "elevenlabs":
       return await runElevenLabs(plugin, input, token);
     case "lovable":
-      return await runLovable(plugin.model_ref, input, token);
+      return await runLovable(plugin, input, token);
     default:
       throw new Error(`Unknown provider "${plugin.provider}".`);
   }

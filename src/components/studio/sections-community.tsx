@@ -567,11 +567,11 @@ type PluginStatusRow = {
   slug: string;
   name: string;
   capability: string;
-  provider: string;
+  quality: number;
+  speed: number;
   enabled: boolean;
   available: boolean;
   reason: string;
-  weekly_score: number;
 };
 
 export function PluginPanel() {
@@ -612,7 +612,7 @@ export function PluginPanel() {
             <div className="min-w-0">
               <div className="truncate font-display text-sm text-primary">{p.name}</div>
               <div className="text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
-                {p.capability} · {p.provider} · score {Math.round(p.weekly_score)}
+                {p.capability} · quality {p.quality} · speed {p.speed}
               </div>
             </div>
             <span

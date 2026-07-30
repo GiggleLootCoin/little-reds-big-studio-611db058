@@ -16,6 +16,36 @@ export async function readPluginCatalog(): Promise<PluginStatus[]> {
   return rankPlugins((data as PluginRow[]).map(describeAvailability));
 }
 
+/** Safe, non-sensitive projection of the catalog for unauthenticated callers. */
+export type PublicPlugin = {
+  slug: string;
+  name: string;
+  capability: string;
+  quality: number;
+  speed: number;
+  enabled: boolean;
+  available: boolean;
+  reason: string;
+};
+
+export async function readPublicPluginCatalog(): Promise<PublicPlugin[]> {
+  const catalog = await readPluginCatalog();
+  return catalog.map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    capability: p.capability,
+    quality: p.quality,
+    speed: p.speed,
+    enabled: p.enabled,
+    available: p.available,
+    reason: p.available
+      ? "Ready"
+      : p.enabled
+        ? "Awaiting provider activation"
+        : "Disabled in the registry",
+  }));
+}
+
 export async function refreshScores() {
   const db = await admin();
   const { error } = await db.rpc("refresh_plugin_weekly_scores");

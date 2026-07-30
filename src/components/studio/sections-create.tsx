@@ -349,8 +349,8 @@ export function LyricsPanel() {
       <div className="drip-divider my-2" />
       <h3 className="font-display text-sm">Vocal clone & swap</h3>
       <p className="text-xs text-muted-foreground">
-        Uses the best free voice plugin available (OpenVoice / Fish Speech). Upload a reference vocal
-        in Module 08 to clone its timbre.
+        Live on ElevenLabs studio voices, with the open engines (OpenVoice / Fish Speech) as
+        fallbacks. Upload a reference vocal in Module 08 to clone its timbre.
       </p>
       <TextArea
         label="Line to sing / speak"
@@ -359,6 +359,20 @@ export function LyricsPanel() {
         onChange={(e) => setVoiceText(e.target.value)}
         placeholder="Paste a lyric line..."
       />
+      <label className="block space-y-1">
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">Voice</span>
+        <select
+          value={voiceId}
+          onChange={(e) => setVoiceId(e.target.value)}
+          className="w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm transition-colors hover:border-primary/60"
+        >
+          {VOICES.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <StudioSlider label="Delivery speed" value={speed} min={50} max={150} unit="%" onChange={setSpeed} />
       <StudioButton
         className="w-full"
@@ -370,6 +384,7 @@ export function LyricsPanel() {
                 capability: "voice",
                 payload: {
                   text: voiceText,
+                  voiceId,
                   reference: studio.audioUrl ?? undefined,
                   speed: speed / 100,
                 },
@@ -386,9 +401,57 @@ export function LyricsPanel() {
       {voiceAction.loading && <Spinner label="Synthesising the vocal take…" />}
       {voiceAction.error && <ErrorNote message={voiceAction.error} />}
       {voiceAction.result && (
-        <div className="space-y-2 rounded-xl border border-border bg-background/50 p-3">
+        <div className="animate-fade-in space-y-2 rounded-xl border border-border bg-background/50 p-3">
           <Readout label="Rendered by" value={voiceAction.result.engine} />
           <audio controls src={voiceAction.result.url} className="w-full" />
+        </div>
+      )}
+
+      <div className="drip-divider my-2" />
+      <h3 className="font-display text-sm">Instrumental generator</h3>
+      <p className="text-xs text-muted-foreground">
+        Describe the backing track and the studio renders an original instrumental you can build on.
+      </p>
+      <TextArea
+        label="Track brief"
+        rows={2}
+        value={musicBrief}
+        onChange={(e) => setMusicBrief(e.target.value)}
+        placeholder="Dark cinematic trap, 140bpm, choir pads, heavy 808s..."
+      />
+      <StudioSlider
+        label="Length"
+        value={musicSeconds}
+        min={10}
+        max={120}
+        unit="s"
+        onChange={setMusicSeconds}
+      />
+      <StudioButton
+        className="w-full"
+        disabled={!user || musicAction.loading || !musicBrief.trim()}
+        onClick={() =>
+          void musicAction.run(async () => {
+            const r = await runPluginJob({
+              data: {
+                capability: "music",
+                payload: { prompt: musicBrief, seconds: musicSeconds },
+              },
+            });
+            const url = r.media[0];
+            if (!url) throw new Error("The music model returned no audio.");
+            return { url, engine: r.plugin };
+          })
+        }
+      >
+        {musicAction.loading ? "Composing…" : "Generate instrumental"}
+      </StudioButton>
+      {musicAction.loading && <Spinner label="Composing your instrumental…" />}
+      {musicAction.error && <ErrorNote message={musicAction.error} />}
+      {musicAction.result && (
+        <div className="animate-fade-in space-y-2 rounded-xl border border-border bg-background/50 p-3">
+          <Readout label="Composed by" value={musicAction.result.engine} />
+          <audio controls src={musicAction.result.url} className="w-full" />
         </div>
       )}
       <Note>Quality guardrails stay locked at optimum regardless of slider position.</Note>

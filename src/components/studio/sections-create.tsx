@@ -15,7 +15,7 @@ import { Chip, Note, Panel, Readout, StudioButton, StudioSlider } from "./ui";
 import { AiOutput, ErrorNote, Field, SignInPrompt, Spinner, TextArea, useAsyncAction } from "./AiOutput";
 import { useAuth } from "@/hooks/use-auth";
 import { buildStoryboard, councilChat, critiqueSong, writeLyrics } from "@/lib/studio.functions";
-import { runPluginJob } from "@/lib/plugins.functions";
+import { listPlugins, runPluginJob } from "@/lib/plugins.functions";
 import { signedUrl, uploadToStudio } from "@/lib/media";
 import { setStudio, useStudio } from "@/lib/studio-store";
 

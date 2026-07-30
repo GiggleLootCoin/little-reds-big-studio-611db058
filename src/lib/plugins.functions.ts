@@ -76,7 +76,7 @@ export const togglePlugin = createServerFn({ method: "POST" })
 export const refreshPluginScores = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const { refreshScores, readPluginCatalog } = await import("./plugins.registry.server");
+    const { refreshScores, readPublicPluginCatalog } = await import("./plugins.registry.server");
     await refreshScores();
-    return await readPluginCatalog();
+    return await readPublicPluginCatalog();
   });

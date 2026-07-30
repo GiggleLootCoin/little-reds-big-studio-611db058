@@ -22,7 +22,13 @@ export function Panel({
   const panelId = id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
   return (
-    <section id={panelId} className="glass-panel scroll-mt-20 overflow-hidden rounded-2xl">
+    <section
+      id={panelId}
+      className={cn(
+        "glass-panel animate-fade-in scroll-mt-20 overflow-hidden rounded-2xl transition-shadow duration-300",
+        open && "animate-pulse-glow",
+      )}
+    >
       <button
         type="button"
         aria-expanded={open}
@@ -113,7 +119,7 @@ export function StudioButton({
     <button
       {...props}
       className={cn(
-        "relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 font-display text-sm font-semibold tracking-wide transition-transform duration-200 active:scale-[0.97]",
+        "hover-lift relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 font-display text-sm font-semibold tracking-wide transition-transform duration-200 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
         variant === "primary"
           ? "crimson-gloss text-primary-foreground"
           : "border border-border bg-secondary/50 text-foreground hover:bg-secondary",

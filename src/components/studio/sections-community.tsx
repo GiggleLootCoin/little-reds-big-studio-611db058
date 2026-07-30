@@ -567,11 +567,11 @@ type PluginStatusRow = {
   slug: string;
   name: string;
   capability: string;
-  provider: string;
+  quality: number;
+  speed: number;
   enabled: boolean;
   available: boolean;
   reason: string;
-  weekly_score: number;
 };
 
 export function PluginPanel() {

@@ -244,8 +244,14 @@ export function buildInput(capability: Capability, payload: Record<string, unkno
       return {
         text: payload.text,
         ...(payload.reference ? { reference_audio: payload.reference, audio: payload.reference } : {}),
+        ...(payload.voiceId ? { voiceId: payload.voiceId } : {}),
         speed: payload.speed ?? 1,
         language: payload.language ?? "en",
+      };
+    case "music":
+      return {
+        prompt: payload.prompt ?? payload.text,
+        seconds: payload.seconds ?? 30,
       };
     case "stems":
       return {

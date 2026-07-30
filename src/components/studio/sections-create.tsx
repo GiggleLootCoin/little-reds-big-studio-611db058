@@ -280,6 +280,17 @@ export function CouncilPanel() {
 }
 
 /* 7 — Lyrics + voice clone */
+const VOICES = [
+  { id: "JBFqnCBsd6RMkjVDRZzb", name: "George — warm narrator" },
+  { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah — bright female lead" },
+  { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda — soulful female" },
+  { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica — pop vocal" },
+  { id: "TX3LPaxmHKxFdv7VOQHJ", name: "Liam — young male lead" },
+  { id: "nPczCjzI2devNBz1zQrb", name: "Brian — deep male" },
+  { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily — airy female" },
+  { id: "N2lVS1w4EtoT3dr4eOWO", name: "Callum — gritty male" },
+];
+
 export function LyricsPanel() {
   const { user } = useAuth();
   const studio = useStudio();

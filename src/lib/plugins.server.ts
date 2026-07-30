@@ -7,7 +7,7 @@
  * studio automatically routes to whichever free model is performing best.
  */
 
-export type Capability = "video" | "voice" | "stems" | "image" | "text";
+export type Capability = "video" | "voice" | "stems" | "image" | "text" | "music";
 
 export type PluginRow = {
   id: string;
@@ -29,6 +29,7 @@ export type PluginStatus = PluginRow & { available: boolean; reason: string };
 
 export function secretFor(plugin: Pick<PluginRow, "provider" | "secret_name">) {
   if (plugin.provider === "lovable") return process.env.LOVABLE_API_KEY;
+  if (plugin.provider === "elevenlabs") return process.env.ELEVENLABS_API_KEY;
   if (!plugin.secret_name) return undefined;
   return process.env[plugin.secret_name];
 }
@@ -139,6 +140,53 @@ async function runLovable(modelRef: string, input: RunInput, token: string) {
   return await generateGatewayImage(String(input.prompt ?? ""), input.reference as string | undefined);
 }
 
+/** ElevenLabs: studio-grade voice, music and sound design. Returns a playable data URI. */
+async function runElevenLabs(plugin: PluginRow, input: RunInput, token: string) {
+  const asDataUri = async (res: Response) => {
+    if (!res.ok) {
+      throw new Error(`ElevenLabs rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    return { audio: `data:audio/mpeg;base64,${buf.toString("base64")}` };
+  };
+  const headers = { "xi-api-key": token, "Content-Type": "application/json" };
+
+  if (plugin.capability === "music") {
+    return await asDataUri(
+      await fetch("https://api.elevenlabs.io/v1/music", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          prompt: String(input.prompt ?? input.text ?? ""),
+          music_length_ms: Math.round(Number(input.seconds ?? 30) * 1000),
+        }),
+      }),
+    );
+  }
+
+  const voiceId = String(input.voiceId ?? "JBFqnCBsd6RMkjVDRZzb");
+  return await asDataUri(
+    await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          text: String(input.text ?? input.prompt ?? ""),
+          model_id: plugin.model_ref || "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.45,
+            similarity_boost: 0.85,
+            style: 0.4,
+            use_speaker_boost: true,
+            speed: Number(input.speed ?? 1),
+          },
+        }),
+      },
+    ),
+  );
+}
+
 export async function invokePlugin(plugin: PluginRow, input: RunInput) {
   const token = secretFor(plugin);
   if (!token) throw new Error(`${plugin.name} needs the ${plugin.secret_name ?? "provider"} key.`);
@@ -150,6 +198,8 @@ export async function invokePlugin(plugin: PluginRow, input: RunInput) {
       return await runHuggingFace(plugin.model_ref, input, token);
     case "fal":
       return await runFal(plugin.model_ref, input, token);
+    case "elevenlabs":
+      return await runElevenLabs(plugin, input, token);
     case "lovable":
       return await runLovable(plugin.model_ref, input, token);
     default:

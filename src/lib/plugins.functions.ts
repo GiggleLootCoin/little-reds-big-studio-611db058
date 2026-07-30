@@ -2,10 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Public catalog + availability of every registered model plugin. */
+/** Public catalog of registered model plugins (safe fields only, no secrets). */
 export const listPlugins = createServerFn({ method: "GET" }).handler(async () => {
-  const { readPluginCatalog } = await import("./plugins.registry.server");
-  return await readPluginCatalog();
+  const { readPublicPluginCatalog } = await import("./plugins.registry.server");
+  return await readPublicPluginCatalog();
 });
 
 /** Runs the best available plugin for a capability (or a specific one). */

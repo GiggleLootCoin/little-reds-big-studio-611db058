@@ -224,7 +224,7 @@ export async function invokePlugin(plugin: PluginRow, input: RunInput) {
     case "elevenlabs":
       return await runElevenLabs(plugin, input, token);
     case "lovable":
-      return await runLovable(plugin.model_ref, input, token);
+      return await runLovable(plugin, input, token);
     default:
       throw new Error(`Unknown provider "${plugin.provider}".`);
   }

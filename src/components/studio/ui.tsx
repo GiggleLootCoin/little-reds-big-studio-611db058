@@ -1,6 +1,11 @@
 import { ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+
+/** Opens a panel by id and scrolls it into view (used by the dashboard shortcuts). */
+export function openStudioPanel(id: string) {
+  window.dispatchEvent(new CustomEvent("studio:open-panel", { detail: id }));
+}
 
 /** Collapsible glossy panel — the core chrome of the studio. */
 export function Panel({
@@ -21,14 +26,27 @@ export function Panel({
   const [open, setOpen] = useState(defaultOpen);
   const panelId = id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== panelId) return;
+      setOpen(true);
+      requestAnimationFrame(() => {
+        document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    window.addEventListener("studio:open-panel", handler);
+    return () => window.removeEventListener("studio:open-panel", handler);
+  }, [panelId]);
+
   return (
     <section
       id={panelId}
       className={cn(
-        "glass-panel animate-fade-in scroll-mt-20 overflow-hidden rounded-2xl transition-shadow duration-300",
+        "glass-panel animate-fade-in scroll-mt-24 overflow-hidden rounded-2xl transition-shadow duration-300",
         open && "animate-pulse-glow",
       )}
     >
+
       <button
         type="button"
         aria-expanded={open}

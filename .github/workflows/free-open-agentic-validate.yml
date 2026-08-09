@@ -1,0 +1,45 @@
+name: Free Open Agentic Validation
+
+on:
+  push:
+    branches:
+      - upgrade/buddy-free-open-agentic
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Commit regenerated lockfile when needed
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json is already synchronized with package.json"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "Regenerate dependency lockfile [skip ci]"
+          git push
+
+      - name: Install exactly from lockfile
+        run: npm ci --ignore-scripts
+
+      - name: Build production bundle
+        run: npm run build

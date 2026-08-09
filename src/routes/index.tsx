@@ -247,8 +247,10 @@ function Studio() {
             <EngineStatusStrip />
             <PluginPanel />
             <EnginePanel />
+            <GithubPanel />
             <ModerationPanel />
             <AnalyticsPanel />
+
           </div>
         )}
 

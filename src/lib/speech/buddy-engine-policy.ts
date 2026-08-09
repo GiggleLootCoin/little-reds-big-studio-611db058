@@ -1,4 +1,5 @@
-export type BuddyEngine = "qwen3-tts" | "chatterbox-multilingual" | "pocket-tts" | "kokoro" | "native";
+export type BuddyEngine =
+  "qwen3-tts" | "chatterbox-multilingual" | "pocket-tts" | "kokoro" | "native";
 
 export type BuddyEngineProfile = {
   id: BuddyEngine;

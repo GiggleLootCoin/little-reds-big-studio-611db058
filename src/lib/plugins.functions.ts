@@ -12,6 +12,10 @@ export type ClientPluginJobResult = {
   plugin: string;
   slug: string;
   media: string[];
+  handoff?: boolean;
+  runnerUrl?: string;
+  runnerName?: string;
+  message?: string;
 };
 
 export const listPlugins = createServerFn({ method: "GET" }).handler(async () =>
@@ -35,7 +39,15 @@ export const runPluginJob = createServerFn({ method: "POST" })
       payload: data.payload,
       userId: "local",
     });
-    return { plugin: result.plugin, slug: result.slug, media: result.media };
+    return {
+      plugin: result.plugin,
+      slug: result.slug,
+      media: result.media,
+      handoff: result.handoff,
+      runnerUrl: result.runnerUrl,
+      runnerName: result.runnerName,
+      message: result.message,
+    };
   });
 
 export const savePlugin = createServerFn({ method: "POST" })

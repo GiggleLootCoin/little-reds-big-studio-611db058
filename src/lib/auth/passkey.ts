@@ -29,6 +29,15 @@ function randomChallenge(size = 32): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(size));
 }
 
+function asBufferSource(bytes: Uint8Array): BufferSource {
+  return bytes.buffer as unknown as ArrayBuffer;
+}
+
+function fromBase64url(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return Uint8Array.from(atob(normalized), (char) => char.charCodeAt(0));
+}
+
 export function supportsPasskeys(): boolean {
   return typeof window !== "undefined" &&
     "PublicKeyCredential" in window &&
@@ -40,10 +49,10 @@ export async function registerPasskey(userName: string): Promise<PasskeyCredenti
 
   const credential = await navigator.credentials.create({
     publicKey: {
-      challenge: randomChallenge(),
+      challenge: asBufferSource(randomChallenge()),
       rp: { name: "Little Red's Big Studio" },
       user: {
-        id: randomChallenge(16),
+        id: asBufferSource(randomChallenge(16)),
         name: userName,
         displayName: userName,
       },
@@ -82,12 +91,12 @@ export async function authenticateWithPasskey(): Promise<boolean> {
 
   const assertion = await navigator.credentials.get({
     publicKey: {
-      challenge: randomChallenge(),
+      challenge: asBufferSource(randomChallenge()),
       userVerification: "required",
       timeout: 60000,
       allowCredentials: credentials.map((credential) => ({
-        id: Uint8Array.from(atob(credential.id.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0)),
-        type: "public-key",
+        id: asBufferSource(fromBase64url(credential.id)),
+        type: "public-key" as const,
       })),
     },
   });

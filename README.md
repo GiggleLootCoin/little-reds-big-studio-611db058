@@ -1,50 +1,73 @@
 # Little Red's Big Studio
 
-Create the fully working app for me. I want to use it privately to start and may want to share in thy future but I need it ready and looking incredibly high quality collapsible windows, animated background using the image reference for idea and the logo at the top and similar themes for everything including buttons and font and everything. Also add as section that says This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
+**Buddy-first, Android-first, free-first creative studio for musicians and YouTubers.**
+
+The Studio is designed around one simple experience: bring in your idea, music, voice or artwork and let **Buddy** decide how to move the project forward. Model names, provider setup and runner selection stay backstage.
+
+## Production
+
+- **Live app:** https://little-reds-big-studio-611db058.gigglelootcoin.workers.dev
+- **Source:** this private GitHub repository
+- **Hosting:** Cloudflare Workers
+- **Cost target:** $0 / no paid hosting required
+- **AI policy:** no mandatory paid AI API and no mandatory provider account
+- **Storage:** browser-first project storage where supported
+- **Device:** Android-friendly responsive web app
+
+## Buddy orchestration
+
+Buddy ranks available routes by capability and keeps free/open fallbacks ready. The Studio never claims that WebGPU, WebAssembly or a browser API is itself an AI model. Heavy generative work can be handed to public open/free runners when local execution is not genuinely available.
+
+The normal user does **not** choose models or providers.
+
+### Current free/open routes
+
+- Writing/reasoning: Bonsai WebGPU when the device can handle it
+- Voice: Applio/RVC, with browser and Qwen3-TTS fallbacks
+- Music: ACE-Step 1.5, with MusicGen Web for lighter jobs
+- Stems: Demucs, with BS-Roformer fallback
+- Artwork: Z Image Turbo, with SDXL fallback
+- Video: Wan 2.2 S2V / video routes, with LTX 2.3 fallback
+
+Public free GPU services can have queues or temporary outages; Buddy therefore keeps alternatives rather than presenting one provider as guaranteed.
+
+## Red's Ways Of Thinking
+
+`Red's Ways Of Thinking` is kept as private reference material for Buddy. It is treated as a perspective/creative knowledge layer, not as a list of verified facts. Buddy can use it for creative framing and personal context while separating disputed claims from independently verifiable information when factual accuracy matters.
+
+## Visual identity
+
+The repository contains the uploaded visual-reference library under `assets/visual-references/` and the Studio uses the approved visual direction for its cinematic, glass, crimson/obsidian interface.
+
+## Creator support
+
+This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
 
 Support The Creator And Her Music On YouTube! 💃 🎧 🎶
 
-SUPPORT LINKS HERE:
-
-YouTube: ❤️ https://youtube.com/@little-red-big-smile?si=U1pBT09zB91GBrW3
-
-💯🦸‍♀️✨️
-
-CashApp: 💚
-
-https://cash.app/$LittleRedBigSmile
-
-            Or
-
-(Internationally)
-
-Buymeacoffee: ☕ 💕
-
-https://buymeacoffee.com/littleredbigsmile
-
-🎙✨️Special Thank You Shout Outs For Supporters! ✊️😁👍💕.
-
-Create working buttons for each of these.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://little-reds-big-studio.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9e414ded-5da2-4e43-a325-1c63865e235f).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- YouTube: https://youtube.com/@little-red-big-smile
+- Cash App: https://cash.app/$LittleRedBigSmile
+- Internationally: https://buymeacoffee.com/littleredbigsmile
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+The repository is a TanStack Start application built with Vite and TypeScript.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
+
+Production build:
+
+```sh
+npm run build
+```
+
+Deployment:
+
+```sh
+npm run deploy
+```
+
+GitHub Actions validates the main branch with dependency installation, TypeScript checking, formatting, linting and a production build before/alongside the Cloudflare deployment workflow.

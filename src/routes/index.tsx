@@ -6,7 +6,6 @@ import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
 import { BuddyWelcome } from "@/components/studio/BuddyWelcome";
 import { Chip, openStudioPanel } from "@/components/studio/ui";
 import { NextMoves } from "@/components/studio/Dashboard";
-import { LocalEnginePanel } from "@/components/studio/LocalEnginePanel";
 import { cn } from "@/lib/utils";
 import type { BuddyTask } from "@/lib/buddy-orchestrator";
 import {

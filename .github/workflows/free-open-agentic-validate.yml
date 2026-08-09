@@ -14,16 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
       - name: Regenerate dependency lockfile
-        run: npm install --package-lock-only --ignore-scripts
+        run: npm install --package-lock-only --ignore-scripts --legacy-peer-deps
 
       - name: Commit regenerated lockfile when needed
         run: |
@@ -39,7 +39,7 @@ jobs:
           git push
 
       - name: Install exactly from lockfile
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --legacy-peer-deps
 
       - name: Build production bundle
         run: npm run build

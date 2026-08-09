@@ -1,4 +1,5 @@
 import { runnersFor, type FreeRunner } from "@/lib/free-runners";
+import { BUDDY_KNOWLEDGE_POLICY, buddyKnowledgeContext } from "@/lib/buddy-knowledge";
 
 export type BuddyTask = "writing" | "voice" | "music" | "stems" | "artwork" | "video";
 
@@ -8,6 +9,7 @@ export type BuddyPlan = {
   label: string;
   runner: FreeRunner | null;
   reason: string;
+  knowledgePolicy: string;
 };
 
 const CAPABILITY: Record<BuddyTask, string> = {
@@ -19,12 +21,6 @@ const CAPABILITY: Record<BuddyTask, string> = {
   video: "video",
 };
 
-/**
- * Only claim a task is local when the Studio can genuinely perform that task
- * without handing the user to another service. Browser capability alone is
- * not enough: WebGPU, WebAssembly and AudioWorklet are building blocks, not
- * proof that a complete generative model is installed on the phone.
- */
 function localCapability(task: BuddyTask): boolean {
   if (typeof window === "undefined") return false;
   if (task === "writing") return typeof WebAssembly !== "undefined";
@@ -47,12 +43,13 @@ function rankFreeRoutes(task: BuddyTask): FreeRunner[] {
 }
 
 /**
- * Buddy's user-facing routing policy. The caller asks for a creative task,
- * never a model. Local execution wins; otherwise Buddy selects the strongest
- * configured free/open route. Public-service availability is deliberately not
- * represented as guaranteed because those services can queue or change state.
+ * Buddy's routing policy. Users request creative outcomes, never model names.
+ * Red's private knowledge layer informs perspective and creative reasoning;
+ * it is deliberately not treated as a database of verified facts.
  */
 export function buddyPlan(task: BuddyTask): BuddyPlan {
+  const knowledgePolicy = BUDDY_KNOWLEDGE_POLICY;
+
   if (localCapability(task)) {
     return {
       task,
@@ -60,6 +57,7 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Ready on this device",
       runner: null,
       reason: "Buddy can complete this part of the workflow locally.",
+      knowledgePolicy,
     };
   }
 
@@ -71,6 +69,7 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Buddy will handle it",
       runner,
       reason: "Buddy selected the strongest configured free/open route for this task.",
+      knowledgePolicy,
     };
   }
 
@@ -80,7 +79,13 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
     label: "Buddy needs another route",
     runner: null,
     reason: "No suitable local or free/open route is configured for this task.",
+    knowledgePolicy,
   };
+}
+
+/** Returns the private knowledge context for future text/creative providers. */
+export function buddyKnowledge(mode: "reference" | "fact-check" | "creative" = "reference") {
+  return buddyKnowledgeContext(mode);
 }
 
 export function openBuddyRoute(task: BuddyTask) {

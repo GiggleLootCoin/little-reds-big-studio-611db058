@@ -121,7 +121,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 9,
     weekly_score: 10,
     enabled: true,
-    notes: "Powerful local open music generation, editing, cover and vocal-to-BGM engine; heavy jobs use a free GPU runner.",
+    notes:
+      "Powerful local open music generation, editing, cover and vocal-to-BGM engine; heavy jobs use a free GPU runner.",
     runtime: "kaggle",
     project_url: "https://github.com/ace-step/ACE-Step-1.5",
   },
@@ -138,7 +139,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 9,
     weekly_score: 10,
     enabled: true,
-    notes: "High-fidelity controllable full-song generation with strong lyric alignment; use a free GPU runner for heavy inference.",
+    notes:
+      "High-fidelity controllable full-song generation with strong lyric alignment; use a free GPU runner for heavy inference.",
     runtime: "kaggle",
     project_url: "https://huggingface.co/models?search=DiffRhythm%202",
   },
@@ -155,7 +157,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 7,
     weekly_score: 9,
     enabled: true,
-    notes: "Open long-form song generation option; use a free GPU runner when the phone cannot handle the model.",
+    notes:
+      "Open long-form song generation option; use a free GPU runner when the phone cannot handle the model.",
     runtime: "kaggle",
     project_url: "https://huggingface.co/models?search=HeartMuLa",
   },
@@ -172,7 +175,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 6,
     weekly_score: 9,
     enabled: true,
-    notes: "Open long-form lyrics-to-song generation and style-transfer research stack; heavy runner recommended.",
+    notes:
+      "Open long-form lyrics-to-song generation and style-transfer research stack; heavy runner recommended.",
     runtime: "kaggle",
     project_url: "https://github.com/multimodal-art-projection/YuE",
   },
@@ -189,7 +193,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 7,
     weekly_score: 9,
     enabled: true,
-    notes: "Widely supported open image-generation model; use a public browser demo or local runtime.",
+    notes:
+      "Widely supported open image-generation model; use a public browser demo or local runtime.",
     runtime: "browser",
     project_url: "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
   },

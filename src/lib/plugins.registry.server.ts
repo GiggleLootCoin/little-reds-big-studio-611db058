@@ -71,7 +71,8 @@ export type PluginJobResult = {
 
 function runnerForPlugin(plugin: PluginRow) {
   if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle");
-  if (plugin.runtime === "lightning") return FREE_RUNNERS.find((runner) => runner.id === "lightning");
+  if (plugin.runtime === "lightning")
+    return FREE_RUNNERS.find((runner) => runner.id === "lightning");
   if (plugin.runtime === "browser") {
     const preferred = {
       voice: "hf-rvc",
@@ -81,7 +82,10 @@ function runnerForPlugin(plugin: PluginRow) {
       image: "android-local",
       text: "android-local",
     }[plugin.capability];
-    return FREE_RUNNERS.find((runner) => runner.id === preferred) ?? FREE_RUNNERS.find((runner) => runner.kind === "public");
+    return (
+      FREE_RUNNERS.find((runner) => runner.id === preferred) ??
+      FREE_RUNNERS.find((runner) => runner.kind === "public")
+    );
   }
   return FREE_RUNNERS.find((runner) => runner.id === "android-local");
 }
@@ -117,7 +121,12 @@ export async function executeBestPlugin(args: {
   if (!chosen.available) {
     const handoff = getFreeRunnerHandoff(chosen);
     if (!handoff) throw new Error(`${chosen.name}: ${chosen.reason}`);
-    sessionRuns.push({ slug: chosen.slug, capability: args.capability, status: "handoff", durationMs: 0 });
+    sessionRuns.push({
+      slug: chosen.slug,
+      capability: args.capability,
+      status: "handoff",
+      durationMs: 0,
+    });
     return { plugin: chosen.name, slug: chosen.slug, media: [], raw: null, ...handoff };
   }
 

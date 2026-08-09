@@ -1,5 +1,6 @@
 import { runnersFor, type FreeRunner } from "@/lib/free-runners";
 import { BUDDY_KNOWLEDGE_POLICY, buddyKnowledgeContext } from "@/lib/buddy-knowledge";
+import { setBuddyStatus } from "@/lib/buddy-presence";
 
 export type BuddyTask = "writing" | "voice" | "music" | "stems" | "artwork" | "video";
 
@@ -22,8 +23,6 @@ const CAPABILITY: Record<BuddyTask, string> = {
   video: "video",
 };
 
-// Browser APIs are capabilities, not AI models. Buddy only marks a task local
-// when a real local implementation exists in the Studio.
 function localCapability(_task: BuddyTask): boolean {
   return false;
 }
@@ -82,13 +81,32 @@ export function buddyKnowledge(mode: "reference" | "fact-check" | "creative" = "
 
 /**
  * A browser cannot submit or monitor a third-party Space as if it were our
- * own backend. We therefore open only the selected route and never claim the
- * Studio completed an external generation it did not perform.
+ * own backend. Buddy therefore opens only the selected route and never claims
+ * the Studio completed an external generation it did not perform.
  */
 export function openBuddyRoute(task: BuddyTask) {
   const plan = buddyPlan(task);
-  if (plan.mode === "free-open" && plan.runner && typeof window !== "undefined") {
+
+  if (plan.mode === "unavailable") {
+    setBuddyStatus("error", {
+      task,
+      message: "That route isn't configured yet. I won't pretend otherwise.",
+    });
+    return plan;
+  }
+
+  if (plan.mode === "local") {
+    setBuddyStatus("working", { task, message: null });
+    return plan;
+  }
+
+  if (plan.runner && typeof window !== "undefined") {
+    setBuddyStatus("working", {
+      task,
+      message: `Opening ${plan.runner.name}. The actual generation happens there; Buddy won't fake a completion here.`,
+    });
     window.open(plan.runner.url, "_blank", "noopener,noreferrer");
   }
+
   return plan;
 }

@@ -2,12 +2,10 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Opens a panel by id and scrolls it into view (used by the dashboard shortcuts). */
 export function openStudioPanel(id: string) {
   window.dispatchEvent(new CustomEvent("studio:open-panel", { detail: id }));
 }
 
-/** Collapsible glossy panel — the core chrome of the studio. */
 export function Panel({
   id,
   title,
@@ -25,19 +23,17 @@ export function Panel({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
   useEffect(() => {
     const handler = (e: Event) => {
       if ((e as CustomEvent<string>).detail !== panelId) return;
       setOpen(true);
-      requestAnimationFrame(() => {
-        document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      requestAnimationFrame(() =>
+        document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
     };
     window.addEventListener("studio:open-panel", handler);
     return () => window.removeEventListener("studio:open-panel", handler);
   }, [panelId]);
-
   return (
     <section
       id={panelId}
@@ -46,7 +42,6 @@ export function Panel({
         open && "animate-pulse-glow",
       )}
     >
-
       <button
         type="button"
         aria-expanded={open}
@@ -70,9 +65,11 @@ export function Panel({
         </span>
         <ChevronDown
           aria-hidden
-          className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
+          className={cn(
+            "size-5 shrink-0 text-muted-foreground transition-transform duration-300",
+            open && "rotate-180 text-primary",
+          )}
         />
-
       </button>
       <div
         id={`${panelId}-content`}
@@ -85,7 +82,6 @@ export function Panel({
   );
 }
 
-/** Preset-perfect, always adjustable control. */
 export function StudioSlider({
   label,
   value,
@@ -157,11 +153,21 @@ export function Chip({ children }: { children: ReactNode }) {
   );
 }
 
-export function Readout({ label, value }: { label: string; value: string }) {
+export function Readout({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value?: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-border bg-background/50 p-3">
-      <div className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className="font-display text-sm text-primary">{value}</div>
+      <div className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="font-display text-sm text-primary">{value ?? children}</div>
     </div>
   );
 }

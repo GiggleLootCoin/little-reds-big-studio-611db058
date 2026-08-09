@@ -1,174 +1,112 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const MODEL = "google/gemini-3.6-flash";
-
-async function runText(system: string, prompt: string) {
-  const { createLovableAiGatewayProvider, requireLovableApiKey } = await import("./ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(requireLovableApiKey());
-  const { text } = await generateText({
-    model: gateway(MODEL),
-    system,
-    prompt,
-  });
-  return text.trim();
-}
+import { FREE_RUNNERS } from "./free-runners";
 
 const HOUSE_STYLE =
-  "You are the engine behind Little Red's Big Studio — a crimson-lit, consciousness-first music video suite tuned to 432Hz resonance and base-12 harmonic thinking. You are direct, warm, and radio-ready in your standards. Format answers in clean markdown.";
+  "Little Red's Big Studio: crimson-lit, cinematic, direct, warm, radio-ready, creator-first.";
+const runnerHint = (capability: string) => {
+  const runner = FREE_RUNNERS.find((r) => r.capabilities.includes(capability)) || FREE_RUNNERS[0];
+  return `\n\n### Free execution\nThis Studio does not call a paid AI API. Open **${runner.name}** and paste the prepared prompt: ${runner.url}`;
+};
+const prepared = (title: string, prompt: string, capability: string) =>
+  `## ${title}\n\n${prompt}\n\n_${HOUSE_STYLE}_` + runnerHint(capability);
 
-/* 3 — Honest Critiquer AI Song Coach */
 export const critiqueSong = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         title: z.string().default(""),
         genre: z.string().default(""),
         lyrics: z.string().default(""),
         notes: z.string().default(""),
-        honesty: z.number().min(0).max(100).default(85),
-        depth: z.number().min(0).max(100).default(70),
+        honesty: z.number().default(85),
+        depth: z.number().default(70),
       })
       .parse(input),
   )
-  .handler(async ({ data }) =>
-    runText(
-      `${HOUSE_STYLE} You are the Honest Critiquer: an unflinching but constructive song coach. Honesty dial: ${data.honesty}/100 (higher = more brutal). Analysis depth: ${data.depth}/100.`,
-      `Critique this song idea and give an upgrade plan.
-
-Title: ${data.title || "(untitled)"}
-Genre / reference: ${data.genre || "(unspecified)"}
-Producer notes: ${data.notes || "(none)"}
-Lyrics / structure:
-${data.lyrics || "(none supplied)"}
-
-Return sections:
-## Verdict (one paragraph, plus a score out of 10)
-## What's working
-## What's holding it back
-## Top-tier alternatives (numbered, specific, immediately usable — melody, arrangement, lyric rewrites)
-## Mix & master targets (LUFS, low-end, vocal placement)
-## Next 3 moves`,
-    ).then((critique) => ({ critique })),
-  );
-
-/* 7 — Elite lyrics generator */
+  .handler(async ({ data }) => ({
+    critique: prepared(
+      "Free AI Song Coach Job",
+      `Critique this song idea. Honesty ${data.honesty}/100; depth ${data.depth}/100.\nTitle: ${data.title}\nGenre: ${data.genre}\nNotes: ${data.notes}\nLyrics:\n${data.lyrics}\nReturn: verdict/10, strengths, weaknesses, specific lyric/arrangement alternatives, mix targets, next 3 moves.`,
+      `text`,
+    ),
+  }));
 export const writeLyrics = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         theme: z.string().min(1),
         genre: z.string().default("cinematic pop"),
         mood: z.string().default("triumphant"),
         explicit: z.boolean().default(false),
-        rhyme: z.number().min(0).max(100).default(80),
+        rhyme: z.number().default(80),
       })
       .parse(input),
   )
-  .handler(async ({ data }) =>
-    runText(
-      `${HOUSE_STYLE} You write professional, catchy, emotionally resonant lyrics with strong hooks and singable phrasing. Rhyme density target: ${data.rhyme}/100. ${data.explicit ? "Explicit language is allowed." : "Keep it clean — no profanity."}`,
-      `Write a full song. Theme: ${data.theme}. Genre: ${data.genre}. Mood: ${data.mood}.
-Include: [Intro], [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Chorus], [Bridge], [Final Chorus], [Outro].
-After the lyrics add a short "## Performance notes" section covering vocal delivery, ad-libs and harmony stacks.`,
-    ).then((lyrics) => ({ lyrics })),
-  );
-
-/* 9 — Council of 9 chat / brainstorming */
+  .handler(async ({ data }) => ({
+    lyrics: prepared(
+      "Free Lyrics Job",
+      `Write a full song about ${data.theme}. Genre ${data.genre}; mood ${data.mood}; rhyme density ${data.rhyme}/100; explicit=${data.explicit}. Include Intro, Verse 1, Pre-Chorus, Chorus, Verse 2, Bridge, Final Chorus and Outro, followed by performance notes.`,
+      `text`,
+    ),
+  }));
 export const councilChat = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         messages: z
           .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }))
-          .min(1)
-          .max(40),
+          .min(1),
         seats: z.array(z.string()).default([]),
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
-    const { createLovableAiGatewayProvider, requireLovableApiKey } = await import("./ai-gateway.server");
-    const gateway = createLovableAiGatewayProvider(requireLovableApiKey());
-    const { text } = await generateText({
-      model: gateway(MODEL),
-      system: `${HOUSE_STYLE} You speak as the Council of 9 — a panel of specialists${
-        data.seats.length ? ` currently seated: ${data.seats.join(", ")}` : ""
-      }. Synthesise their perspectives into one decisive answer. Keep replies tight and actionable.`,
-      messages: data.messages,
-    });
-    return { reply: text.trim() };
-  });
-
-/* 10 — Automated storyboarding */
+  .handler(async ({ data }) => ({
+    reply: prepared(
+      "Free Council Job",
+      `Act as a council of specialists: ${data.seats.join(", ") || "songwriter, producer, director, vocal coach and growth strategist"}. Synthesize one decisive answer to:\n${data.messages.map((m) => `${m.role}: ${m.content}`).join("\n")}`,
+      `text`,
+    ),
+  }));
 export const buildStoryboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         title: z.string().default(""),
         direction: z.string().min(1),
-        bpm: z.number().min(40).max(220).default(120),
-        durationSec: z.number().min(30).max(600).default(180),
-        scenes: z.number().min(3).max(24).default(10),
+        bpm: z.number().default(120),
+        durationSec: z.number().default(180),
+        scenes: z.number().default(10),
       })
       .parse(input),
   )
-  .handler(async ({ data }) =>
-    runText(
-      `${HOUSE_STYLE} You are a music video director building shot-by-shot storyboards mapped to the beat grid.`,
-      `Track: ${data.title || "(untitled)"} — ${data.bpm} BPM, ${data.durationSec}s long.
-Creative direction: ${data.direction}
-
-Produce exactly ${data.scenes} scenes. For each scene use this shape:
-
-### Scene N — mm:ss–mm:ss (bars X–Y)
-- **Shot:** camera move, lens, framing
-- **Action:** what happens
-- **Lighting & palette:** (crimson / obsidian house look unless the direction says otherwise)
-- **Video prompt:** one dense paragraph ready to paste into Luma / Runway / Kling`,
-    ).then((storyboard) => ({ storyboard })),
-  );
-
-/* 15 — YouTube SEO */
+  .handler(async ({ data }) => ({
+    storyboard: prepared(
+      "Free Storyboard Job",
+      `Create exactly ${data.scenes} shot-by-shot music-video scenes for ${data.title}. ${data.bpm} BPM, ${data.durationSec}s. Direction: ${data.direction}. For each scene provide time/bars, shot, action, lighting/palette and a dense video prompt.`,
+      `video`,
+    ),
+  }));
 export const generateSeo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
-        title: z.string().min(1),
+        title: z.string(),
         artist: z.string().default(""),
         genre: z.string().default(""),
         vibe: z.string().default(""),
       })
       .parse(input),
   )
-  .handler(async ({ data }) =>
-    runText(
-      `${HOUSE_STYLE} You are a YouTube growth strategist for independent musicians.`,
-      `Track: "${data.title}" by ${data.artist || "an independent artist"}. Genre: ${data.genre}. Vibe: ${data.vibe}.
-
-Return exactly these sections, ready to copy:
-## Titles
-5 options, each under 70 characters.
-## Description
-A full description: hook paragraph, credits placeholder, timestamps placeholder, links placeholder.
-## Tags
-20 comma-separated tags.
-## Hashtags
-8 hashtags on one line.`,
-    ).then((seo) => ({ seo })),
-  );
-
-/* 13 — AI profile / cover artwork */
+  .handler(async ({ data }) => ({
+    seo: prepared(
+      "Free YouTube SEO Job",
+      `For ${data.title} by ${data.artist}, genre ${data.genre}, vibe ${data.vibe}: return 5 titles under 70 chars, a full description, 20 tags and 8 hashtags.`,
+      `text`,
+    ),
+  }));
 export const generateArtwork = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         prompt: z.string().min(3),
@@ -177,17 +115,7 @@ export const generateArtwork = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
-    const { generateGatewayImage } = await import("./ai-gateway.server");
-    const shape =
-      data.kind === "banner"
-        ? "a wide cinematic banner image"
-        : data.kind === "cover"
-          ? "a square album cover"
-          : "a square profile portrait";
-    const url = await generateGatewayImage(
-      `Create ${shape}. ${data.prompt}. Style: glossy crimson and obsidian, glowing red rim light, cinematic, ultra detailed, high contrast.`,
-      data.reference,
-    );
-    return { url };
-  });
+  .handler(async ({ data }) => ({
+    url: `https://huggingface.co/spaces?category=image-generation&search=${encodeURIComponent(data.prompt)}`,
+    prompt: `Create ${data.kind}: ${data.prompt}. Use Buddy reference when supplied: ${data.reference || "none"}.`,
+  }));

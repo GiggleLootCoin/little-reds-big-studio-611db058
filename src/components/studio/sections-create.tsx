@@ -12,7 +12,15 @@ import {
   Waves,
 } from "lucide-react";
 import { Chip, Note, Panel, Readout, StudioButton, StudioSlider } from "./ui";
-import { AiOutput, ErrorNote, Field, SignInPrompt, Spinner, TextArea, useAsyncAction } from "./AiOutput";
+import {
+  AiOutput,
+  ErrorNote,
+  Field,
+  SignInPrompt,
+  Spinner,
+  TextArea,
+  useAsyncAction,
+} from "./AiOutput";
 import { useAuth } from "@/hooks/use-auth";
 import { buildStoryboard, councilChat, critiqueSong, writeLyrics } from "@/lib/studio.functions";
 import { listPlugins, runPluginJob } from "@/lib/plugins.functions";
@@ -32,13 +40,27 @@ export function CoachPanel() {
   const { loading, error, result, run } = useAsyncAction<string>();
 
   return (
-    <Panel eyebrow="Module 03" title="Honest Critiquer AI Song Coach" icon={<Brain className="size-5" />}>
+    <Panel
+      eyebrow="Module 03"
+      title="Honest Critiquer AI Song Coach"
+      icon={<Brain className="size-5" />}
+    >
       <p className="text-sm text-muted-foreground">
-        A brutally honest pass over melody, arrangement, mix balance and lyric density — then ranked,
-        top-tier alternatives you can use straight away.
+        A brutally honest pass over melody, arrangement, mix balance and lyric density — then
+        ranked, top-tier alternatives you can use straight away.
       </p>
-      <Field label="Track title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Crimson Lullaby" />
-      <Field label="Genre / reference" value={genre} onChange={(e) => setGenre(e.target.value)} placeholder="dark pop, Billie-adjacent" />
+      <Field
+        label="Track title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Crimson Lullaby"
+      />
+      <Field
+        label="Genre / reference"
+        value={genre}
+        onChange={(e) => setGenre(e.target.value)}
+        placeholder="dark pop, Billie-adjacent"
+      />
       <TextArea
         label="Lyrics / structure"
         rows={4}
@@ -46,7 +68,13 @@ export function CoachPanel() {
         onChange={(e) => setLyrics(e.target.value)}
         placeholder="Paste your lyrics or song map..."
       />
-      <TextArea label="Producer notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What are you unsure about?" />
+      <TextArea
+        label="Producer notes"
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="What are you unsure about?"
+      />
       <StudioSlider label="Brutal honesty" value={honesty} onChange={setHonesty} unit="%" />
       <StudioSlider label="Analysis depth" value={depth} onChange={setDepth} unit="%" />
       {!user && <SignInPrompt />}
@@ -104,7 +132,11 @@ export function LabPanel() {
     });
 
   return (
-    <Panel eyebrow="Module 04" title="Red'sLab Multi-Track & Stem Studio" icon={<Waves className="size-5" />}>
+    <Panel
+      eyebrow="Module 04"
+      title="Red'sLab Multi-Track & Stem Studio"
+      icon={<Waves className="size-5" />}
+    >
       <p className="text-sm text-muted-foreground">
         Multi-track mixing, waveform inspection and real four-way neural demixing — vocals, drums,
         bass, instruments — routed through the best free demixing plugin available.
@@ -115,7 +147,9 @@ export function LabPanel() {
           <audio controls src={studio.audioUrl} className="w-full" />
         </div>
       ) : (
-        <Note>No session track yet — upload audio in Module 08 and it lands here automatically.</Note>
+        <Note>
+          No session track yet — upload audio in Module 08 and it lands here automatically.
+        </Note>
       )}
 
       <div className="space-y-3">
@@ -127,7 +161,9 @@ export function LabPanel() {
                 type="button"
                 onClick={() => setMuted((m) => m.map((v, idx) => (idx === i ? !v : v)))}
                 className={`rounded-lg border border-border px-2.5 py-1 text-xs transition-colors ${
-                  muted[i] ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground"
+                  muted[i]
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/50 text-muted-foreground"
                 }`}
               >
                 {muted[i] ? "Muted" : "Live"}
@@ -157,7 +193,9 @@ export function LabPanel() {
       <StudioButton className="w-full" disabled={!user || loading} onClick={separate}>
         {loading ? "Demixing…" : "Separate stems"}
       </StudioButton>
-      {loading && <Spinner label="Neural demixing in progress — this can take a couple of minutes." />}
+      {loading && (
+        <Spinner label="Neural demixing in progress — this can take a couple of minutes." />
+      )}
       {error && <ErrorNote message={error} />}
       {engine && stems.length > 0 && <Readout label="Demixed by" value={engine} />}
     </Panel>
@@ -190,7 +228,12 @@ export function QRangePanel() {
   const [applied, setApplied] = useState(false);
 
   return (
-    <Panel eyebrow="Module 05" title="Red's QRange" icon={<SlidersHorizontal className="size-5" />} defaultOpen>
+    <Panel
+      eyebrow="Module 05"
+      title="Red's QRange"
+      icon={<SlidersHorizontal className="size-5" />}
+      defaultOpen
+    >
       <p className="text-sm text-muted-foreground">
         The signature range engine. Preset to perfection, adjustable everywhere — every other module
         reads these values live.
@@ -314,9 +357,7 @@ function CouncilEngines() {
             <span className="truncate">{r.name}</span>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] ${
-                r.available
-                  ? "bg-primary/20 text-primary"
-                  : "bg-muted text-muted-foreground"
+                r.available ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
               }`}
             >
               {r.available ? "Ready" : r.reason}
@@ -327,7 +368,6 @@ function CouncilEngines() {
     </div>
   );
 }
-
 
 /* 7 — Lyrics + voice clone */
 const VOICES = [
@@ -361,7 +401,11 @@ export function LyricsPanel() {
   const musicAction = useAsyncAction<{ url: string; engine: string }>();
 
   return (
-    <Panel eyebrow="Module 07" title="Elite Lyrics & Voice Cloning" icon={<Mic2 className="size-5" />}>
+    <Panel
+      eyebrow="Module 07"
+      title="Elite Lyrics & Voice Cloning"
+      icon={<Mic2 className="size-5" />}
+    >
       <TextArea
         label="Theme / hook"
         rows={3}
@@ -423,7 +467,14 @@ export function LyricsPanel() {
           ))}
         </select>
       </label>
-      <StudioSlider label="Delivery speed" value={speed} min={50} max={150} unit="%" onChange={setSpeed} />
+      <StudioSlider
+        label="Delivery speed"
+        value={speed}
+        min={50}
+        max={150}
+        unit="%"
+        onChange={setSpeed}
+      />
       <StudioButton
         className="w-full"
         disabled={!user || voiceAction.loading || !voiceText.trim()}
@@ -541,7 +592,11 @@ export function UploadPanel() {
   };
 
   return (
-    <Panel eyebrow="Module 08" title="Audio, Voice & File Uploads" icon={<UploadCloud className="size-5" />}>
+    <Panel
+      eyebrow="Module 08"
+      title="Audio, Voice & File Uploads"
+      icon={<UploadCloud className="size-5" />}
+    >
       {!user && <SignInPrompt />}
       <div
         onDragOver={(e) => {
@@ -561,7 +616,9 @@ export function UploadPanel() {
       >
         <UploadCloud className="mx-auto mb-2 size-7 text-primary" />
         <p className="font-display text-sm">Drop audio or reference imagery</p>
-        <p className="text-xs text-muted-foreground">WAV · MP3 · PNG · JPG — stored privately in your account</p>
+        <p className="text-xs text-muted-foreground">
+          WAV · MP3 · PNG · JPG — stored privately in your account
+        </p>
         <input
           ref={inputRef}
           type="file"
@@ -679,7 +736,11 @@ export function StoryboardPanel() {
   const { loading, error, result, run } = useAsyncAction<string>();
 
   return (
-    <Panel eyebrow="Module 10" title="Automated Storyboarding" icon={<Clapperboard className="size-5" />}>
+    <Panel
+      eyebrow="Module 10"
+      title="Automated Storyboarding"
+      icon={<Clapperboard className="size-5" />}
+    >
       <p className="text-sm text-muted-foreground">
         Beat-mapped, scene-by-scene shot scripts built from your audio and locked chat direction —
         each scene ships with a ready-to-render video prompt.
@@ -699,7 +760,15 @@ export function StoryboardPanel() {
       />
       <StudioSlider label="Scenes" value={scenes} min={3} max={24} onChange={setScenes} />
       <StudioSlider label="Tempo" value={bpm} min={40} max={220} unit=" BPM" onChange={setBpm} />
-      <StudioSlider label="Track length" value={duration} min={30} max={600} step={5} unit="s" onChange={setDuration} />
+      <StudioSlider
+        label="Track length"
+        value={duration}
+        min={30}
+        max={600}
+        step={5}
+        unit="s"
+        onChange={setDuration}
+      />
       {!user && <SignInPrompt />}
       <StudioButton
         className="w-full"
@@ -772,7 +841,14 @@ export function VideoPanel() {
         Renders through the plugin system — Wan, Hunyuan Video, LTX Video or CogVideoX, whichever is
         scoring best this week. Manage them in Module 18.
       </p>
-      <StudioSlider label="Clip length" value={length} min={3} max={15} unit="s" onChange={setLength} />
+      <StudioSlider
+        label="Clip length"
+        value={length}
+        min={3}
+        max={15}
+        unit="s"
+        onChange={setLength}
+      />
       <TextArea
         label="One-off shot prompt"
         rows={2}
@@ -797,11 +873,16 @@ export function VideoPanel() {
           Render {scenes.length || ""} scenes
         </StudioButton>
       </div>
-      {scenes.length === 0 && <Note>Generate a storyboard in Module 10 to unlock batch rendering.</Note>}
+      {scenes.length === 0 && (
+        <Note>Generate a storyboard in Module 10 to unlock batch rendering.</Note>
+      )}
       {loading && <Spinner label="Rendering clips — video models take a few minutes per shot." />}
       {error && <ErrorNote message={error} />}
       {clips.map((c, i) => (
-        <div key={`${c.url}-${i}`} className="space-y-2 rounded-xl border border-border bg-background/50 p-3">
+        <div
+          key={`${c.url}-${i}`}
+          className="space-y-2 rounded-xl border border-border bg-background/50 p-3"
+        >
           <div className="font-display text-xs text-primary">{c.heading}</div>
           <video controls src={c.url} className="w-full rounded-lg" />
           <Readout label="Rendered by" value={c.engine} />

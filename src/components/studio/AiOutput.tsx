@@ -46,7 +46,9 @@ export function Field({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
     <label className="block space-y-1.5">
-      {label && <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</span>}
+      {label && (
+        <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+      )}
       <input
         {...props}
         className="w-full rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -61,7 +63,9 @@ export function TextArea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
   return (
     <label className="block space-y-1.5">
-      {label && <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</span>}
+      {label && (
+        <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+      )}
       <textarea
         {...props}
         className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm outline-none focus:ring-2 focus:ring-ring"

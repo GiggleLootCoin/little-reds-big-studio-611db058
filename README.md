@@ -1,10 +1,10 @@
 # Little Red's Big Studio
 
-Create the fully working app for me. I want to use it privately to start and may want to share in thy future but I need it ready and looking incredibly high quality collapsible windows,  animated background using the image reference for idea and the logo at the top and similar themes for everything including buttons and font and everything.  Also add as section that says This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️ 
+Create the fully working app for me. I want to use it privately to start and may want to share in thy future but I need it ready and looking incredibly high quality collapsible windows, animated background using the image reference for idea and the logo at the top and similar themes for everything including buttons and font and everything. Also add as section that says This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
 
-Support The Creator And Her Music On YouTube! 💃 🎧 🎶 
+Support The Creator And Her Music On YouTube! 💃 🎧 🎶
 
- SUPPORT LINKS HERE:
+SUPPORT LINKS HERE:
 
 YouTube: ❤️ https://youtube.com/@little-red-big-smile?si=U1pBT09zB91GBrW3
 
@@ -16,7 +16,7 @@ https://cash.app/$LittleRedBigSmile
 
             Or
 
-(Internationally) 
+(Internationally)
 
 Buymeacoffee: ☕ 💕
 

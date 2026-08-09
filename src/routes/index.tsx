@@ -29,7 +29,6 @@ import { SupportPanel } from "@/components/studio/sections-community";
 import { AnalyticsPanel, ModerationPanel } from "@/components/studio/sections-admin";
 import { GithubPanel } from "@/components/studio/sections-github";
 
-
 const SITE_URL = "https://little-reds-big-studio.lovable.app";
 const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
 const DESCRIPTION =
@@ -71,14 +70,17 @@ export const Route = createFileRoute("/")({
           description: DESCRIPTION,
           image: OG_IMAGE,
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-          author: { "@type": "Person", name: "LittleRedBigSmile", url: "https://youtube.com/@little-red-big-smile" },
+          author: {
+            "@type": "Person",
+            name: "LittleRedBigSmile",
+            url: "https://youtube.com/@little-red-big-smile",
+          },
         }),
       },
     ],
   }),
   component: Studio,
 });
-
 
 const VERSION = "Studio Version 3.6.9.12";
 
@@ -127,7 +129,11 @@ function Studio() {
 
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background/90 backdrop-blur-md">
-          <img src={logo.url} alt="Little Red's Big Studio" className="w-64 max-w-[80vw] animate-moon" />
+          <img
+            src={logo.url}
+            alt="Little Red's Big Studio"
+            className="w-64 max-w-[80vw] animate-moon"
+          />
           <div className="h-1 w-48 overflow-hidden rounded-full bg-secondary">
             <div className="gloss-sheen crimson-gloss h-full w-full" />
           </div>
@@ -146,7 +152,10 @@ function Studio() {
           </Link>
         </div>
         {/* Desktop / wide tab rail */}
-        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-3xl gap-1 px-4 pb-2 sm:flex">
+        <nav
+          aria-label="Studio sections"
+          className="mx-auto hidden w-full max-w-3xl gap-1 px-4 pb-2 sm:flex"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -174,7 +183,8 @@ function Studio() {
                 Little Red's Big Studio
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Audio in, finished music video out. Every control preset to radio-ready — and always adjustable.
+                Audio in, finished music video out. Every control preset to radio-ready — and always
+                adjustable.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <Chip>{VERSION}</Chip>
@@ -197,7 +207,11 @@ function Studio() {
               <EngineStatusStrip />
               <p className="text-xs text-muted-foreground">
                 Engines marked “needs provider key” are registered but not switched on yet — open{" "}
-                <button type="button" onClick={() => go("engines")} className="font-semibold text-primary underline">
+                <button
+                  type="button"
+                  onClick={() => go("engines")}
+                  className="font-semibold text-primary underline"
+                >
                   Engines
                 </button>{" "}
                 to add a provider and go live.
@@ -250,7 +264,6 @@ function Studio() {
             <GithubPanel />
             <ModerationPanel />
             <AnalyticsPanel />
-
           </div>
         )}
 
@@ -279,7 +292,10 @@ function Studio() {
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
+                <Icon
+                  aria-hidden
+                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
+                />
                 <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
               </button>
             );
@@ -288,5 +304,4 @@ function Studio() {
       </nav>
     </>
   );
-
 }

@@ -8,84 +8,73 @@ export type FreeRunner = {
   notes: string;
 };
 
-/** No-key execution options. These are links, not paid API integrations. */
+/**
+ * Free/no-key execution routes. These are intentionally external browser
+ * workflows rather than pretend API integrations: the Studio never requires
+ * a paid provider credential to use them.
+ */
 export const FREE_RUNNERS: FreeRunner[] = [
   {
-    id: "android-local",
-    name: "Android / Browser Local",
-    kind: "android",
-    description: "Browser-capable open models and WebAssembly/WebGPU where practical.",
-    capabilities: ["text", "small-audio", "small-image"],
-    url: "https://huggingface.co/spaces/Xenova/musicgen-web",
-    notes: "Best for lightweight jobs.",
-  },
-  {
     id: "hf-rvc",
-    name: "Hugging Face — Applio/RVC",
+    name: "Applio / RVC",
     kind: "public",
-    description: "Public open voice-conversion Space; no Studio API key.",
+    description: "Free browser-based voice conversion for RVC workflows.",
     capabilities: ["voice"],
     url: "https://huggingface.co/spaces/IAHispano/ApplioX",
-    notes: "Browser workflow; public Space availability applies.",
-  },
-  {
-    id: "hf-video",
-    name: "Hugging Face ZeroGPU — Video",
-    kind: "public",
-    description: "Public Wan/LTX browser Spaces using shared free GPU infrastructure.",
-    capabilities: ["video", "image-to-video"],
-    url: "https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster",
-    notes: "Free ZeroGPU quota is shared and may be temporarily exhausted; no API key.",
-  },
-  {
-    id: "hf-audio",
-    name: "Hugging Face — Demucs",
-    kind: "public",
-    description: "Public open audio-separation Space.",
-    capabilities: ["stems"],
-    url: "https://huggingface.co/spaces/nakas/demucs_playground",
-    notes: "No Studio API credential.",
+    notes: "Open the Space, run the conversion there, then bring the result back to the Studio.",
   },
   {
     id: "hf-ace-step",
-    name: "Hugging Face — ACE-Step 1.5",
+    name: "ACE-Step 1.5",
     kind: "public",
-    description: "Official ACE-Step 1.5 public Gradio Space with shared free GPU infrastructure.",
+    description: "Free browser music generation and editing using the public Space.",
     capabilities: ["music"],
     url: "https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5",
-    notes: "No Studio API key. Availability and free quota are controlled by the public Space.",
+    notes: "Shared public GPU availability applies; no Studio API key is required.",
   },
   {
-    id: "hf-music",
-    name: "Hugging Face — MusicGen Web",
-    kind: "public",
-    description: "In-browser open MusicGen demo.",
-    capabilities: ["music"],
+    id: "hf-musicgen",
+    name: "MusicGen Web",
+    kind: "android",
+    description: "In-browser MusicGen option for lighter music-generation jobs.",
+    capabilities: ["music", "small-audio"],
     url: "https://huggingface.co/spaces/Xenova/musicgen-web",
-    notes: "Useful on Android.",
+    notes: "Best suited to shorter/lighter jobs on capable phones.",
+  },
+  {
+    id: "hf-demucs",
+    name: "Demucs",
+    kind: "public",
+    description: "Free browser stem-separation workflow.",
+    capabilities: ["stems"],
+    url: "https://huggingface.co/spaces/nakas/demucs_playground",
+    notes: "Separate vocals/instruments externally, then import the stems into the Studio.",
+  },
+  {
+    id: "hf-wan-video",
+    name: "Wan 2.2 Video",
+    kind: "public",
+    description: "Free public image-to-video workflow using shared GPU infrastructure.",
+    capabilities: ["video", "image-to-video"],
+    url: "https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster",
+    notes: "Shared free GPU quota can be busy; no Studio API key is required.",
   },
   {
     id: "kaggle",
     name: "Kaggle Notebooks",
     kind: "gpu",
-    description:
-      "Free browser GPU notebooks for heavy open-source workloads; separate from Google Colab.",
+    description: "Free browser GPU workspace for heavier open-source models.",
     capabilities: ["voice", "stems", "video", "image", "music", "training", "text"],
     url: "https://www.kaggle.com/code",
-    notes: "Heavy-compute fallback; the Studio needs no Kaggle API key.",
-  },
-  {
-    id: "lightning",
-    name: "Lightning AI Studio",
-    kind: "gpu",
-    description: "Browser development environment with a free tier for open-source workloads.",
-    capabilities: ["voice", "stems", "video", "image", "music", "training", "text"],
-    url: "https://lightning.ai/studios",
-    notes: "Useful when a persistent browser workspace is easier than Colab.",
+    notes: "Use as a heavier fallback when a public Space is unavailable.",
   },
 ];
 
 export function runnersFor(capability?: string) {
   if (!capability) return FREE_RUNNERS;
   return FREE_RUNNERS.filter((runner) => runner.capabilities.includes(capability));
+}
+
+export function bestFreeRunner(capability: string) {
+  return runnersFor(capability)[0] ?? null;
 }

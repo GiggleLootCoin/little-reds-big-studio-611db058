@@ -98,8 +98,8 @@ function getFreeRunnerHandoff(plugin: PluginRow) {
     runnerUrl: runner.url,
     runnerName: runner.name,
     message:
-      `The hosted Studio cannot execute ${plugin.name} directly without a paid/API inference service. ` +
-      `Open ${runner.name} to run this free/open model without giving the Studio an API key.`,
+      `The Studio is using the free/open route for ${plugin.name}. ` +
+      `Open ${runner.name} to run it without a Studio API key or paid provider.`,
   };
 }
 
@@ -111,13 +111,17 @@ export async function executeBestPlugin(args: {
 }): Promise<PluginJobResult> {
   const catalog = await readPluginCatalog();
   const pool = catalog.filter((p) => p.capability === args.capability && p.enabled);
-  const chosen = args.slug ? pool.find((p) => p.slug === args.slug) : pool.find((p) => p.available);
+  const chosen = args.slug
+    ? pool.find((p) => p.slug === args.slug)
+    : pool.find((p) => p.available) ?? pool[0];
 
   if (!chosen) {
-    const names = pool.map((p) => p.name).join(", ") || "none registered";
-    throw new Error(`No free/open ${args.capability} model is registered. Available: ${names}.`);
+    throw new Error(`No free/open ${args.capability} model is registered.`);
   }
 
+  // A hosted Studio instance normally has no model process attached. Never make
+  // the user configure a runner just to discover that fact: hand the job to the
+  // best known free/open runtime automatically.
   if (!chosen.available) {
     const handoff = getFreeRunnerHandoff(chosen);
     if (!handoff) throw new Error(`${chosen.name}: ${chosen.reason}`);

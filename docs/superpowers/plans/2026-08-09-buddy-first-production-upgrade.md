@@ -9,6 +9,7 @@
 **Tech Stack:** React, TanStack Start/Router, TypeScript, Tailwind/CSS, IndexedDB, Web Workers, WebAssembly, WebGPU, Cloudflare Workers.
 
 ## Global Constraints
+
 - $0-first; no required paid hosting or AI API.
 - Android-first/mobile Chrome.
 - Buddy is the normal AI-facing abstraction; model/provider/runner names stay hidden.
@@ -19,6 +20,7 @@
 - Validate type-check, formatting, lint, and production build.
 
 ## File Map
+
 - `src/lib/buddy-orchestrator.ts`: automatic route ranking/fallback.
 - `src/lib/free-runners.ts`: free/open route registry.
 - `src/components/studio/BuddyWelcome.tsx`: premium Buddy-first home.
@@ -28,17 +30,20 @@
 - Existing visual system and `assets/visual-references`: approved visual identity.
 
 ### Task 1 — Orchestration
+
 - [ ] Define user-safe states: ready, preparing, fallback, unavailable.
 - [ ] Rank local before external free/open routes.
 - [ ] Rank by availability, compatibility, quality, speed and free status.
 - [ ] Add deterministic fallback behavior and tests.
 
 ### Task 2 — Free routes
+
 - [ ] Keep only real documented public routes.
 - [ ] Add capability/input/output/fallback metadata.
 - [ ] Keep route names out of normal UI.
 
 ### Task 3 — Premium Buddy home
+
 - [ ] Use approved repository imagery.
 - [ ] Build cinematic glass/obsidian/crimson mobile-first presentation.
 - [ ] Keep task actions, not model actions.
@@ -46,11 +51,13 @@
 - [ ] Preserve reduced-motion/responsive behavior.
 
 ### Task 4 — Advanced diagnostics
+
 - [ ] Put runner/model diagnostics behind Advanced/Developer access.
 - [ ] Replace provider-key language in normal workflows with Buddy-safe status.
 - [ ] Keep diagnostics available for maintenance.
 
 ### Task 5 — Release verification
+
 - [ ] Install dependencies.
 - [ ] Type-check.
 - [ ] Format check.
@@ -60,6 +67,7 @@
 - [ ] Verify Android entry/navigation when live browser access is available.
 
 ### Task 6 — Final review
+
 - [ ] No required paid API key.
 - [ ] Buddy is the normal AI abstraction.
 - [ ] External failures have fallback messaging.

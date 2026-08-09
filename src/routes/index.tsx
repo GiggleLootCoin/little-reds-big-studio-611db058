@@ -29,7 +29,8 @@ import {
 
 const SITE_URL = "https://little-reds-big-studio-611db058.gigglelootcoin.workers.dev";
 const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
-const DESCRIPTION = "Free, local-first creative studio for musicians and YouTubers, with Buddy handling the technical routing.";
+const DESCRIPTION =
+  "Free, local-first creative studio for musicians and YouTubers, with Buddy handling the technical routing.";
 const OG_IMAGE = `${SITE_URL}${logo.url}`;
 
 export const Route = createFileRoute("/")({
@@ -37,7 +38,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
-      { name: "keywords", content: "AI music video, music production, lyrics, audio, video, local AI, Buddy" },
+      {
+        name: "keywords",
+        content: "AI music video, music production, lyrics, audio, video, local AI, Buddy",
+      },
       { property: "og:site_name", content: "Little Red's Big Studio" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
@@ -107,9 +111,17 @@ function Studio() {
       <AnimatedBackground />
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background/95 backdrop-blur-xl">
-          <img src={logo.url} alt="Little Red's Big Studio" className="w-56 max-w-[72vw] animate-moon" />
-          <div className="h-1 w-44 overflow-hidden rounded-full bg-secondary"><div className="gloss-sheen crimson-gloss h-full w-full" /></div>
-          <p className="font-display text-[0.65rem] font-semibold tracking-[0.28em] text-primary">{VERSION}</p>
+          <img
+            src={logo.url}
+            alt="Little Red's Big Studio"
+            className="w-56 max-w-[72vw] animate-moon"
+          />
+          <div className="h-1 w-44 overflow-hidden rounded-full bg-secondary">
+            <div className="gloss-sheen crimson-gloss h-full w-full" />
+          </div>
+          <p className="font-display text-[0.65rem] font-semibold tracking-[0.28em] text-primary">
+            {VERSION}
+          </p>
         </div>
       )}
 
@@ -117,9 +129,23 @@ function Studio() {
         <div className="mx-auto flex w-full max-w-4xl items-center justify-center px-4 py-2.5">
           <img src={logo.url} alt="Little Red's Big Studio logo" className="h-9 w-auto sm:h-10" />
         </div>
-        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex">
+        <nav
+          aria-label="Studio sections"
+          className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex"
+        >
           {TABS.map((t) => (
-            <button key={t.id} type="button" aria-current={tab === t.id ? "page" : undefined} onClick={() => go(t.id)} className={cn("flex-1 rounded-xl px-3 py-2.5 font-display text-xs font-semibold tracking-wide transition-all", tab === t.id ? "crimson-gloss text-primary-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground")}>
+            <button
+              key={t.id}
+              type="button"
+              aria-current={tab === t.id ? "page" : undefined}
+              onClick={() => go(t.id)}
+              className={cn(
+                "flex-1 rounded-xl px-3 py-2.5 font-display text-xs font-semibold tracking-wide transition-all",
+                tab === t.id
+                  ? "crimson-gloss text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+              )}
+            >
               {t.label}
             </button>
           ))}
@@ -133,38 +159,99 @@ function Studio() {
             <section className="rounded-2xl border border-border/60 bg-background/45 p-4 backdrop-blur-md sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">Your project</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">Everything stays adjustable. Start anywhere and Buddy will keep the workflow moving.</p>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">
+                    Your project
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Everything stays adjustable. Start anywhere and Buddy will keep the workflow
+                    moving.
+                  </p>
                 </div>
-                <div className="flex flex-wrap gap-2"><Chip>Local-first</Chip><Chip>No paid API required</Chip></div>
+                <div className="flex flex-wrap gap-2">
+                  <Chip>Local-first</Chip>
+                  <Chip>No paid API required</Chip>
+                </div>
               </div>
             </section>
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">Your next move</h2>
+              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">
+                Your next move
+              </h2>
               <NextMoves onJump={jump} />
             </section>
             <section className="rounded-2xl border border-border/50 bg-background/35 p-4 text-xs text-muted-foreground backdrop-blur-md">
-              <p><span className="font-semibold text-foreground">Buddy handles the machinery.</span> Model names, provider settings and runner choices stay out of your normal workflow.</p>
+              <p>
+                <span className="font-semibold text-foreground">Buddy handles the machinery.</span>{" "}
+                Model names, provider settings and runner choices stay out of your normal workflow.
+              </p>
             </section>
             <SupportPanel />
           </div>
         )}
-        {tab === "write" && <div className="space-y-3"><LyricsPanel /><CoachPanel /><CouncilPanel /><ChatPanel /></div>}
-        {tab === "mix" && <div className="space-y-3"><UploadPanel /><QRangePanel /><LabPanel /></div>}
-        {tab === "video" && <div className="space-y-3"><StoryboardPanel /><VideoPanel /><SeoPanel /></div>}
-        {tab === "community" && <div className="space-y-3"><SpotlightPanel /><ProfilePanel /><AccessPanel /></div>}
+        {tab === "write" && (
+          <div className="space-y-3">
+            <LyricsPanel />
+            <CoachPanel />
+            <CouncilPanel />
+            <ChatPanel />
+          </div>
+        )}
+        {tab === "mix" && (
+          <div className="space-y-3">
+            <UploadPanel />
+            <QRangePanel />
+            <LabPanel />
+          </div>
+        )}
+        {tab === "video" && (
+          <div className="space-y-3">
+            <StoryboardPanel />
+            <VideoPanel />
+            <SeoPanel />
+          </div>
+        )}
+        {tab === "community" && (
+          <div className="space-y-3">
+            <SpotlightPanel />
+            <ProfilePanel />
+            <AccessPanel />
+          </div>
+        )}
 
-        <footer className="mt-10 text-center text-xs text-muted-foreground"><span>{VERSION}</span><span className="mx-2">•</span><span>Made with love by LittleRedBigSmile 🔴😁✨️</span></footer>
+        <footer className="mt-10 text-center text-xs text-muted-foreground">
+          <span>{VERSION}</span>
+          <span className="mx-2">•</span>
+          <span>Made with love by LittleRedBigSmile 🔴😁✨️</span>
+        </footer>
       </main>
 
-      <nav aria-label="Studio sections" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden">
+      <nav
+        aria-label="Studio sections"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden"
+      >
         <div className="grid grid-cols-5">
-          {TABS.map((t) => { const Icon = t.icon; const active = tab === t.id; return (
-            <button key={t.id} type="button" aria-current={active ? "page" : undefined} onClick={() => go(t.id)} className={cn("flex min-h-14 flex-col items-center justify-center gap-1 transition-colors", active ? "text-primary" : "text-muted-foreground")}>
-              <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
-              <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
-            </button>
-          ); })}
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => go(t.id)}
+                className={cn(
+                  "flex min-h-14 flex-col items-center justify-center gap-1 transition-colors",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                <Icon
+                  aria-hidden
+                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
+                />
+                <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </nav>
     </>

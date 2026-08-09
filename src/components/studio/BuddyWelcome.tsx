@@ -16,8 +16,18 @@ const TASKS: { task: BuddyTask; title: string; copy: string }[] = [
 export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void }) {
   return (
     <section className="relative isolate overflow-hidden rounded-[2rem] border border-primary/35 bg-black shadow-[0_30px_100px_oklch(0_0_0_/_0.48)]">
-      <img src={studioHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-45" />
-      <img src={luxuryBanner} alt="" aria-hidden="true" className="absolute -right-8 bottom-0 h-44 w-80 rotate-1 object-cover opacity-25 mix-blend-screen blur-[0.2px] sm:h-56 sm:w-[28rem]" />
+      <img
+        src={studioHero}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover opacity-45"
+      />
+      <img
+        src={luxuryBanner}
+        alt=""
+        aria-hidden="true"
+        className="absolute -right-8 bottom-0 h-44 w-80 rotate-1 object-cover opacity-25 mix-blend-screen blur-[0.2px] sm:h-56 sm:w-[28rem]"
+      />
       <div className="absolute inset-0 bg-[linear-gradient(110deg,oklch(0.055_0.02_20_/_0.98)_5%,oklch(0.09_0.025_20_/_0.8)_52%,oklch(0.12_0.06_20_/_0.42)_100%)]" />
       <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-primary/20 blur-3xl" />
 
@@ -33,8 +43,9 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
           <span className="block text-primary text-glow">Buddy handles the rest.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-          Bring your idea, track, voice or image. Buddy chooses the best available route for the job,
-          keeps the technical machinery backstage, and leaves every creative decision in your hands.
+          Bring your idea, track, voice or image. Buddy chooses the best available route for the
+          job, keeps the technical machinery backstage, and leaves every creative decision in your
+          hands.
         </p>
 
         <div className="mt-7 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -61,10 +72,18 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-semibold">
-          <span className="rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-primary backdrop-blur-md">Buddy chooses automatically</span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Free-first</span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Android ready</span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">No model setup</span>
+          <span className="rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-primary backdrop-blur-md">
+            Buddy chooses automatically
+          </span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
+            Free-first
+          </span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
+            Android ready
+          </span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
+            No model setup
+          </span>
         </div>
       </div>
     </section>

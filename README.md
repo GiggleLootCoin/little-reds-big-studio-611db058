@@ -6,13 +6,15 @@ The Studio is designed around one simple experience: bring in your idea, music, 
 
 ## Production
 
-- **Live app:** https://little-reds-big-studio-611db058.gigglelootcoin.workers.dev
-- **Source:** this private GitHub repository
-- **Hosting:** Cloudflare Workers
+- **Live app:** `https://gigglelootcoin.github.io/little-reds-big-studio-611db058/`
+- **Source:** this public GitHub repository
+- **Hosting:** GitHub Pages
 - **Cost target:** $0 / no paid hosting required
 - **AI policy:** no mandatory paid AI API and no mandatory provider account
 - **Storage:** browser-first project storage where supported
-- **Device:** Android-friendly responsive web app
+- **Device:** Android-first responsive web app
+
+GitHub Pages builds the Vite production bundle and publishes the generated `dist/` directory. No Lovable, Netlify, Cloudflare Workers, or Supabase runtime is required.
 
 ## Buddy orchestration
 
@@ -39,16 +41,6 @@ Public free GPU services can have queues or temporary outages; Buddy therefore k
 
 The repository contains the uploaded visual-reference library under `assets/visual-references/` and the Studio uses the approved visual direction for its cinematic, glass, crimson/obsidian interface.
 
-## Creator support
-
-This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
-
-Support The Creator And Her Music On YouTube! 💃 🎧 🎶
-
-- YouTube: https://youtube.com/@little-red-big-smile
-- Cash App: https://cash.app/$LittleRedBigSmile
-- Internationally: https://buymeacoffee.com/littleredbigsmile
-
 ## Development
 
 The repository is a TanStack Start application built with Vite and TypeScript.
@@ -64,10 +56,14 @@ Production build:
 npm run build
 ```
 
-Deployment:
+Production deployment is automatic through `.github/workflows/github-pages.yml` whenever an approved change reaches `main`.
 
-```sh
-npm run deploy
-```
+## Quality gate
 
-GitHub Actions validates the main branch with dependency installation, TypeScript checking, formatting, linting and a production build before/alongside the Cloudflare deployment workflow.
+GitHub Actions validates changes with dependency installation, TypeScript checking, formatting, linting and a production build. The `main` branch is protected and requires the configured validation check before merging.
+
+## Creator support
+
+This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
+
+Support The Creator And Her Music On YouTube!

@@ -25,7 +25,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     kind: "public",
     description: "Public open voice-conversion Space; no Studio API key.",
     capabilities: ["voice"],
-    url: "https://huggingface.co/spaces/IAHispano/Applio",
+    url: "https://huggingface.co/spaces/IAHispano/ApplioX",
     notes: "Browser workflow; public Space availability applies.",
   },
   {
@@ -47,6 +47,15 @@ export const FREE_RUNNERS: FreeRunner[] = [
     notes: "No Studio API credential.",
   },
   {
+    id: "hf-ace-step",
+    name: "Hugging Face — ACE-Step 1.5",
+    kind: "public",
+    description: "Official ACE-Step 1.5 public Gradio Space with shared free GPU infrastructure.",
+    capabilities: ["music"],
+    url: "https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5",
+    notes: "No Studio API key. Availability and free quota are controlled by the public Space.",
+  },
+  {
     id: "hf-music",
     name: "Hugging Face — MusicGen Web",
     kind: "public",
@@ -61,7 +70,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     kind: "gpu",
     description:
       "Free browser GPU notebooks for heavy open-source workloads; separate from Google Colab.",
-    capabilities: ["voice", "stems", "video", "image", "music", "training"],
+    capabilities: ["voice", "stems", "video", "image", "music", "training", "text"],
     url: "https://www.kaggle.com/code",
     notes: "Heavy-compute fallback; the Studio needs no Kaggle API key.",
   },
@@ -70,7 +79,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     name: "Lightning AI Studio",
     kind: "gpu",
     description: "Browser development environment with a free tier for open-source workloads.",
-    capabilities: ["voice", "stems", "video", "image", "music", "training"],
+    capabilities: ["voice", "stems", "video", "image", "music", "training", "text"],
     url: "https://lightning.ai/studios",
     notes: "Useful when a persistent browser workspace is easier than Colab.",
   },

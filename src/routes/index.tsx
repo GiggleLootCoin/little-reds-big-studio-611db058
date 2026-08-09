@@ -6,6 +6,7 @@ import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
 import { BuddyWelcome } from "@/components/studio/BuddyWelcome";
 import { Chip, openStudioPanel } from "@/components/studio/ui";
 import { NextMoves } from "@/components/studio/Dashboard";
+import { FreeEngineDeck } from "@/components/studio/FreeEngineDeck";
 import { cn } from "@/lib/utils";
 import type { BuddyTask } from "@/lib/buddy-orchestrator";
 import {
@@ -28,9 +29,9 @@ import {
 } from "@/components/studio/sections-community";
 
 const SITE_URL = "https://little-reds-big-studio-611db058.gigglelootcoin.workers.dev";
-const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
+const TITLE = "Little Red's Big Studio — Free AI Music & Creator Studio";
 const DESCRIPTION =
-  "Free, local-first creative studio for musicians and YouTubers, with Buddy handling the technical routing.";
+  "Little Red's Big Studio: Android-first creative tools with Buddy, free/open AI routes, music, voice, artwork, video and project workflows.";
 const OG_IMAGE = `${SITE_URL}${logo.url}`;
 
 export const Route = createFileRoute("/")({
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/")({
       { name: "description", content: DESCRIPTION },
       {
         name: "keywords",
-        content: "AI music video, music production, lyrics, audio, video, local AI, Buddy",
+        content: "music production, AI music, RVC, voice conversion, artwork, video, Buddy, free open source",
       },
       { property: "og:site_name", content: "Little Red's Big Studio" },
       { property: "og:title", content: TITLE },
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/")({
   component: Studio,
 });
 
-const VERSION = "Studio Version 3.6.9.12";
+const VERSION = "Studio Version 4.0 — Free/Open Edition";
 type TabId = "home" | "write" | "mix" | "video" | "community";
 const TABS: { id: TabId; label: string; icon: typeof Compass }[] = [
   { id: "home", label: "Home", icon: Compass },
@@ -145,10 +146,7 @@ function Studio() {
             />
           </a>
         </div>
-        <nav
-          aria-label="Studio sections"
-          className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex"
-        >
+        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -172,20 +170,19 @@ function Studio() {
         {tab === "home" && (
           <div className="space-y-5">
             <BuddyWelcome onChoose={chooseBuddyTask} />
+            <FreeEngineDeck />
             <section className="rounded-2xl border border-border/60 bg-background/45 p-4 backdrop-blur-md sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">
-                    Your project
-                  </h2>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">Your project</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Everything stays adjustable. Start anywhere and Buddy will keep the workflow
-                    moving.
+                    Start anywhere. Buddy keeps the workflow moving while the engine deck gives you direct free fallbacks.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Chip>Local-first</Chip>
-                  <Chip>No paid API required</Chip>
+                  <Chip>Android-first</Chip>
+                  <Chip>No paid API</Chip>
+                  <Chip>No Lovable</Chip>
                 </div>
               </div>
             </section>
@@ -198,7 +195,7 @@ function Studio() {
             <section className="rounded-2xl border border-border/50 bg-background/35 p-4 text-xs text-muted-foreground backdrop-blur-md">
               <p>
                 <span className="font-semibold text-foreground">Buddy handles the machinery.</span>{" "}
-                Model names, provider settings and runner choices stay out of your normal workflow.
+                Provider settings stay out of the normal workflow. When a heavyweight model cannot run locally, Buddy can point you to the best free/open runner instead of pretending it ran.
               </p>
             </section>
             <SupportPanel />
@@ -237,14 +234,11 @@ function Studio() {
         <footer className="mt-10 text-center text-xs text-muted-foreground">
           <span>{VERSION}</span>
           <span className="mx-2">•</span>
-          <span>Made with love by LittleRedBigSmile 🔴😁✨️</span>
+          <span>Little Red's Big Studio — free/open edition</span>
         </footer>
       </main>
 
-      <nav
-        aria-label="Studio sections"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden"
-      >
+      <nav aria-label="Studio sections" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden">
         <div className="grid grid-cols-5">
           {TABS.map((t) => {
             const Icon = t.icon;
@@ -260,10 +254,7 @@ function Studio() {
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon
-                  aria-hidden
-                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
-                />
+                <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
                 <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
               </button>
             );

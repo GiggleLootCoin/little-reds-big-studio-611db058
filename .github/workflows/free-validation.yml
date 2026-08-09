@@ -1,0 +1,32 @@
+name: Free Open Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Type-check
+        run: npx tsc --noEmit
+      - name: Format check
+        run: npx prettier --check .
+      - name: Lint
+        run: npm run lint
+      - name: Production build
+        run: npm run build

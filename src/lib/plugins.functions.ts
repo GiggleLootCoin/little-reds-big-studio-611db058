@@ -2,11 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { executeBestPlugin, readPublicPluginCatalog, refreshScores } from "./plugins.registry.server";
 
+export type ClientPluginJobResult = {
+  plugin: string;
+  slug: string;
+  media: string[];
+};
+
 export const listPlugins = createServerFn({ method: "GET" }).handler(async () => readPublicPluginCatalog());
 
 export const runPluginJob = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({ capability: z.enum(["video", "voice", "stems", "image", "music", "text"]), slug: z.string().optional(), payload: z.record(z.string(), z.unknown()).default({}) }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<ClientPluginJobResult> => {
     const result = await executeBestPlugin({ capability: data.capability, slug: data.slug, payload: data.payload, userId: "local" });
     return { plugin: result.plugin, slug: result.slug, media: result.media };
   });

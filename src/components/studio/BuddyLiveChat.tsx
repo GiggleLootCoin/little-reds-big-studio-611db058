@@ -5,13 +5,13 @@ import { Panel, StudioButton } from "./ui";
 type Message = { role: "user" | "assistant"; content: string };
 type Generator = (messages: Message[], options: Record<string, unknown>) => Promise<any>;
 
-const SYSTEM = `You are Buddy from Little Red's Big Studio. You are exceptionally intelligent and emotionally perceptive. You are a music-production and creator companion. Be concise unless detail helps. Never pretend an action happened when it did not. Be genuinely funny through timing, deadpan observations and occasional callbacks, but never force a joke. Protect the user's confidence. If the user is frustrated, be calm and useful. If a serious topic appears, drop the comedy. Help with songwriting, production, vocals, RVC, artwork, video, YouTube and creative decisions. You have no paid APIs and must never ask for an API key.`;
+const SYSTEM = `You are Buddy from Little Red's Big Studio. You are exceptionally intelligent, emotionally perceptive, practical and creative. You are a music-production and creator companion. Be concise unless detail helps. Never pretend an action happened when it did not. Be genuinely funny through timing, deadpan observations and occasional callbacks, but never force a joke. Protect the user's confidence. If the user is frustrated, be calm and useful. If a serious topic appears, drop the comedy. Help with songwriting, production, vocals, RVC, artwork, video, YouTube and creative decisions. You have no paid APIs and must never ask for an API key. Keep private reasoning private; give useful conclusions and actionable steps instead.`;
 
 export function BuddyLiveChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("Local AI is ready to load when you need it.");
+  const [status, setStatus] = useState("Buddy is ready to load locally when you need him.");
   const generatorRef = useRef<Generator | null>(null);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export function BuddyLiveChat() {
       const saved = JSON.parse(localStorage.getItem("lrbgs-buddy-chat") || "[]") as Message[];
       if (Array.isArray(saved)) setMessages(saved.slice(-40));
     } catch {
-      // A corrupt local chat should never stop the Studio loading.
+      // Corrupt local chat must never stop the Studio loading.
     }
   }, []);
 
@@ -32,8 +32,12 @@ export function BuddyLiveChat() {
     setStatus("Loading Buddy's local brain… first load is the big one.");
     const dynamicImport = new Function("url", "return import(url)") as (url: string) => Promise<any>;
     const lib = await dynamicImport("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1");
-    const device = typeof navigator !== "undefined" && "gpu" in navigator ? "webgpu" : "wasm";
-    const generator = await lib.pipeline("text-generation", "onnx-community/Qwen2.5-0.5B-Instruct", { dtype: "q4", device });
+    const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
+    const device = hasGpu ? "webgpu" : "wasm";
+    const generator = await lib.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", {
+      dtype: hasGpu ? "q4f16" : "q4",
+      device,
+    });
     generatorRef.current = generator as Generator;
     setStatus(device === "webgpu" ? "Buddy is running locally on your GPU." : "Buddy is running locally in the browser.");
     return generator as Generator;
@@ -49,13 +53,21 @@ export function BuddyLiveChat() {
     try {
       const generator = await load();
       const prompt: Message[] = [{ role: "system", content: SYSTEM }, ...next];
-      const output = await generator(prompt, { max_new_tokens: 256, temperature: 0.78, do_sample: true, return_full_text: false });
+      const output = await generator(prompt, {
+        max_new_tokens: 320,
+        temperature: 0.72,
+        do_sample: true,
+        return_full_text: false,
+      });
       const raw = Array.isArray(output) ? output[0]?.generated_text : output?.generated_text;
       const reply = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.at(-1)?.content : raw?.at?.(-1)?.content;
-      setMessages([...next, { role: "assistant", content: String(reply || "I appear to have temporarily misplaced my brain. Give me another go.") }]);
+      const clean = String(reply || "I appear to have temporarily misplaced my brain. Give me another go.")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+      setMessages([...next, { role: "assistant", content: clean }]);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Local model could not load on this device.");
-      setMessages([...next, { role: "assistant", content: "The local brain couldn't start on this phone. That's a device/runtime limitation, not a paid-service wall. Try the free WebGPU chat from the engine deck." }]);
+      setMessages([...next, { role: "assistant", content: "The local brain couldn't start on this device. That's a device/runtime limitation, not a paid-service wall. Try the free WebGPU runner from the engine deck." }]);
     } finally {
       setBusy(false);
     }
@@ -76,7 +88,7 @@ export function BuddyLiveChat() {
         <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void send(); }} placeholder="Talk to Buddy…" disabled={busy} className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
         <StudioButton onClick={() => void send()} disabled={busy || !input.trim()} aria-label="Send message"><Send className="size-4" /></StudioButton>
       </div>
-      <p className="text-[0.65rem] text-muted-foreground">No API key. No paid model. No message quota. The model downloads once to the browser and inference stays on-device.</p>
+      <p className="text-[0.65rem] text-muted-foreground">No API key. No paid model. No message quota. Qwen3 loads once into the browser; inference stays on-device.</p>
     </Panel>
   );
 }

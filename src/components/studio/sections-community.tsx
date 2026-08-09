@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Heart, Plug, UserCircle2, Users } from "lucide-react";
 import { FREE_RUNNERS } from "@/lib/free-runners";
-import { listPlugins } from "@/lib/plugins.functions";
+import { listPlugins, type PublicPlugin } from "@/lib/plugins.functions";
 import { useAuth, useProfile } from "@/hooks/use-auth";
 import { Panel, Note, Readout, StudioButton } from "./ui";
 import { Field, TextArea } from "./AiOutput";
@@ -97,7 +97,7 @@ export function SeoPanel() {
   );
 }
 export function PluginPanel() {
-  const [plugins, setPlugins] = useState<any[]>([]);
+  const [plugins, setPlugins] = useState<PublicPlugin[]>([]);
   useEffect(() => {
     listPlugins()
       .then(setPlugins)

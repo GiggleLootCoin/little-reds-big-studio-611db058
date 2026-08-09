@@ -62,7 +62,7 @@ export function AccessPanel() {
       <Readout label="Hosted database">None</Readout>
       <Note>
         Studio drafts, settings and creator profile stay in browser storage. Heavy AI runs use
-        public free runners only when you choose one.
+        public free runners only when needed.
       </Note>
     </Panel>
   );
@@ -97,6 +97,27 @@ export function SeoPanel() {
     </Panel>
   );
 }
+
+function runnerUrlForPlugin(plugin: PublicPlugin) {
+  if (plugin.slug === "ace-step-open")
+    return FREE_RUNNERS.find((runner) => runner.id === "hf-ace-step")?.url;
+  if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle")?.url;
+  if (plugin.runtime === "lightning")
+    return FREE_RUNNERS.find((runner) => runner.id === "lightning")?.url;
+  const preferred = {
+    voice: "hf-rvc",
+    stems: "hf-audio",
+    video: "hf-video",
+    music: "hf-music",
+    image: "android-local",
+    text: "android-local",
+  }[plugin.capability];
+  return (
+    FREE_RUNNERS.find((runner) => runner.id === preferred)?.url ??
+    plugin.projectUrl
+  );
+}
+
 export function PluginPanel() {
   const [plugins, setPlugins] = useState<PublicPlugin[]>([]);
   useEffect(() => {
@@ -107,18 +128,39 @@ export function PluginPanel() {
   return (
     <Panel eyebrow="Open Models" title="No-API Model Catalog" icon={<Plug className="size-5" />}>
       <p className="text-sm text-muted-foreground">
-        Only source-controlled open models are listed. Commercial API providers are intentionally
-        absent.
+        Only open models are listed. Commercial API providers and secret keys are intentionally
+        absent. Pick a model and the Studio gives you its best available free execution route.
       </p>
       <div className="grid gap-2">
-        {plugins.map((p) => (
-          <div key={p.slug} className="rounded-xl border border-border bg-background/40 p-3">
-            <div className="font-display text-sm">{p.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {p.capability} · {p.runtime}
+        {plugins.map((p) => {
+          const runnerUrl = runnerUrlForPlugin(p);
+          return (
+            <div key={p.slug} className="rounded-xl border border-border bg-background/40 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-display text-sm">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.capability} · {p.runtime}
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  {p.available ? "Ready" : "Free route"}
+                </span>
+              </div>
+              {runnerUrl && (
+                <a
+                  href={runnerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden />
+                  Open free runner
+                </a>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Panel>
   );
@@ -127,8 +169,8 @@ export function SupportPanel() {
   return (
     <Panel eyebrow="Free by design" title="Studio Support" icon={<Plug className="size-5" />}>
       <Note>
-        Little Red&apos;s Big Studio is being rebuilt around open models, local browser storage and
-        free public execution. There is no paid AI gateway hidden behind the controls.
+        Little Red&apos;s Big Studio is built around open models, local browser storage and free public
+        execution. There is no paid AI gateway hidden behind the controls.
       </Note>
     </Panel>
   );

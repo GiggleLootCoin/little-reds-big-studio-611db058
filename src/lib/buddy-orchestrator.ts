@@ -8,12 +8,13 @@ export type BuddyPlan = {
   mode: "local" | "free-open" | "unavailable";
   label: string;
   runner: FreeRunner | null;
+  fallbacks: FreeRunner[];
   reason: string;
   knowledgePolicy: string;
 };
 
 const CAPABILITY: Record<BuddyTask, string> = {
-  writing: "text",
+  writing: "writing",
   voice: "voice",
   music: "music",
   stems: "stems",
@@ -21,34 +22,24 @@ const CAPABILITY: Record<BuddyTask, string> = {
   video: "video",
 };
 
-function localCapability(task: BuddyTask): boolean {
-  if (typeof window === "undefined") return false;
-  if (task === "writing") return typeof WebAssembly !== "undefined";
+// Browser APIs are capabilities, not AI models. Buddy only marks a task local
+// when a real local implementation exists in the Studio.
+function localCapability(_task: BuddyTask): boolean {
   return false;
 }
 
 function rankFreeRoutes(task: BuddyTask): FreeRunner[] {
-  const routes = runnersFor(CAPABILITY[task]);
-  return [...routes].sort((a, b) => {
-    const score = (runner: FreeRunner) => {
-      let value = 0;
-      if (runner.kind === "android") value += 30;
-      if (runner.kind === "public") value += 20;
-      if (runner.kind === "gpu") value += 5;
-      if (runner.capabilities.includes(CAPABILITY[task])) value += 20;
-      return value;
-    };
-    return score(b) - score(a);
-  });
+  return runnersFor(CAPABILITY[task]);
 }
 
 /**
- * Buddy's routing policy. Users request creative outcomes, never model names.
- * Red's private knowledge layer informs perspective and creative reasoning;
- * it is deliberately not treated as a database of verified facts.
+ * Users request outcomes, never model names. Buddy selects the first route
+ * and keeps the rest as silent fallbacks for the orchestration layer.
  */
 export function buddyPlan(task: BuddyTask): BuddyPlan {
   const knowledgePolicy = BUDDY_KNOWLEDGE_POLICY;
+  const routes = rankFreeRoutes(task);
+  const runner = routes[0] ?? null;
 
   if (localCapability(task)) {
     return {
@@ -56,19 +47,20 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       mode: "local",
       label: "Ready on this device",
       runner: null,
+      fallbacks: [],
       reason: "Buddy can complete this part of the workflow locally.",
       knowledgePolicy,
     };
   }
 
-  const runner = rankFreeRoutes(task)[0] ?? null;
   if (runner) {
     return {
       task,
       mode: "free-open",
       label: "Buddy will handle it",
       runner,
-      reason: "Buddy selected the strongest configured free/open route for this task.",
+      fallbacks: routes.slice(1),
+      reason: "Buddy selected the strongest configured free/open route and keeps fallbacks ready.",
       knowledgePolicy,
     };
   }
@@ -78,16 +70,21 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
     mode: "unavailable",
     label: "Buddy needs another route",
     runner: null,
+    fallbacks: [],
     reason: "No suitable local or free/open route is configured for this task.",
     knowledgePolicy,
   };
 }
 
-/** Returns the private knowledge context for future text/creative providers. */
 export function buddyKnowledge(mode: "reference" | "fact-check" | "creative" = "reference") {
   return buddyKnowledgeContext(mode);
 }
 
+/**
+ * A browser cannot submit or monitor a third-party Space as if it were our
+ * own backend. We therefore open only the selected route and never claim the
+ * Studio completed an external generation it did not perform.
+ */
 export function openBuddyRoute(task: BuddyTask) {
   const plan = buddyPlan(task);
   if (plan.mode === "free-open" && plan.runner && typeof window !== "undefined") {

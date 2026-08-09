@@ -101,7 +101,8 @@ export function SeoPanel() {
 function runnerUrlForPlugin(plugin: PublicPlugin) {
   if (plugin.slug === "ace-step-open")
     return FREE_RUNNERS.find((runner) => runner.id === "hf-ace-step")?.url;
-  if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle")?.url;
+  if (plugin.runtime === "kaggle")
+    return FREE_RUNNERS.find((runner) => runner.id === "kaggle")?.url;
   if (plugin.runtime === "lightning")
     return FREE_RUNNERS.find((runner) => runner.id === "lightning")?.url;
   const preferred = {
@@ -112,10 +113,7 @@ function runnerUrlForPlugin(plugin: PublicPlugin) {
     image: "android-local",
     text: "android-local",
   }[plugin.capability];
-  return (
-    FREE_RUNNERS.find((runner) => runner.id === preferred)?.url ??
-    plugin.projectUrl
-  );
+  return FREE_RUNNERS.find((runner) => runner.id === preferred)?.url ?? plugin.projectUrl;
 }
 
 export function PluginPanel() {
@@ -169,8 +167,8 @@ export function SupportPanel() {
   return (
     <Panel eyebrow="Free by design" title="Studio Support" icon={<Plug className="size-5" />}>
       <Note>
-        Little Red&apos;s Big Studio is built around open models, local browser storage and free public
-        execution. There is no paid AI gateway hidden behind the controls.
+        Little Red&apos;s Big Studio is built around open models, local browser storage and free
+        public execution. There is no paid AI gateway hidden behind the controls.
       </Note>
     </Panel>
   );

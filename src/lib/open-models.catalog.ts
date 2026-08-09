@@ -211,7 +211,8 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 7,
     weekly_score: 9,
     enabled: true,
-    notes: "Widely supported open image-generation model; use a public browser demo or local runtime.",
+    notes:
+      "Widely supported open image-generation model; use a public browser demo or local runtime.",
     runtime: "browser",
     project_url: "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
   },

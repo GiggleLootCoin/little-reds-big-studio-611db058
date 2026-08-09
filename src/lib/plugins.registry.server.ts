@@ -115,7 +115,7 @@ export async function executeBestPlugin(args: {
   const pool = catalog.filter((p) => p.capability === args.capability && p.enabled);
   const chosen = args.slug
     ? pool.find((p) => p.slug === args.slug)
-    : pool.find((p) => p.available) ?? pool[0];
+    : (pool.find((p) => p.available) ?? pool[0]);
 
   if (!chosen) {
     throw new Error(`No free/open ${args.capability} model is registered.`);

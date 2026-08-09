@@ -15,35 +15,29 @@ const TASKS: { task: BuddyTask; title: string; copy: string }[] = [
 
 export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-[2rem] border border-primary/35 bg-black shadow-[0_24px_80px_oklch(0_0_0_/_0.45)]">
-      <img
-        src={studioHero}
-        alt="Little Red's Big Studio visual reference"
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
-      />
-      <img
-        src={luxuryBanner}
-        alt=""
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-40 w-full object-cover opacity-20 mix-blend-screen"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(115deg,oklch(0.06_0.02_20_/_0.97),oklch(0.12_0.035_20_/_0.78)_55%,oklch(0.12_0.08_20_/_0.5))]" />
-      <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/20 blur-3xl" />
-      <div className="relative p-5 sm:p-8">
+    <section className="relative isolate overflow-hidden rounded-[2rem] border border-primary/35 bg-black shadow-[0_30px_100px_oklch(0_0_0_/_0.48)]">
+      <img src={studioHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+      <img src={luxuryBanner} alt="" aria-hidden="true" className="absolute -right-8 bottom-0 h-44 w-80 rotate-1 object-cover opacity-25 mix-blend-screen blur-[0.2px] sm:h-56 sm:w-[28rem]" />
+      <div className="absolute inset-0 bg-[linear-gradient(110deg,oklch(0.055_0.02_20_/_0.98)_5%,oklch(0.09_0.025_20_/_0.8)_52%,oklch(0.12_0.06_20_/_0.42)_100%)]" />
+      <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-primary/20 blur-3xl" />
+
+      <div className="relative p-5 sm:p-8 lg:p-10">
         <div className="flex items-center gap-2 text-primary">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-black/40 ring-1 ring-primary/40 backdrop-blur-md">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-black/45 ring-1 ring-primary/40 backdrop-blur-md">
             <Sparkles className="size-5" />
           </span>
-          <span className="text-xs font-bold uppercase tracking-[0.22em]">Buddy is ready</span>
+          <span className="text-xs font-bold uppercase tracking-[0.24em]">Buddy is ready</span>
         </div>
-        <h1 className="mt-4 max-w-2xl font-display text-3xl font-black leading-[1.02] tracking-tight text-glow sm:text-5xl">
-          You make the creative decisions. Buddy handles the technical stuff.
+        <h1 className="mt-5 max-w-2xl font-display text-4xl font-black leading-[0.98] tracking-tight text-white drop-shadow-2xl sm:text-6xl">
+          Make something brilliant.
+          <span className="block text-primary text-glow">Buddy handles the rest.</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground/75 sm:text-base">
-          Pick what you want to make. Buddy automatically chooses the best local or free/open route
-          available for the job. You never need to choose a model or configure an AI provider.
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
+          Bring your idea, track, voice or image. Buddy chooses the best available route for the job,
+          keeps the technical machinery backstage, and leaves every creative decision in your hands.
         </p>
-        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
+
+        <div className="mt-7 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {TASKS.map(({ task, title, copy }) => {
             const plan = buddyPlan(task);
             return (
@@ -52,32 +46,25 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
                 type="button"
                 onClick={() => onChoose(task)}
                 className={cn(
-                  "group rounded-2xl border border-white/10 bg-black/45 p-3 text-left shadow-lg backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 active:scale-[0.985]",
+                  "group rounded-2xl border border-white/10 bg-black/40 p-3.5 text-left shadow-lg backdrop-blur-xl transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_12px_35px_oklch(0.55_0.22_25_/_0.16)] active:scale-[0.985]",
                   plan.mode === "unavailable" && "opacity-60",
                 )}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="font-display text-sm font-bold">{title}</span>
-                  <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-0.5" />
+                  <span className="font-display text-sm font-bold text-white">{title}</span>
+                  <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-1" />
                 </span>
-                <span className="mt-1 block text-xs leading-5 text-foreground/60">{copy}</span>
+                <span className="mt-1.5 block text-xs leading-5 text-white/55">{copy}</span>
               </button>
             );
           })}
         </div>
-        <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-foreground/65">
-          <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-primary">
-            Automatic routing
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/35 px-3 py-1.5 backdrop-blur-sm">
-            Free-first
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/35 px-3 py-1.5 backdrop-blur-sm">
-            Android ready
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/35 px-3 py-1.5 backdrop-blur-sm">
-            No model setup
-          </span>
+
+        <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-semibold">
+          <span className="rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-primary backdrop-blur-md">Buddy chooses automatically</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Free-first</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Android ready</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">No model setup</span>
         </div>
       </div>
     </section>

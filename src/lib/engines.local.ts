@@ -1,65 +1,84 @@
-// Local-first engine capability registry.
-// Keep this module dependency-free so the Studio can determine which
-// browser capabilities are available before choosing a free/open runner.
+// Browser capability registry. A browser capability is NOT itself an AI model.
+// Buddy only calls something "local" when the Studio has a real local implementation
+// for that task. WebGPU/WASM availability alone never counts as a generative engine.
 
 export type LocalCapability =
-  "indexeddb" | "wasm" | "workers" | "webgpu" | "recording" | "audioworklet" | "file-access";
+  | "indexeddb"
+  | "wasm"
+  | "workers"
+  | "webgpu"
+  | "recording"
+  | "audioworklet"
+  | "file-access";
 
 export type EngineReadiness = {
   id: string;
   label: string;
   capability: LocalCapability;
-  local: boolean;
+  available: boolean;
+  hasLocalModel: boolean;
   freeRunner?: string;
   requiresApiKey: false;
 };
 
+// These describe what the phone/browser can provide to the Studio itself.
+// Heavy generative models remain free/open runner jobs unless a real local
+// model implementation is installed and detected.
 export const LOCAL_ENGINES: EngineReadiness[] = [
   {
-    id: "writing-local",
-    label: "Writing & Council",
+    id: "storage",
+    label: "Project storage",
+    capability: "indexeddb",
+    available: false,
+    hasLocalModel: false,
+    requiresApiKey: false,
+  },
+  {
+    id: "audio-processing",
+    label: "Browser audio processing",
     capability: "wasm",
-    local: true,
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
   {
-    id: "voice-local",
-    label: "Voice",
-    capability: "wasm",
-    local: true,
-    freeRunner: "ApplioX",
+    id: "background-processing",
+    label: "Background processing",
+    capability: "workers",
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
   {
-    id: "music-local",
-    label: "Music",
+    id: "phone-gpu",
+    label: "Phone GPU capability",
     capability: "webgpu",
-    local: true,
-    freeRunner: "ACE-Step 1.5",
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
   {
-    id: "stems-local",
-    label: "Stem separation",
-    capability: "wasm",
-    local: true,
-    freeRunner: "Demucs",
+    id: "recording",
+    label: "Local recording",
+    capability: "recording",
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
   {
-    id: "art-local",
-    label: "Artwork",
-    capability: "webgpu",
-    local: true,
-    freeRunner: "SDXL",
+    id: "audio-worklet",
+    label: "Real-time audio processing",
+    capability: "audioworklet",
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
   {
-    id: "video-local",
-    label: "Video",
-    capability: "webgpu",
-    local: true,
-    freeRunner: "Wan 2.2",
+    id: "file-access",
+    label: "Direct file access",
+    capability: "file-access",
+    available: false,
+    hasLocalModel: false,
     requiresApiKey: false,
   },
 ];
@@ -89,10 +108,6 @@ export function capabilityAvailable(capability: LocalCapability): boolean {
 export function getEngineReadiness(): EngineReadiness[] {
   return LOCAL_ENGINES.map((engine) => ({
     ...engine,
-    local: capabilityAvailable(engine.capability),
+    available: capabilityAvailable(engine.capability),
   }));
-}
-
-export function getBestRoute(engine: EngineReadiness): "local" | "free-runner" {
-  return engine.local ? "local" : "free-runner";
 }

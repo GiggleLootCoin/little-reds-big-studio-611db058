@@ -27,6 +27,7 @@ import {
 } from "@/components/studio/sections-community";
 import { SupportPanel } from "@/components/studio/sections-community";
 import { AnalyticsPanel, ModerationPanel } from "@/components/studio/sections-admin";
+import { GithubPanel } from "@/components/studio/sections-github";
 
 
 const SITE_URL = "https://little-reds-big-studio.lovable.app";
@@ -246,8 +247,10 @@ function Studio() {
             <EngineStatusStrip />
             <PluginPanel />
             <EnginePanel />
+            <GithubPanel />
             <ModerationPanel />
             <AnalyticsPanel />
+
           </div>
         )}
 

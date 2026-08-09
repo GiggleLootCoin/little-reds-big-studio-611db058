@@ -3,6 +3,8 @@ import { HardDrive, Smartphone, WifiOff, Zap } from "lucide-react";
 import { detectLocalRuntime, isAndroidLike, localRuntimeSummary, type LocalRuntimeCapabilities } from "@/lib/local-first/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+type CapabilityCheck = readonly [label: string, available: boolean];
+
 export function LocalEnginePanel() {
   const [capabilities, setCapabilities] = useState<LocalRuntimeCapabilities | null>(null);
 
@@ -10,7 +12,7 @@ export function LocalEnginePanel() {
     void detectLocalRuntime().then(setCapabilities);
   }, []);
 
-  const checks = capabilities
+  const checks: CapabilityCheck[] = capabilities
     ? [
         ["IndexedDB project storage", capabilities.indexedDb],
         ["WebAssembly processing", capabilities.webAssembly],

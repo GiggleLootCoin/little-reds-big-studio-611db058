@@ -1,5 +1,7 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { buddyPlan, type BuddyTask } from "@/lib/buddy-orchestrator";
+import { setBuddyStatus } from "@/lib/buddy-presence";
+import { BuddyPresence } from "@/components/studio/BuddyPresence";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import studioHero from "../../../lobby-hero.jpg";
@@ -18,18 +20,8 @@ const TASKS: { task: BuddyTask; title: string; copy: string }[] = [
 export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void }) {
   return (
     <section className="relative isolate overflow-hidden rounded-[2rem] border border-primary/35 bg-black shadow-[0_30px_100px_oklch(0_0_0_/_0.48)]">
-      <img
-        src={studioHero}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover opacity-45"
-      />
-      <img
-        src={luxuryBanner}
-        alt=""
-        aria-hidden="true"
-        className="absolute -right-8 bottom-0 h-44 w-80 rotate-1 object-cover opacity-25 mix-blend-screen blur-[0.2px] sm:h-56 sm:w-[28rem]"
-      />
+      <img src={studioHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+      <img src={luxuryBanner} alt="" aria-hidden="true" className="absolute -right-8 bottom-0 h-44 w-80 rotate-1 object-cover opacity-25 mix-blend-screen blur-[0.2px] sm:h-56 sm:w-[28rem]" />
       <div className="absolute inset-0 bg-[linear-gradient(110deg,oklch(0.055_0.02_20_/_0.98)_5%,oklch(0.09_0.025_20_/_0.8)_52%,oklch(0.12_0.06_20_/_0.42)_100%)]" />
       <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-primary/20 blur-3xl" />
 
@@ -47,31 +39,20 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
               <span className="block text-primary text-glow">Buddy handles the rest.</span>
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Bring your idea, track, voice or image. Buddy chooses the best available route for the
-              job, keeps the technical machinery backstage, and leaves every creative decision in
-              your hands.
+              Bring your idea, track, voice or image. Buddy chooses the best available route for the job,
+              keeps the technical machinery backstage, and leaves every creative decision in your hands.
             </p>
+            <BuddyPresence className="mt-5 max-w-xl border-white/10 bg-black/35" />
           </div>
 
-          <div
-            className="buddy-stage relative hidden w-36 shrink-0 sm:block sm:w-44 lg:w-52"
-            aria-label="Animated Buddy character"
-          >
+          <div className="buddy-stage relative hidden w-36 shrink-0 sm:block sm:w-44 lg:w-52" aria-label="Animated Buddy character">
             <div className="buddy-aura absolute inset-4 rounded-full bg-primary/25 blur-2xl" />
             <div className="buddy-ring absolute inset-2 rounded-[2.5rem] border border-primary/30 bg-black/20 backdrop-blur-sm" />
             <div className="buddy-character relative mx-auto aspect-square w-[86%] overflow-hidden rounded-[2.2rem] border border-white/15 bg-black/30 shadow-[0_20px_55px_oklch(0_0_0_/_0.5)]">
-              <img
-                src={buddyReference}
-                alt="Buddy"
-                className="buddy-character-image h-full w-full object-contain"
-              />
+              <img src={buddyReference} alt="Buddy" className="buddy-character-image h-full w-full object-contain" />
               <div className="buddy-shine absolute inset-0 bg-[linear-gradient(115deg,transparent_20%,oklch(1_0_0_/_0.14)_48%,transparent_62%)]" />
             </div>
-            <img
-              src={logo.url}
-              alt="Little Red's Big Studio"
-              className="absolute -bottom-3 left-1/2 w-28 -translate-x-1/2 rounded-xl border border-white/10 bg-black/75 p-1.5 shadow-xl backdrop-blur-md"
-            />
+            <img src={logo.url} alt="Little Red's Big Studio" className="absolute -bottom-3 left-1/2 w-28 -translate-x-1/2 rounded-xl border border-white/10 bg-black/75 p-1.5 shadow-xl backdrop-blur-md" />
             <span className="absolute -right-1 top-3 rounded-full border border-primary/40 bg-black/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary backdrop-blur-md">
               Buddy
             </span>
@@ -79,24 +60,15 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
         </div>
 
         <div className="mt-6 flex items-center gap-3 sm:hidden">
-          <div
-            className="buddy-stage relative h-28 w-28 shrink-0"
-            aria-label="Animated Buddy character"
-          >
+          <div className="buddy-stage relative h-28 w-28 shrink-0" aria-label="Animated Buddy character">
             <div className="buddy-aura absolute inset-2 rounded-full bg-primary/25 blur-xl" />
             <div className="buddy-character relative mx-auto aspect-square overflow-hidden rounded-3xl border border-white/15 bg-black/30 shadow-xl">
-              <img
-                src={buddyReference}
-                alt="Buddy"
-                className="buddy-character-image h-full w-full object-contain"
-              />
+              <img src={buddyReference} alt="Buddy" className="buddy-character-image h-full w-full object-contain" />
             </div>
           </div>
           <div>
             <p className="font-display text-sm font-bold text-white">Buddy is with you.</p>
-            <p className="mt-1 text-xs leading-5 text-white/55">
-              Tell Buddy what you want to make. The technical stuff stays backstage.
-            </p>
+            <p className="mt-1 text-xs leading-5 text-white/55">Tell Buddy what you want to make. The technical stuff stays backstage.</p>
           </div>
         </div>
 
@@ -107,7 +79,13 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
               <button
                 key={task}
                 type="button"
-                onClick={() => onChoose(task)}
+                onClick={() => {
+                  setBuddyStatus(plan.mode === "unavailable" ? "error" : "thinking", {
+                    task,
+                    message: plan.mode === "unavailable" ? "That route isn't configured yet. I won't pretend otherwise." : null,
+                  });
+                  onChoose(task);
+                }}
                 className={cn(
                   "group rounded-2xl border border-white/10 bg-black/40 p-3.5 text-left shadow-lg backdrop-blur-xl transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_12px_35px_oklch(0.55_0.22_25_/_0.16)] active:scale-[0.985]",
                   plan.mode === "unavailable" && "opacity-60",
@@ -124,18 +102,10 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-semibold">
-          <span className="rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-primary backdrop-blur-md">
-            Buddy chooses automatically
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
-            Free-first
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
-            Android ready
-          </span>
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">
-            No model setup
-          </span>
+          <span className="rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-primary backdrop-blur-md">Buddy chooses automatically</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Free-first</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">Android ready</span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-white/65 backdrop-blur-md">No model setup</span>
         </div>
       </div>
     </section>

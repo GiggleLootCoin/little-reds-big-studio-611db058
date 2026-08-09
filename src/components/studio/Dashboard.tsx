@@ -66,14 +66,15 @@ export function EngineStatusStrip() {
             key={cap}
             className={cn(
               "rounded-xl border p-2.5 transition-colors",
-              s?.ok
-                ? "border-primary/40 bg-primary/10"
-                : "border-border/70 bg-background/50",
+              s?.ok ? "border-primary/40 bg-primary/10" : "border-border/70 bg-background/50",
             )}
           >
             <div className="flex items-center gap-1.5">
               {s === null ? (
-                <CircleDashed aria-hidden className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+                <CircleDashed
+                  aria-hidden
+                  className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+                />
               ) : s.ok ? (
                 <CheckCircle2 aria-hidden className="size-3.5 shrink-0 text-primary" />
               ) : (
@@ -152,14 +153,18 @@ export function NextMoves({ onJump }: { onJump: (id: string) => void }) {
           onClick={() => onJump(s.id)}
           className={cn(
             "hover-lift flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
-            s.done ? "border-primary/40 bg-primary/10" : "border-border/70 bg-background/50 hover:bg-secondary/40",
+            s.done
+              ? "border-primary/40 bg-primary/10"
+              : "border-border/70 bg-background/50 hover:bg-secondary/40",
           )}
         >
           <span
             aria-hidden
             className={cn(
               "flex size-9 shrink-0 items-center justify-center rounded-lg",
-              s.done ? "crimson-gloss text-primary-foreground" : "border border-border text-primary",
+              s.done
+                ? "crimson-gloss text-primary-foreground"
+                : "border border-border text-primary",
             )}
           >
             {s.done ? <CheckCircle2 className="size-4" /> : s.icon}

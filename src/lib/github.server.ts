@@ -87,7 +87,9 @@ type RawCommit = {
 };
 
 export async function listMyRepos(): Promise<RepoSummary[]> {
-  const raw = (await gh("user/repos?sort=pushed&per_page=20&affiliation=owner,collaborator,organization_member")) as RawRepo[];
+  const raw = (await gh(
+    "user/repos?sort=pushed&per_page=20&affiliation=owner,collaborator,organization_member",
+  )) as RawRepo[];
   return raw.map((r) => ({
     fullName: r.full_name,
     description: r.description,

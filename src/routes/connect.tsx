@@ -66,14 +66,17 @@ function ConnectPage() {
           Use the Studio inside ChatGPT &amp; Claude
         </h1>
         <p className="mt-2 text-center text-sm text-muted-foreground">
-          Connect your AI assistant once, then just ask it to write your lyrics, critique a song or build a
-          storyboard — it saves straight into your studio.
+          Connect your AI assistant once, then just ask it to write your lyrics, critique a song or
+          build a storyboard — it saves straight into your studio.
         </p>
 
         <div className="drip-divider my-6" />
 
         <section className="glass-panel rounded-2xl p-5" aria-labelledby="studio-link">
-          <h2 id="studio-link" className="font-display text-sm font-bold uppercase tracking-[0.2em] text-primary">
+          <h2
+            id="studio-link"
+            className="font-display text-sm font-bold uppercase tracking-[0.2em] text-primary"
+          >
             Your studio link
           </h2>
           <p className="mt-2 text-xs text-muted-foreground">
@@ -83,7 +86,11 @@ function ConnectPage() {
             {mcpUrl || "Loading…"}
           </code>
           <StudioButton className="mt-3 w-full" onClick={() => void copy()} disabled={!mcpUrl}>
-            {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+            {copied ? (
+              <Check className="size-4" aria-hidden />
+            ) : (
+              <Copy className="size-4" aria-hidden />
+            )}
             {copied ? "Copied!" : "Copy studio link"}
           </StudioButton>
         </section>
@@ -116,23 +123,34 @@ function ConnectPage() {
                 Click <strong>Add sources</strong>, then <strong>Connect more</strong>.
               </Step>
               <Step n={4}>
-                Name it <strong>Little Red's Big Studio</strong> and paste the studio link from above.
+                Name it <strong>Little Red's Big Studio</strong> and paste the studio link from
+                above.
               </Step>
               <Step n={5}>
-                Sign in with the same account you use here and press <strong>Approve</strong> on the screen
-                that appears.
+                Sign in with the same account you use here and press <strong>Approve</strong> on the
+                screen that appears.
               </Step>
               <Step n={6}>
-                Now just ask: <em>"Write a chorus for my new session in Little Red's Big Studio."</em>
+                Now just ask:{" "}
+                <em>"Write a chorus for my new session in Little Red's Big Studio."</em>
               </Step>
             </ol>
           </Panel>
 
-          <Panel title="Connect Claude" eyebrow="Step by step" icon={<Bot className="size-5" aria-hidden />}>
+          <Panel
+            title="Connect Claude"
+            eyebrow="Step by step"
+            icon={<Bot className="size-5" aria-hidden />}
+          >
             <ol className="space-y-3">
               <Step n={1}>
                 Click{" "}
-                <a className="text-primary underline" href={claudeUrl} target="_blank" rel="noreferrer">
+                <a
+                  className="text-primary underline"
+                  href={claudeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   this link to open Claude's connector box
                 </a>{" "}
                 — the name and studio link are already filled in for you.
@@ -148,7 +166,8 @@ function ConnectPage() {
                 Sign in with the same account you use here and press <strong>Approve</strong>.
               </Step>
               <Step n={5}>
-                Turn the connector on from the message box, then ask Claude to work on your studio sessions.
+                Turn the connector on from the message box, then ask Claude to work on your studio
+                sessions.
               </Step>
             </ol>
           </Panel>
@@ -173,20 +192,21 @@ function ConnectPage() {
             icon={<RefreshCw className="size-5" aria-hidden />}
           >
             <p className="mb-3 text-sm text-muted-foreground">
-              Your assistant remembers what the studio could do the day you connected it. When new features
-              land, refresh the connection:
+              Your assistant remembers what the studio could do the day you connected it. When new
+              features land, refresh the connection:
             </p>
             <ol className="space-y-3">
               <Step n={1}>
-                <strong>ChatGPT:</strong> Settings → Enabled apps → Little Red's Big Studio → next to
-                "Information", click <strong>Refresh</strong>. Then start a new chat.
+                <strong>ChatGPT:</strong> Settings → Enabled apps → Little Red's Big Studio → next
+                to "Information", click <strong>Refresh</strong>. Then start a new chat.
               </Step>
               <Step n={2}>
-                <strong>Claude:</strong> Settings → Connectors → select this connector → refresh or update its
-                tools.
+                <strong>Claude:</strong> Settings → Connectors → select this connector → refresh or
+                update its tools.
               </Step>
               <Step n={3}>
-                <strong>Anything else:</strong> open the connection in its settings and reload / reconnect it.
+                <strong>Anything else:</strong> open the connection in its settings and reload /
+                reconnect it.
               </Step>
               <Step n={4}>If the studio link above ever changes, paste the new one in.</Step>
             </ol>

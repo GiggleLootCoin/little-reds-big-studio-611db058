@@ -1,4 +1,10 @@
-import { buildInput, describeAvailability, extractMedia, invokePlugin, rankPlugins } from "./plugins.server";
+import {
+  buildInput,
+  describeAvailability,
+  extractMedia,
+  invokePlugin,
+  rankPlugins,
+} from "./plugins.server";
 import type { Capability, PluginStatus } from "./plugins.server";
 import { OPEN_MODEL_CATALOG } from "./open-models.catalog";
 
@@ -79,11 +85,21 @@ export async function executeBestPlugin(args: {
   try {
     const output = await invokePlugin(chosen, buildInput(args.capability, args.payload));
     const media = extractMedia(output);
-    sessionRuns.push({ slug: chosen.slug, capability: args.capability, status: "succeeded", durationMs: Date.now() - started });
+    sessionRuns.push({
+      slug: chosen.slug,
+      capability: args.capability,
+      status: "succeeded",
+      durationMs: Date.now() - started,
+    });
     return { plugin: chosen.name, slug: chosen.slug, media, raw: output };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    sessionRuns.push({ slug: chosen.slug, capability: args.capability, status: "failed", durationMs: Date.now() - started });
+    sessionRuns.push({
+      slug: chosen.slug,
+      capability: args.capability,
+      status: "failed",
+      durationMs: Date.now() - started,
+    });
     throw new Error(`${chosen.name} failed: ${message}`);
   }
 }

@@ -5,7 +5,9 @@
 export const lovable = {
   auth: {
     signInWithOAuth: async () => ({
-      error: new Error("Hosted OAuth is disabled. Little Red's Big Studio uses local/free-open operation."),
+      error: new Error(
+        "Hosted OAuth is disabled. Little Red's Big Studio uses local/free-open operation.",
+      ),
     }),
   },
 };

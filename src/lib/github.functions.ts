@@ -2,11 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 /** Repos visible to the connected GitHub account. */
-export const listRepos = createServerFn({ method: "POST" })
-  .handler(async () => {
-    const { listMyRepos } = await import("@/lib/github.server");
-    return listMyRepos();
-  });
+export const listRepos = createServerFn({ method: "POST" }).handler(async () => {
+  const { listMyRepos } = await import("@/lib/github.server");
+  return listMyRepos();
+});
 
 /** Open issues + recent commits for one repository. */
 export const getRepo = createServerFn({ method: "POST" })

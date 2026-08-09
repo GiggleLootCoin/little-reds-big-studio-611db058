@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import bgAsset from "@/assets/red-moon-bg.png.asset.json";
 
-type Ember = { id: number; left: number; size: number; delay: number; duration: number; drift: number };
+type Ember = {
+  id: number;
+  left: number;
+  size: number;
+  delay: number;
+  duration: number;
+  drift: number;
+};
 
 /**
  * Layered live-wallpaper background: slow parallax moon plate, drifting
@@ -25,7 +32,10 @@ export function AnimatedBackground() {
   );
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background"
+    >
       <div
         className="absolute inset-0 animate-slow-zoom bg-cover bg-center opacity-40"
         style={{ backgroundImage: `url(${bgAsset.url})` }}
@@ -36,7 +46,6 @@ export function AnimatedBackground() {
       <div className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(0deg,oklch(0.08_0.02_20)_10%,transparent)]" />
       {/* Readability scrim — keeps copy legible over the live wallpaper */}
       <div className="absolute inset-0 bg-background/45" />
-
 
       {mounted &&
         embers.map((e) => (

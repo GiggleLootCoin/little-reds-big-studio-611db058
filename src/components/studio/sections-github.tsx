@@ -47,7 +47,12 @@ export function GithubPanel() {
   };
 
   return (
-    <Panel id="github-repos" eyebrow="Module 21" title="GitHub Repositories" icon={<Github className="size-5" />}>
+    <Panel
+      id="github-repos"
+      eyebrow="Module 21"
+      title="GitHub Repositories"
+      icon={<Github className="size-5" />}
+    >
       {!user ? (
         <SignInPrompt />
       ) : (
@@ -60,7 +65,9 @@ export function GithubPanel() {
           {loading && !repos && <Spinner label="Talking to GitHub" />}
           {error && <ErrorNote message={error} />}
 
-          {repos && repos.length === 0 && <Note>No repositories found on the connected GitHub account.</Note>}
+          {repos && repos.length === 0 && (
+            <Note>No repositories found on the connected GitHub account.</Note>
+          )}
 
           {repos && repos.length > 0 && (
             <div className="grid gap-2">
@@ -82,7 +89,11 @@ export function GithubPanel() {
                       {r.private ? "private" : "public"} · ★ {r.stars}
                     </span>
                   </div>
-                  {r.description && <div className="line-clamp-2 text-xs text-muted-foreground">{r.description}</div>}
+                  {r.description && (
+                    <div className="line-clamp-2 text-xs text-muted-foreground">
+                      {r.description}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

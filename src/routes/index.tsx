@@ -115,6 +115,9 @@ function Studio() {
             src={logo.url}
             alt="Little Red's Big Studio"
             className="w-56 max-w-[72vw] animate-moon"
+            onError={(event) => {
+              event.currentTarget.src = "/favicon.ico";
+            }}
           />
           <div className="h-1 w-44 overflow-hidden rounded-full bg-secondary">
             <div className="gloss-sheen crimson-gloss h-full w-full" />
@@ -126,8 +129,21 @@ function Studio() {
       )}
 
       <header className="sticky top-0 z-30 border-b border-border/50 bg-background/75 backdrop-blur-2xl">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-center px-4 py-2.5">
-          <img src={logo.url} alt="Little Red's Big Studio logo" className="h-9 w-auto sm:h-10" />
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-center px-4 py-3.5">
+          <a
+            href="/"
+            aria-label="Little Red's Big Studio home"
+            className="group flex items-center justify-center rounded-2xl px-3 py-1.5 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <img
+              src={logo.url}
+              alt="Little Red's Big Studio logo"
+              className="h-12 w-auto max-w-[82vw] object-contain drop-shadow-[0_0_18px_hsl(var(--primary)/0.22)] sm:h-14"
+              onError={(event) => {
+                event.currentTarget.src = "/favicon.ico";
+              }}
+            />
+          </a>
         </div>
         <nav
           aria-label="Studio sections"

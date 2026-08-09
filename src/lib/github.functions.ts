@@ -1,10 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Repos visible to the connected GitHub account. */
 export const listRepos = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .handler(async () => {
     const { listMyRepos } = await import("@/lib/github.server");
     return listMyRepos();
@@ -12,7 +10,6 @@ export const listRepos = createServerFn({ method: "POST" })
 
 /** Open issues + recent commits for one repository. */
 export const getRepo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({

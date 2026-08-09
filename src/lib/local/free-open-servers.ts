@@ -75,8 +75,10 @@ export function getLocalServer(id: LocalServerId): LocalOpenServer {
 export function isAllowedLocalEndpoint(endpoint: string): boolean {
   try {
     const url = new URL(endpoint);
-    return url.protocol === "http:" &&
-      (url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]");
+    return (
+      url.protocol === "http:" &&
+      (url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]")
+    );
   } catch {
     return false;
   }
@@ -85,7 +87,10 @@ export function isAllowedLocalEndpoint(endpoint: string): boolean {
 export async function checkLocalServer(server: LocalOpenServer): Promise<boolean> {
   if (typeof fetch === "undefined" || !isAllowedLocalEndpoint(server.endpoint)) return false;
   try {
-    const response = await fetch(server.endpoint, { method: "GET", signal: AbortSignal.timeout(2500) });
+    const response = await fetch(server.endpoint, {
+      method: "GET",
+      signal: AbortSignal.timeout(2500),
+    });
     return response.ok || response.status < 500;
   } catch {
     return false;

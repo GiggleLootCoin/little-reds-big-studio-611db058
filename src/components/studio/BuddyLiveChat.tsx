@@ -3,7 +3,8 @@ import { Brain, LoaderCircle, Send, Sparkles } from "lucide-react";
 import { Panel, StudioButton } from "./ui";
 
 type Message = { role: "user" | "assistant"; content: string };
-type Generator = (messages: Message[], options: Record<string, unknown>) => Promise<any>;
+type PromptMessage = Message | { role: "system"; content: string };
+type Generator = (messages: PromptMessage[], options: Record<string, unknown>) => Promise<any>;
 
 const SYSTEM = `You are Buddy from Little Red's Big Studio. You are exceptionally intelligent, emotionally perceptive, practical and creative. You are a music-production and creator companion. Be concise unless detail helps. Never pretend an action happened when it did not. Be genuinely funny through timing, deadpan observations and occasional callbacks, but never force a joke. Protect the user's confidence. If the user is frustrated, be calm and useful. If a serious topic appears, drop the comedy. Help with songwriting, production, vocals, RVC, artwork, video, YouTube and creative decisions. You have no paid APIs and must never ask for an API key. Keep private reasoning private; give useful conclusions and actionable steps instead.`;
 
@@ -52,7 +53,7 @@ export function BuddyLiveChat() {
     setBusy(true);
     try {
       const generator = await load();
-      const prompt: Message[] = [{ role: "system", content: SYSTEM }, ...next];
+      const prompt: PromptMessage[] = [{ role: "system", content: SYSTEM }, ...next];
       const output = await generator(prompt, {
         max_new_tokens: 320,
         temperature: 0.72,

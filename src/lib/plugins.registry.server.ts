@@ -5,9 +5,9 @@ import {
   invokePlugin,
   rankPlugins,
 } from "./plugins.server";
-import type { Capability, PluginStatus } from "./plugins.server";
+import type { Capability, PluginRow, PluginStatus } from "./plugins.server";
 import { OPEN_MODEL_CATALOG } from "./open-models.catalog";
-import { runnersFor } from "./free-runners";
+import { FREE_RUNNERS } from "./free-runners";
 
 /** Provider-free model registry. */
 const sessionRuns: Array<{
@@ -69,15 +69,33 @@ export type PluginJobResult = {
   message?: string;
 };
 
-function getFreeRunnerHandoff(capability: Capability) {
-  const runner = runnersFor(capability)[0];
+function runnerForPlugin(plugin: PluginRow) {
+  if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle");
+  if (plugin.runtime === "lightning") return FREE_RUNNERS.find((runner) => runner.id === "lightning");
+  if (plugin.runtime === "browser") {
+    const preferred = {
+      voice: "hf-rvc",
+      stems: "hf-audio",
+      video: "hf-video",
+      music: "hf-music",
+      image: "android-local",
+      text: "android-local",
+    }[plugin.capability];
+    return FREE_RUNNERS.find((runner) => runner.id === preferred) ?? FREE_RUNNERS.find((runner) => runner.kind === "public");
+  }
+  return FREE_RUNNERS.find((runner) => runner.id === "android-local");
+}
+
+function getFreeRunnerHandoff(plugin: PluginRow) {
+  const runner = runnerForPlugin(plugin);
   if (!runner) return undefined;
   return {
     handoff: true,
     runnerUrl: runner.url,
     runnerName: runner.name,
     message:
-      "This heavy open model cannot execute inside the hosted Studio without a paid/API inference service. Open the free runner to run the job without an API key.",
+      `The hosted Studio cannot execute ${plugin.name} directly without a paid/API inference service. ` +
+      `Open ${runner.name} to run this free/open model without giving the Studio an API key.`,
   };
 }
 
@@ -97,7 +115,7 @@ export async function executeBestPlugin(args: {
   }
 
   if (!chosen.available) {
-    const handoff = getFreeRunnerHandoff(args.capability);
+    const handoff = getFreeRunnerHandoff(chosen);
     if (!handoff) throw new Error(`${chosen.name}: ${chosen.reason}`);
     sessionRuns.push({ slug: chosen.slug, capability: args.capability, status: "handoff", durationMs: 0 });
     return { plugin: chosen.name, slug: chosen.slug, media: [], raw: null, ...handoff };

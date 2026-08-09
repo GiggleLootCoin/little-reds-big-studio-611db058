@@ -1,52 +1,59 @@
 /**
- * Model plugin runtime.
+ * Provider-free open-model runtime.
  *
- * The studio keeps a registry of swappable open models (Wan, Hunyuan Video,
- * LTX Video, CogVideoX, OpenVoice, Fish Speech, Demucs, ...). Every run is
- * recorded, and the weekly score is recomputed from those real runs so the
- * studio automatically routes to whichever free model is performing best.
+ * The studio does NOT require Replicate, ElevenLabs, fal.ai, Hugging Face
+ * Inference API, Lovable AI, or any other paid/API-key provider.
+ *
+ * Heavy models are represented as open runtimes. A runtime may be executed
+ * locally (desktop/Termux), in a free Colab session, or by another explicitly
+ * connected open-source runner. The registry never asks the user for an API key.
  */
 
 export type Capability = "video" | "voice" | "stems" | "image" | "text" | "music";
+
+export type RuntimeKind = "local" | "colab" | "browser";
 
 export type PluginRow = {
   id: string;
   slug: string;
   name: string;
-  capability: string;
-  provider: string;
+  capability: Capability;
+  provider: "open-source";
   model_ref: string;
-  secret_name: string | null;
-  is_free: boolean;
+  secret_name: null;
+  is_free: true;
   quality: number;
   speed: number;
   weekly_score: number;
   enabled: boolean;
   notes: string;
+  runtime: RuntimeKind;
+  project_url: string;
 };
 
 export type PluginStatus = PluginRow & { available: boolean; reason: string };
 
-export function secretFor(plugin: Pick<PluginRow, "provider" | "secret_name">) {
-  if (plugin.provider === "lovable") return process.env.LOVABLE_API_KEY;
-  if (plugin.provider === "elevenlabs") return process.env.ELEVENLABS_API_KEY;
-  if (!plugin.secret_name) return undefined;
-  return process.env[plugin.secret_name];
+/** Open runtimes never require a secret/API key. */
+export function secretFor(_plugin: PluginRow): undefined {
+  return undefined;
 }
 
 export function describeAvailability(plugin: PluginRow): PluginStatus {
-  const key = secretFor(plugin);
-  if (!plugin.enabled) return { ...plugin, available: false, reason: "Disabled in the registry" };
-  if (!key)
-    return {
-      ...plugin,
-      available: false,
-      reason: `Add the ${plugin.secret_name ?? "provider"} key to activate`,
-    };
-  return { ...plugin, available: true, reason: "Ready" };
+  if (!plugin.enabled) {
+    return { ...plugin, available: false, reason: "Disabled in the open-model catalog" };
+  }
+
+  // Availability means the model is publicly obtainable and has a supported
+  // free execution route. Actual heavy-model execution is delegated to the
+  // selected runtime rather than a proprietary API.
+  return {
+    ...plugin,
+    available: true,
+    reason: `Free/open model — run via ${plugin.runtime}`,
+  };
 }
 
-/** Higher is better. Weekly score (real run telemetry) dominates, then quality/speed. */
+/** Higher is better. Weekly score dominates, then quality/speed. */
 export function rankPlugins(plugins: PluginStatus[]) {
   return [...plugins].sort(
     (a, b) =>
@@ -56,187 +63,48 @@ export function rankPlugins(plugins: PluginStatus[]) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Providers                                                           */
-/* ------------------------------------------------------------------ */
-
 type RunInput = Record<string, unknown>;
 
-async function runReplicate(modelRef: string, input: RunInput, token: string) {
-  const isVersion = /^[0-9a-f]{40}$/i.test(modelRef);
-  const url = isVersion
-    ? "https://api.replicate.com/v1/predictions"
-    : `https://api.replicate.com/v1/models/${modelRef}/predictions`;
+/**
+ * Provider-free execution contract.
+ *
+ * The web app is deliberately not coupled to a commercial inference API.
+ * A local/Colab/browser runner can register an implementation through the
+ * global hook. This keeps the studio portable and makes the execution layer
+ * replaceable without changing the UI or model catalog.
+ */
+export type OpenModelRunner = (
+  plugin: PluginRow,
+  input: RunInput,
+) => Promise<unknown>;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait=60",
-    },
-    body: JSON.stringify(isVersion ? { version: modelRef, input } : { input }),
-  });
+const RUNNER_KEY = "__LITTLE_REDS_OPEN_MODEL_RUNNER__";
 
-  if (!res.ok) {
-    throw new Error(`Replicate rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
-  }
+type RunnerHost = typeof globalThis & {
+  [RUNNER_KEY]?: OpenModelRunner;
+};
 
-  let prediction = (await res.json()) as {
-    id: string;
-    status: string;
-    output?: unknown;
-    error?: string;
-    urls?: { get?: string };
-  };
-
-  const deadline = Date.now() + 9 * 60 * 1000;
-  while (["starting", "processing"].includes(prediction.status) && Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 2500));
-    const poll = await fetch(
-      prediction.urls?.get ?? `https://api.replicate.com/v1/predictions/${prediction.id}`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    prediction = (await poll.json()) as typeof prediction;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(prediction.error || `Job ended as "${prediction.status}".`);
-  }
-  return prediction.output;
-}
-
-async function runHuggingFace(modelRef: string, input: RunInput, token: string) {
-  const res = await fetch(`https://api-inference.huggingface.co/models/${modelRef}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ inputs: input.prompt ?? input, parameters: input }),
-  });
-  if (!res.ok) {
-    throw new Error(`Hugging Face rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
-  }
-  const type = res.headers.get("content-type") ?? "";
-  if (type.includes("application/json")) return await res.json();
-  const buf = Buffer.from(await res.arrayBuffer());
-  return `data:${type};base64,${buf.toString("base64")}`;
-}
-
-async function runFal(modelRef: string, input: RunInput, token: string) {
-  const res = await fetch(`https://fal.run/${modelRef}`, {
-    method: "POST",
-    headers: { Authorization: `Key ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    throw new Error(`fal.ai rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
-  }
-  return await res.json();
-}
-
-async function runLovable(plugin: PluginRow, input: RunInput, token: string) {
-  if (plugin.capability === "text") {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": token,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: plugin.model_ref,
-        messages: [
-          ...(input.system ? [{ role: "system", content: String(input.system) }] : []),
-          { role: "user", content: String(input.prompt ?? input.text ?? "") },
-        ],
-        ...(plugin.model_ref.startsWith("openai/") ? { reasoning_effort: "none" } : {}),
-      }),
-    });
-    if (!res.ok) {
-      throw new Error(`${plugin.name} rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
-    }
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    return { text: json.choices?.[0]?.message?.content ?? "" };
-  }
-
-  const { generateGatewayImage } = await import("./ai-gateway.server");
-  return await generateGatewayImage(String(input.prompt ?? ""), input.reference as string | undefined);
-}
-
-
-/** ElevenLabs: studio-grade voice, music and sound design. Returns a playable data URI. */
-async function runElevenLabs(plugin: PluginRow, input: RunInput, token: string) {
-  const asDataUri = async (res: Response) => {
-    if (!res.ok) {
-      throw new Error(`ElevenLabs rejected the job (${res.status}): ${(await res.text()).slice(0, 300)}`);
-    }
-    const buf = Buffer.from(await res.arrayBuffer());
-    return { audio: `data:audio/mpeg;base64,${buf.toString("base64")}` };
-  };
-  const headers = { "xi-api-key": token, "Content-Type": "application/json" };
-
-  if (plugin.capability === "music") {
-    return await asDataUri(
-      await fetch("https://api.elevenlabs.io/v1/music", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          prompt: String(input.prompt ?? input.text ?? ""),
-          music_length_ms: Math.round(Number(input.seconds ?? 30) * 1000),
-        }),
-      }),
-    );
-  }
-
-  const voiceId = String(input.voiceId ?? "JBFqnCBsd6RMkjVDRZzb");
-  return await asDataUri(
-    await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          text: String(input.text ?? input.prompt ?? ""),
-          model_id: plugin.model_ref || "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.45,
-            similarity_boost: 0.85,
-            style: 0.4,
-            use_speaker_boost: true,
-            speed: Number(input.speed ?? 1),
-          },
-        }),
-      },
-    ),
-  );
+export function registerOpenModelRunner(runner: OpenModelRunner) {
+  (globalThis as RunnerHost)[RUNNER_KEY] = runner;
 }
 
 export async function invokePlugin(plugin: PluginRow, input: RunInput) {
-  const token = secretFor(plugin);
-  if (!token) throw new Error(`${plugin.name} needs the ${plugin.secret_name ?? "provider"} key.`);
-
-  switch (plugin.provider) {
-    case "replicate":
-      return await runReplicate(plugin.model_ref, input, token);
-    case "huggingface":
-      return await runHuggingFace(plugin.model_ref, input, token);
-    case "fal":
-      return await runFal(plugin.model_ref, input, token);
-    case "elevenlabs":
-      return await runElevenLabs(plugin, input, token);
-    case "lovable":
-      return await runLovable(plugin, input, token);
-    default:
-      throw new Error(`Unknown provider "${plugin.provider}".`);
+  const runner = (globalThis as RunnerHost)[RUNNER_KEY];
+  if (!runner) {
+    throw new Error(
+      `${plugin.name} is an open model and needs a free local/Colab/browser runner. No API key or paid provider is supported.`,
+    );
   }
+  return runner(plugin, input);
 }
 
-/** Normalises wildly different provider payloads down to usable media URLs. */
+/** Normalises wildly different runner payloads down to usable media URLs. */
 export function extractMedia(output: unknown): string[] {
   const out: string[] = [];
   const walk = (value: unknown, depth = 0) => {
     if (depth > 4 || value == null) return;
     if (typeof value === "string") {
-      if (value.startsWith("http") || value.startsWith("data:")) out.push(value);
+      if (value.startsWith("http") || value.startsWith("data:") || value.startsWith("blob:")) out.push(value);
       return;
     }
     if (Array.isArray(value)) {
@@ -251,15 +119,13 @@ export function extractMedia(output: unknown): string[] {
   return Array.from(new Set(out));
 }
 
-/** Per-capability input shaping so one call site can drive every model. */
+/** Per-capability input shaping shared by every open model runner. */
 export function buildInput(capability: Capability, payload: Record<string, unknown>): RunInput {
   switch (capability) {
     case "video":
       return {
         prompt: payload.prompt,
         ...(payload.image ? { image: payload.image, start_image: payload.image } : {}),
-        num_frames: 81,
-        fps: 24,
         duration: payload.seconds ?? 5,
         aspect_ratio: payload.aspectRatio ?? "16:9",
       };
@@ -267,7 +133,6 @@ export function buildInput(capability: Capability, payload: Record<string, unkno
       return {
         text: payload.text,
         ...(payload.reference ? { reference_audio: payload.reference, audio: payload.reference } : {}),
-        ...(payload.voiceId ? { voiceId: payload.voiceId } : {}),
         speed: payload.speed ?? 1,
         language: payload.language ?? "en",
       };
@@ -277,13 +142,10 @@ export function buildInput(capability: Capability, payload: Record<string, unkno
         seconds: payload.seconds ?? 30,
       };
     case "stems":
-      return {
-        audio: payload.audio,
-        stem: "none",
-        output_format: "mp3",
-      };
+      return { audio: payload.audio };
     case "image":
       return { prompt: payload.prompt, reference: payload.reference };
+    case "text":
     default:
       return payload;
   }

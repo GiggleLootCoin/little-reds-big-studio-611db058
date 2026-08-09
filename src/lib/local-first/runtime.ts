@@ -29,11 +29,11 @@ export async function detectLocalRuntime(): Promise<LocalRuntimeCapabilities> {
   return {
     indexedDb: typeof indexedDB !== "undefined",
     serviceWorker: Boolean(nav?.serviceWorker),
-    webWorkers: typeof Worker !== "undefined',
-    webAssembly: typeof WebAssembly !== "undefined',
+    webWorkers: typeof Worker !== "undefined",
+    webAssembly: typeof WebAssembly !== "undefined",
     webGpu: Boolean(nav && "gpu" in nav),
-    mediaRecorder: typeof win?.MediaRecorder !== "undefined',
-    audioWorklet: typeof AudioWorkletNode !== "undefined',
+    mediaRecorder: typeof win?.MediaRecorder !== "undefined",
+    audioWorklet: typeof AudioWorkletNode !== "undefined",
     fileSystemAccess: Boolean(win && "showOpenFilePicker" in win),
     storageEstimate,
   };

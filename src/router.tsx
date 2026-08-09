@@ -7,6 +7,7 @@ export const getRouter = () => {
 
   const router = createRouter({
     routeTree,
+    basepath: "/little-reds-big-studio-611db058",
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,

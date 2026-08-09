@@ -1,12 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Compass, Film, Mic2, Plug, SlidersHorizontal, Users } from "lucide-react";
+import { Compass, Film, Mic2, SlidersHorizontal, Users } from "lucide-react";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
+import { BuddyWelcome } from "@/components/studio/BuddyWelcome";
 import { Chip, openStudioPanel } from "@/components/studio/ui";
-import { EngineStatusStrip, NextMoves } from "@/components/studio/Dashboard";
+import { NextMoves } from "@/components/studio/Dashboard";
 import { LocalEnginePanel } from "@/components/studio/LocalEnginePanel";
 import { cn } from "@/lib/utils";
+import type { BuddyTask } from "@/lib/buddy-orchestrator";
 import {
   ChatPanel,
   CoachPanel,
@@ -20,15 +22,11 @@ import {
 } from "@/components/studio/sections-create";
 import {
   AccessPanel,
-  EnginePanel,
   ProfilePanel,
   SeoPanel,
   SpotlightPanel,
-  PluginPanel,
   SupportPanel,
 } from "@/components/studio/sections-community";
-import { AnalyticsPanel, ModerationPanel } from "@/components/studio/sections-admin";
-import { GithubPanel } from "@/components/studio/sections-github";
 
 const SITE_URL = "https://little-reds-big-studio.lovable.app";
 const TITLE = "Little Red's Big Studio — AI Music Video Production Suite";
@@ -40,10 +38,7 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
-      {
-        name: "keywords",
-        content: "AI music video, music production, lyrics, audio, video, local AI",
-      },
+      { name: "keywords", content: "AI music video, music production, lyrics, audio, video, local AI" },
       { property: "og:site_name", content: "Little Red's Big Studio" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
@@ -61,14 +56,13 @@ export const Route = createFileRoute("/")({
 });
 
 const VERSION = "Studio Version 3.6.9.12";
-type TabId = "home" | "write" | "mix" | "video" | "community" | "engines";
+type TabId = "home" | "write" | "mix" | "video" | "community";
 const TABS: { id: TabId; label: string; icon: typeof Compass }[] = [
   { id: "home", label: "Home", icon: Compass },
   { id: "write", label: "Write", icon: Mic2 },
   { id: "mix", label: "Mix", icon: SlidersHorizontal },
   { id: "video", label: "Video", icon: Film },
   { id: "community", label: "Artists", icon: Users },
-  { id: "engines", label: "Engines", icon: Plug },
 ];
 const PANEL_TAB: Record<string, TabId> = {
   "audio-voice-file-uploads": "mix",
@@ -76,18 +70,34 @@ const PANEL_TAB: Record<string, TabId> = {
   "honest-critiquer-ai-song-coach": "write",
   "automated-storyboarding": "video",
 };
+const BUDDY_TAB: Record<BuddyTask, TabId> = {
+  writing: "write",
+  voice: "mix",
+  music: "mix",
+  stems: "mix",
+  artwork: "video",
+  video: "video",
+};
 
 function Studio() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("home");
+
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1200);
+    const t = setTimeout(() => setLoading(false), 700);
     return () => clearTimeout(t);
   }, []);
+
   const jump = (panelId: string) => {
     setTab(PANEL_TAB[panelId] ?? "write");
     setTimeout(() => openStudioPanel(panelId), 60);
   };
+
+  const chooseBuddyTask = (task: BuddyTask) => {
+    setTab(BUDDY_TAB[task]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const go = (next: TabId) => {
     setTab(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -97,32 +107,20 @@ function Studio() {
     <>
       <AnimatedBackground />
       {loading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background/90 backdrop-blur-md">
-          <img
-            src={logo.url}
-            alt="Little Red's Big Studio"
-            className="w-64 max-w-[80vw] animate-moon"
-          />
-          <div className="h-1 w-48 overflow-hidden rounded-full bg-secondary">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background/95 backdrop-blur-xl">
+          <img src={logo.url} alt="Little Red's Big Studio" className="w-56 max-w-[72vw] animate-moon" />
+          <div className="h-1 w-44 overflow-hidden rounded-full bg-secondary">
             <div className="gloss-sheen crimson-gloss h-full w-full" />
           </div>
-          <p className="font-display text-xs tracking-[0.3em] text-primary">{VERSION}</p>
+          <p className="font-display text-[0.65rem] font-semibold tracking-[0.28em] text-primary">{VERSION}</p>
         </div>
       )}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5">
-          <img src={logo.url} alt="Little Red's Big Studio logo" className="h-10 w-auto" />
-          <Link
-            to="/connect"
-            className="shrink-0 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-          >
-            Connect AI
-          </Link>
+
+      <header className="sticky top-0 z-30 border-b border-border/50 bg-background/75 backdrop-blur-2xl">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-center px-4 py-2.5">
+          <img src={logo.url} alt="Little Red's Big Studio logo" className="h-9 w-auto sm:h-10" />
         </div>
-        <nav
-          aria-label="Studio sections"
-          className="mx-auto hidden w-full max-w-3xl gap-1 px-4 pb-2 sm:flex"
-        >
+        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -130,7 +128,7 @@ function Studio() {
               aria-current={tab === t.id ? "page" : undefined}
               onClick={() => go(t.id)}
               className={cn(
-                "flex-1 rounded-lg px-3 py-2 font-display text-xs font-semibold tracking-wide transition-colors",
+                "flex-1 rounded-xl px-3 py-2.5 font-display text-xs font-semibold tracking-wide transition-all",
                 tab === t.id
                   ? "crimson-gloss text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
@@ -141,20 +139,21 @@ function Studio() {
           ))}
         </nav>
       </header>
-      <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-5 sm:pb-16">
+
+      <main className="mx-auto w-full max-w-4xl px-4 pb-28 pt-5 sm:pb-16 sm:pt-7">
         {tab === "home" && (
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-border/70 bg-background/60 p-5 text-center backdrop-blur-md">
-              <h1 className="font-display text-2xl font-black leading-tight text-glow sm:text-3xl">
-                Little Red's Big Studio
-              </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Audio in, finished music video out. Local-first, free-first, and always adjustable.
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Chip>{VERSION}</Chip>
-                <Chip>Local-first</Chip>
-                <Chip>No paid API required</Chip>
+          <div className="space-y-5">
+            <BuddyWelcome onChoose={chooseBuddyTask} />
+            <section className="rounded-2xl border border-border/60 bg-background/45 p-4 backdrop-blur-md sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">Your project</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">Everything stays adjustable. Start anywhere and Buddy will keep the workflow moving.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Chip>Local-first</Chip>
+                  <Chip>No paid API required</Chip>
+                </div>
               </div>
             </section>
             <section className="space-y-3">
@@ -163,26 +162,13 @@ function Studio() {
               </h2>
               <NextMoves onJump={jump} />
             </section>
-            <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">
-                Your phone engine
-              </h2>
-              <LocalEnginePanel />
+            <section className="rounded-2xl border border-border/50 bg-background/35 p-4 text-xs text-muted-foreground backdrop-blur-md">
+              <p><span className="font-semibold text-foreground">Buddy handles the machinery.</span> Model names, provider settings and runner choices stay out of your normal workflow.</p>
             </section>
-            <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">
-                Engine status
-              </h2>
-              <EngineStatusStrip />
-              <p className="text-xs text-muted-foreground">
-                Open Engines to see local capabilities and optional open runners. No paid provider
-                is required for the Studio shell.
-              </p>
-            </section>
-            <div className="drip-divider" />
             <SupportPanel />
           </div>
         )}
+
         {tab === "write" && (
           <div className="space-y-3">
             <LyricsPanel />
@@ -212,26 +198,16 @@ function Studio() {
             <AccessPanel />
           </div>
         )}
-        {tab === "engines" && (
-          <div className="space-y-3">
-            <LocalEnginePanel />
-            <EngineStatusStrip />
-            <PluginPanel />
-            <EnginePanel />
-            <GithubPanel />
-            <ModerationPanel />
-            <AnalyticsPanel />
-          </div>
-        )}
+
         <footer className="mt-10 text-center text-xs text-muted-foreground">
-          Made with love ❤️ by LittleRedBigSmile 🔴😁✨️
+          <span>{VERSION}</span>
+          <span className="mx-2">•</span>
+          <span>Made with love by LittleRedBigSmile 🔴😁✨️</span>
         </footer>
       </main>
-      <nav
-        aria-label="Studio sections"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
-      >
-        <div className="grid grid-cols-6">
+
+      <nav aria-label="Studio sections" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden">
+        <div className="grid grid-cols-5">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -241,15 +217,9 @@ function Studio() {
                 type="button"
                 aria-current={active ? "page" : undefined}
                 onClick={() => go(t.id)}
-                className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
+                className={cn("flex min-h-14 flex-col items-center justify-center gap-1 transition-colors", active ? "text-primary" : "text-muted-foreground")}
               >
-                <Icon
-                  aria-hidden
-                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
-                />
+                <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
                 <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
               </button>
             );

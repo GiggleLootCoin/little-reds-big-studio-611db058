@@ -37,7 +37,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
-      { name: "keywords", content: "AI music video, music production, lyrics, audio, video, local AI" },
+      {
+        name: "keywords",
+        content: "AI music video, music production, lyrics, audio, video, local AI",
+      },
       { property: "og:site_name", content: "Little Red's Big Studio" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
@@ -107,11 +110,17 @@ function Studio() {
       <AnimatedBackground />
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background/95 backdrop-blur-xl">
-          <img src={logo.url} alt="Little Red's Big Studio" className="w-56 max-w-[72vw] animate-moon" />
+          <img
+            src={logo.url}
+            alt="Little Red's Big Studio"
+            className="w-56 max-w-[72vw] animate-moon"
+          />
           <div className="h-1 w-44 overflow-hidden rounded-full bg-secondary">
             <div className="gloss-sheen crimson-gloss h-full w-full" />
           </div>
-          <p className="font-display text-[0.65rem] font-semibold tracking-[0.28em] text-primary">{VERSION}</p>
+          <p className="font-display text-[0.65rem] font-semibold tracking-[0.28em] text-primary">
+            {VERSION}
+          </p>
         </div>
       )}
 
@@ -119,7 +128,10 @@ function Studio() {
         <div className="mx-auto flex w-full max-w-4xl items-center justify-center px-4 py-2.5">
           <img src={logo.url} alt="Little Red's Big Studio logo" className="h-9 w-auto sm:h-10" />
         </div>
-        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex">
+        <nav
+          aria-label="Studio sections"
+          className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -146,8 +158,13 @@ function Studio() {
             <section className="rounded-2xl border border-border/60 bg-background/45 p-4 backdrop-blur-md sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">Your project</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">Everything stays adjustable. Start anywhere and Buddy will keep the workflow moving.</p>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">
+                    Your project
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Everything stays adjustable. Start anywhere and Buddy will keep the workflow
+                    moving.
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Chip>Local-first</Chip>
@@ -162,7 +179,10 @@ function Studio() {
               <NextMoves onJump={jump} />
             </section>
             <section className="rounded-2xl border border-border/50 bg-background/35 p-4 text-xs text-muted-foreground backdrop-blur-md">
-              <p><span className="font-semibold text-foreground">Buddy handles the machinery.</span> Model names, provider settings and runner choices stay out of your normal workflow.</p>
+              <p>
+                <span className="font-semibold text-foreground">Buddy handles the machinery.</span>{" "}
+                Model names, provider settings and runner choices stay out of your normal workflow.
+              </p>
             </section>
             <SupportPanel />
           </div>
@@ -205,7 +225,10 @@ function Studio() {
         </footer>
       </main>
 
-      <nav aria-label="Studio sections" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden">
+      <nav
+        aria-label="Studio sections"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden"
+      >
         <div className="grid grid-cols-5">
           {TABS.map((t) => {
             const Icon = t.icon;
@@ -216,9 +239,15 @@ function Studio() {
                 type="button"
                 aria-current={active ? "page" : undefined}
                 onClick={() => go(t.id)}
-                className={cn("flex min-h-14 flex-col items-center justify-center gap-1 transition-colors", active ? "text-primary" : "text-muted-foreground")}
+                className={cn(
+                  "flex min-h-14 flex-col items-center justify-center gap-1 transition-colors",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
               >
-                <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
+                <Icon
+                  aria-hidden
+                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
+                />
                 <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
               </button>
             );

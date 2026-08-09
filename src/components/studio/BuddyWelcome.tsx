@@ -54,10 +54,18 @@ export function BuddyWelcome({ onChoose }: { onChoose: (task: BuddyTask) => void
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-muted-foreground">
-          <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-primary">Automatic routing</span>
-          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">Free-first</span>
-          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">Android ready</span>
-          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">No model setup</span>
+          <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-primary">
+            Automatic routing
+          </span>
+          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">
+            Free-first
+          </span>
+          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">
+            Android ready
+          </span>
+          <span className="rounded-full border border-border/70 bg-background/40 px-3 py-1.5">
+            No model setup
+          </span>
         </div>
       </div>
     </section>

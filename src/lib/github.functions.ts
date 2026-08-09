@@ -10,7 +10,7 @@ export const listRepos = createServerFn({ method: "POST" })
 
 /** Open issues + recent commits for one repository. */
 export const getRepo = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         owner: z.string().min(1).max(120),

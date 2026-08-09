@@ -70,6 +70,8 @@ export type PluginJobResult = {
 };
 
 function runnerForPlugin(plugin: PluginRow) {
+  if (plugin.slug === "ace-step-open")
+    return FREE_RUNNERS.find((runner) => runner.id === "hf-ace-step");
   if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle");
   if (plugin.runtime === "lightning")
     return FREE_RUNNERS.find((runner) => runner.id === "lightning");

@@ -80,9 +80,7 @@ function runnerForPlugin(plugin: PluginRow) {
   };
 
   const preferred = preferredByCapability[plugin.capability] ?? [];
-  return preferred
-    .map((id) => FREE_RUNNERS.find((runner) => runner.id === id))
-    .find(Boolean);
+  return preferred.map((id) => FREE_RUNNERS.find((runner) => runner.id === id)).find(Boolean);
 }
 
 function getFreeRunnerHandoff(plugin: PluginRow) {

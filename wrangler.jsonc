@@ -3,8 +3,11 @@
   "name": "little-reds-big-studio",
   "compatibility_date": "2026-08-09",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "src/server.ts",
-  "observability": {
-    "enabled": true,
+  "main": ".output/server/index.mjs",
+  "assets": {
+    "directory": ".output/public"
   },
+  "observability": {
+    "enabled": true
+  }
 }

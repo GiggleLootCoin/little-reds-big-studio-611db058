@@ -13,10 +13,54 @@ export type FreeOpenMediaEngine = {
 };
 
 /**
- * Model/runner registry. This is metadata only: model weights are downloaded
- * on demand rather than committed to Git. No hosted inference is required.
+ * Open/local model registry. Metadata only: model weights are downloaded on
+ * demand rather than committed to Git. Hosted inference is never required.
  */
 export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
+  {
+    id: "heartmula-oss-3b",
+    name: "HeartMuLa OSS 3B",
+    kind: "music",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["full songs", "lyrics-to-song", "multilingual", "section control", "reference audio"],
+    androidFit: "runner",
+    notes: "Top-tier open song-generation choice; Apache-2.0 project and weights. Heavy for most phones.",
+  },
+  {
+    id: "ace-step-1.5",
+    name: "ACE-Step 1.5",
+    kind: "music",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["full songs", "vocals", "lyrics-to-song", "editing", "remix", "cover", "vocal-to-BGM"],
+    androidFit: "runner",
+    notes: "Primary high-performance open music engine; supports long compositions and advanced editing.",
+  },
+  {
+    id: "yue",
+    name: "YuE",
+    kind: "music",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["long-form songs", "lyrics alignment", "vocal melodies", "style transfer"],
+    androidFit: "runner",
+    notes: "Strong long-form lyrics-to-song engine; heavier than mobile-first models.",
+  },
+  {
+    id: "riffusion",
+    name: "Riffusion",
+    kind: "music",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["music ideas", "loops", "audio experiments", "prompt exploration"],
+    androidFit: "good",
+    notes: "Keep as an experimental/fast ideation engine; use a locally runnable open implementation rather than a hosted API.",
+  },
   {
     id: "musicgen-small",
     name: "MusicGen Small",
@@ -26,7 +70,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["text-to-music", "instrumentals", "short ideas"],
     androidFit: "good",
-    notes: "Lightweight local starting point; best for sketches and shorter generations.",
+    notes: "Lightweight fallback for sketches and short generations.",
   },
   {
     id: "stable-audio-open",
@@ -35,20 +79,20 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: ["text-to-audio", "sound design", "music ideas"],
+    strengths: ["text-to-audio", "sound design", "music ideas", "loops"],
     androidFit: "runner",
-    notes: "Use locally where hardware permits; model license must be checked for the intended use.",
+    notes: "Useful open audio model; verify the model license for commercial use before export.",
   },
   {
-    id: "ace-step",
-    name: "ACE-Step",
+    id: "stable-audio-3",
+    name: "Stable Audio 3",
     kind: "music",
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: ["full songs", "lyrics-to-song", "music editing"],
+    strengths: ["instrumentals", "high-fidelity audio", "tempo/key control"],
     androidFit: "runner",
-    notes: "Preferred heavier open local music-generation runner when the phone cannot handle the model.",
+    notes: "High-quality option for instrumental generation; license/model availability must be checked per release.",
   },
   {
     id: "stable-diffusion-xl",
@@ -70,7 +114,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["fast image generation", "covers", "concept art"],
     androidFit: "runner",
-    notes: "High-quality fast model; use only where its license matches the user's intended use.",
+    notes: "High-quality fast model; check its license against intended commercial use.",
   },
   {
     id: "sdxl-controlnet",
@@ -92,7 +136,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["image-to-video", "short clips", "motion"],
     androidFit: "runner",
-    notes: "Heavy local workload; suitable for a local runner rather than most phones.",
+    notes: "Heavy local workload; suitable for a capable local runner rather than most phones.",
   },
   {
     id: "animatediff",
@@ -114,7 +158,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["image-to-video", "text-to-video", "high-quality motion"],
     androidFit: "runner",
-    notes: "High-end option for a capable local machine/runner; not a realistic default for low-memory phones.",
+    notes: "High-end open video option; generally requires a stronger local runner.",
   },
 ];
 

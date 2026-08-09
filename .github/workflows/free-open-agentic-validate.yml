@@ -41,5 +41,11 @@ jobs:
       - name: Install exactly from lockfile
         run: npm ci --ignore-scripts --legacy-peer-deps
 
+      - name: Type-check application
+        run: npx tsc --noEmit
+
+      - name: Lint application
+        run: npm run lint
+
       - name: Build production bundle
         run: npm run build

@@ -3,13 +3,7 @@
 // for that task. WebGPU/WASM availability alone never counts as a generative engine.
 
 export type LocalCapability =
-  | "indexeddb"
-  | "wasm"
-  | "workers"
-  | "webgpu"
-  | "recording"
-  | "audioworklet"
-  | "file-access";
+  "indexeddb" | "wasm" | "workers" | "webgpu" | "recording" | "audioworklet" | "file-access";
 
 export type EngineReadiness = {
   id: string;

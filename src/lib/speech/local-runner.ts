@@ -7,8 +7,16 @@ export type LocalRunner = {
 };
 
 export const DEFAULT_LOCAL_RUNNERS: LocalRunner[] = [
-  { id: "qwen-local", baseUrl: "http://127.0.0.1:8787", engineIds: ["qwen3-tts-0.6b-onnx", "qwen3-tts-1.7b"] },
-  { id: "chatterbox-local", baseUrl: "http://127.0.0.1:8788", engineIds: ["chatterbox-multilingual-v3", "chatterbox-onnx"] },
+  {
+    id: "qwen-local",
+    baseUrl: "http://127.0.0.1:8787",
+    engineIds: ["qwen3-tts-0.6b-onnx", "qwen3-tts-1.7b"],
+  },
+  {
+    id: "chatterbox-local",
+    baseUrl: "http://127.0.0.1:8788",
+    engineIds: ["chatterbox-multilingual-v3", "chatterbox-onnx"],
+  },
   { id: "cosyvoice-local", baseUrl: "http://127.0.0.1:8789", engineIds: ["cosyvoice-3"] },
   { id: "f5-local", baseUrl: "http://127.0.0.1:8790", engineIds: ["f5-tts"] },
 ];
@@ -16,13 +24,19 @@ export const DEFAULT_LOCAL_RUNNERS: LocalRunner[] = [
 function isLoopback(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "http:" && (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost");
+    return (
+      parsed.protocol === "http:" &&
+      (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost")
+    );
   } catch {
     return false;
   }
 }
 
-export async function probeLocalRunner(runner: LocalRunner, signal?: AbortSignal): Promise<boolean> {
+export async function probeLocalRunner(
+  runner: LocalRunner,
+  signal?: AbortSignal,
+): Promise<boolean> {
   if (typeof window === "undefined" || !isLoopback(runner.baseUrl)) return false;
   try {
     const response = await fetch(`${runner.baseUrl}/health`, {
@@ -49,7 +63,8 @@ export async function synthesizeWithLocalRunner(
 ): Promise<Blob> {
   if (typeof window === "undefined") throw new Error("Local voice inference is browser-only.");
   if (!isLoopback(runner.baseUrl)) throw new Error("Only a loopback local runner is permitted.");
-  if (!runner.engineIds.includes(engine.id)) throw new Error("This runner does not support the selected voice engine.");
+  if (!runner.engineIds.includes(engine.id))
+    throw new Error("This runner does not support the selected voice engine.");
   if (!input.text.trim()) throw new Error("There is no text to synthesize.");
 
   const form = new FormData();

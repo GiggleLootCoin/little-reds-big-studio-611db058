@@ -1,5 +1,6 @@
 export type VoiceEngineKind = "browser" | "webgpu" | "wasm" | "native" | "python";
-export type VoiceEngineCapability = "tts" | "voice-clone" | "multilingual" | "streaming" | "voice-design";
+export type VoiceEngineCapability =
+  "tts" | "voice-clone" | "multilingual" | "streaming" | "voice-design";
 
 export type VoiceEngine = {
   id: string;
@@ -27,7 +28,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["zh", "en", "ja", "ko", "de", "fr", "ru", "pt", "es", "it"],
     preferredFor: "clone",
     localOnly: true,
-    notes: "Smallest Qwen3-TTS clone model we can target for device-local inference. Downloads only when the user chooses it.",
+    notes:
+      "Smallest Qwen3-TTS clone model we can target for device-local inference. Downloads only when the user chooses it.",
   },
   {
     id: "qwen3-tts-1.7b",
@@ -40,7 +42,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["zh", "en", "ja", "ko", "de", "fr", "ru", "pt", "es", "it"],
     preferredFor: "quality",
     localOnly: true,
-    notes: "Higher-quality local Qwen clone option. Use through a native/llama.cpp-style local runner when the phone has sufficient memory.",
+    notes:
+      "Higher-quality local Qwen clone option. Use through a native/llama.cpp-style local runner when the phone has sufficient memory.",
   },
   {
     id: "chatterbox-multilingual-v3",
@@ -53,7 +56,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["en", "es", "fr", "de", "it", "pt", "zh", "ja", "ko", "hi"],
     preferredFor: "clone",
     localOnly: true,
-    notes: "Strong multilingual zero-shot cloning. Use locally through the open-source runtime; no hosted inference is required.",
+    notes:
+      "Strong multilingual zero-shot cloning. Use locally through the open-source runtime; no hosted inference is required.",
   },
   {
     id: "chatterbox-onnx",
@@ -66,7 +70,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["en"],
     preferredFor: "clone",
     localOnly: true,
-    notes: "Browser/ONNX route for English cloning. This is a community ONNX conversion, so the Studio treats it as an optional engine rather than assuming equivalence to the original runtime.",
+    notes:
+      "Browser/ONNX route for English cloning. This is a community ONNX conversion, so the Studio treats it as an optional engine rather than assuming equivalence to the original runtime.",
   },
   {
     id: "f5-tts",
@@ -79,7 +84,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["en", "zh"],
     preferredFor: "quality",
     localOnly: true,
-    notes: "Excellent zero-shot cloning. The code is MIT, but pretrained model licensing is non-commercial, so the Studio must not describe it as unrestricted commercial content generation.",
+    notes:
+      "Excellent zero-shot cloning. The code is MIT, but pretrained model licensing is non-commercial, so the Studio must not describe it as unrestricted commercial content generation.",
   },
   {
     id: "cosyvoice-3",
@@ -92,7 +98,8 @@ export const OPEN_LOCAL_VOICE_ENGINES: VoiceEngine[] = [
     languages: ["zh", "en", "ja", "ko", "yue", "de", "es", "fr", "it"],
     preferredFor: "quality",
     localOnly: true,
-    notes: "Powerful multilingual local engine. Its larger footprint makes it a better fit for a local runner than direct browser inference on modest phones.",
+    notes:
+      "Powerful multilingual local engine. Its larger footprint makes it a better fit for a local runner than direct browser inference on modest phones.",
   },
   {
     id: "kokoro-82m",
@@ -117,18 +124,23 @@ export function getCloneEngines(): VoiceEngine[] {
   return OPEN_LOCAL_VOICE_ENGINES.filter((engine) => engine.capabilities.includes("voice-clone"));
 }
 
-export function selectBestLocalCloneEngine(options: {
-  webgpu?: boolean;
-  preferLightweight?: boolean;
-  languages?: string[];
-} = {}): VoiceEngine {
+export function selectBestLocalCloneEngine(
+  options: {
+    webgpu?: boolean;
+    preferLightweight?: boolean;
+    languages?: string[];
+  } = {},
+): VoiceEngine {
   const requested = new Set(options.languages ?? []);
-  const candidates = getCloneEngines().filter((engine) =>
-    requested.size === 0 || engine.languages.some((language) => requested.has(language)),
+  const candidates = getCloneEngines().filter(
+    (engine) =>
+      requested.size === 0 || engine.languages.some((language) => requested.has(language)),
   );
 
   if (options.webgpu) {
-    const browserClone = candidates.find((engine) => engine.kind === "webgpu" && engine.id === "qwen3-tts-0.6b-onnx");
+    const browserClone = candidates.find(
+      (engine) => engine.kind === "webgpu" && engine.id === "qwen3-tts-0.6b-onnx",
+    );
     if (browserClone) return browserClone;
     const chatterbox = candidates.find((engine) => engine.id === "chatterbox-onnx");
     if (chatterbox) return chatterbox;
@@ -139,11 +151,13 @@ export function selectBestLocalCloneEngine(options: {
     if (light) return light;
   }
 
-  return candidates.find((engine) => engine.id === "qwen3-tts-1.7b")
-    ?? candidates.find((engine) => engine.id === "chatterbox-multilingual-v3")
-    ?? candidates.find((engine) => engine.id === "cosyvoice-3")
-    ?? candidates[0]
-    ?? OPEN_LOCAL_VOICE_ENGINES[0];
+  return (
+    candidates.find((engine) => engine.id === "qwen3-tts-1.7b") ??
+    candidates.find((engine) => engine.id === "chatterbox-multilingual-v3") ??
+    candidates.find((engine) => engine.id === "cosyvoice-3") ??
+    candidates[0] ??
+    OPEN_LOCAL_VOICE_ENGINES[0]
+  );
 }
 
 export function getEngineInstallInstructions(engine: VoiceEngine): string {

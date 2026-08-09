@@ -47,7 +47,9 @@ async function loadRuntime(device: LocalTtsDevice): Promise<KokoroInstance> {
   runtimePromise = (async () => {
     // Keep the neural runtime optional so the base Studio remains lightweight.
     // The package is open-source and the model runs locally after download/cache.
-    const dynamicImport = new Function("url", "return import(url);") as (url: string) => Promise<KokoroModule>;
+    const dynamicImport = new Function("url", "return import(url);") as (
+      url: string,
+    ) => Promise<KokoroModule>;
     const module = await dynamicImport("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm");
     return module.KokoroTTS.from_pretrained(KOKORO_MODEL, {
       dtype: "q4",
@@ -94,7 +96,8 @@ function float32ToWav(samples: Float32Array, sampleRate: number): Blob {
 }
 
 export async function speakLocally(text: string, voice = "af_heart"): Promise<HTMLAudioElement> {
-  if (typeof window === "undefined") throw new Error("Local speech is only available in the browser.");
+  if (typeof window === "undefined")
+    throw new Error("Local speech is only available in the browser.");
   if (!text.trim()) throw new Error("There is no text to speak.");
 
   const selected = KOKORO_VOICES.some((item) => item.id === voice) ? voice : "af_heart";

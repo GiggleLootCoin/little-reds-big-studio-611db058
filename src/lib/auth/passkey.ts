@@ -34,14 +34,19 @@ function asBufferSource(bytes: Uint8Array): BufferSource {
 }
 
 function fromBase64url(value: string): Uint8Array {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const normalized = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   return Uint8Array.from(atob(normalized), (char) => char.charCodeAt(0));
 }
 
 export function supportsPasskeys(): boolean {
-  return typeof window !== "undefined" &&
+  return (
+    typeof window !== "undefined" &&
     "PublicKeyCredential" in window &&
-    typeof PublicKeyCredential !== "undefined";
+    typeof PublicKeyCredential !== "undefined"
+  );
 }
 
 export async function registerPasskey(userName: string): Promise<PasskeyCredential> {

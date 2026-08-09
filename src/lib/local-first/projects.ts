@@ -19,7 +19,8 @@ function openDb(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Unable to open local project storage."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("Unable to open local project storage."));
   });
 }
 
@@ -27,7 +28,10 @@ export async function listLocalProjects(): Promise<LocalProject[]> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve((request.result as LocalProject[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    request.onsuccess = () =>
+      resolve(
+        (request.result as LocalProject[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      );
     request.onerror = () => reject(request.error ?? new Error("Unable to read local projects."));
   });
 }

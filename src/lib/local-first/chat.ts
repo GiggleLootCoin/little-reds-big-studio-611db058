@@ -17,7 +17,9 @@ export function loadLocalChat(): LocalChatMessage[] {
       const candidate = message as Record<string, unknown>;
       return (
         typeof candidate.id === "string" &&
-        (candidate.role === "user" || candidate.role === "assistant" || candidate.role === "system") &&
+        (candidate.role === "user" ||
+          candidate.role === "assistant" ||
+          candidate.role === "system") &&
         typeof candidate.content === "string" &&
         typeof candidate.createdAt === "string"
       );
@@ -27,7 +29,9 @@ export function loadLocalChat(): LocalChatMessage[] {
   }
 }
 
-export function appendLocalChat(message: Omit<LocalChatMessage, "id" | "createdAt">): LocalChatMessage[] {
+export function appendLocalChat(
+  message: Omit<LocalChatMessage, "id" | "createdAt">,
+): LocalChatMessage[] {
   const next: LocalChatMessage = {
     ...message,
     id: crypto.randomUUID(),

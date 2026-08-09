@@ -35,11 +35,16 @@ export function hasLocalBuddyClone(): boolean {
   return getLocalBuddyClone() !== null;
 }
 
-export function isUsableLocalClone(clone = getLocalBuddyClone()): clone is LocalBuddyClone & { modelUrl: string } {
+export function isUsableLocalClone(
+  clone = getLocalBuddyClone(),
+): clone is LocalBuddyClone & { modelUrl: string } {
   return Boolean(clone?.modelUrl && clone.modelUrl.length > 0);
 }
 
-export async function loadLocalBuddyClone(file: File, name = "Buddy — My Local Clone"): Promise<LocalBuddyClone> {
+export async function loadLocalBuddyClone(
+  file: File,
+  name = "Buddy — My Local Clone",
+): Promise<LocalBuddyClone> {
   const modelFormats = new Map<string, LocalBuddyClone["modelFormat"]>([
     ["application/onnx", "onnx"],
     ["model/onnx", "onnx"],
@@ -47,10 +52,19 @@ export async function loadLocalBuddyClone(file: File, name = "Buddy — My Local
   ]);
 
   const isModel = file.name.toLowerCase().endsWith(".onnx") || modelFormats.has(file.type);
-  const isAudio = ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/ogg", "audio/webm", "audio/mp4"].includes(file.type);
+  const isAudio = [
+    "audio/wav",
+    "audio/x-wav",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/webm",
+    "audio/mp4",
+  ].includes(file.type);
 
   if (!isModel && !isAudio) {
-    throw new Error("Choose an ONNX local voice model or a WAV, MP3, OGG, WebM, or M4A reference recording.");
+    throw new Error(
+      "Choose an ONNX local voice model or a WAV, MP3, OGG, WebM, or M4A reference recording.",
+    );
   }
 
   const previous = getLocalBuddyClone();
@@ -64,7 +78,9 @@ export async function loadLocalBuddyClone(file: File, name = "Buddy — My Local
         name,
         language: "English",
         modelUrl: objectUrl,
-        modelFormat: modelFormats.get(file.type) ?? (file.name.toLowerCase().endsWith(".onnx") ? "onnx" : "unknown"),
+        modelFormat:
+          modelFormats.get(file.type) ??
+          (file.name.toLowerCase().endsWith(".onnx") ? "onnx" : "unknown"),
       }
     : {
         id: `buddy-reference-${crypto.randomUUID()}`,

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { HardDrive, Smartphone, WifiOff, Zap } from "lucide-react";
-import { detectLocalRuntime, isAndroidLike, localRuntimeSummary, type LocalRuntimeCapabilities } from "@/lib/local-first/runtime";
+import {
+  detectLocalRuntime,
+  isAndroidLike,
+  localRuntimeSummary,
+  type LocalRuntimeCapabilities,
+} from "@/lib/local-first/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type CapabilityCheck = readonly [label: string, available: boolean];
@@ -35,7 +40,11 @@ export function LocalEnginePanel() {
       <CardContent className="space-y-4">
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            {capabilities?.webGpu ? <Zap aria-hidden className="size-4 text-primary" /> : <HardDrive aria-hidden className="size-4 text-primary" />}
+            {capabilities?.webGpu ? (
+              <Zap aria-hidden className="size-4 text-primary" />
+            ) : (
+              <HardDrive aria-hidden className="size-4 text-primary" />
+            )}
             {capabilities ? localRuntimeSummary(capabilities) : "Checking this device…"}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -45,7 +54,10 @@ export function LocalEnginePanel() {
 
         <div className="grid gap-2 sm:grid-cols-2">
           {checks.map(([label, available]) => (
-            <div key={label} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2 text-xs">
+            <div
+              key={label}
+              className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2 text-xs"
+            >
               <span>{label}</span>
               <span className={available ? "font-semibold text-primary" : "text-muted-foreground"}>
                 {available ? "Available" : "Unavailable"}

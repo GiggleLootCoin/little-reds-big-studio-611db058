@@ -109,6 +109,24 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     project_url: "https://github.com/openai/whisper",
   },
   {
+    id: "open-laguna-s21",
+    slug: "laguna-s21-open",
+    name: "Laguna S 2.1",
+    capability: "text",
+    provider: "open-source",
+    model_ref: "poolside/Laguna-S-2.1",
+    secret_name: null,
+    is_free: true,
+    quality: 10,
+    speed: 7,
+    weekly_score: 10,
+    enabled: true,
+    notes:
+      "Open long-context reasoning and coding model. Heavy inference uses a free GPU workspace; smaller quantized builds can run locally on capable hardware.",
+    runtime: "kaggle",
+    project_url: "https://huggingface.co/poolside/Laguna-S-2.1",
+  },
+  {
     id: "open-ace-step",
     slug: "ace-step-open",
     name: "ACE-Step 1.5",
@@ -122,9 +140,9 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     weekly_score: 10,
     enabled: true,
     notes:
-      "Powerful local open music generation, editing, cover and vocal-to-BGM engine; heavy jobs use a free GPU runner.",
-    runtime: "kaggle",
-    project_url: "https://github.com/ace-step/ACE-Step-1.5",
+      "Powerful open music generation, editing, cover and vocal-to-BGM engine. Its public Hugging Face Space provides the easiest no-key browser path.",
+    runtime: "browser",
+    project_url: "https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5",
   },
   {
     id: "open-diffrhythm-2",
@@ -142,7 +160,7 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     notes:
       "High-fidelity controllable full-song generation with strong lyric alignment; use a free GPU runner for heavy inference.",
     runtime: "kaggle",
-    project_url: "https://huggingface.co/models?search=DiffRhythm%202",
+    project_url: "https://huggingface.co/ASLP-lab/DiffRhythm2",
   },
   {
     id: "open-heartmula",
@@ -193,8 +211,7 @@ export const OPEN_MODEL_CATALOG: PluginRow[] = [
     speed: 7,
     weekly_score: 9,
     enabled: true,
-    notes:
-      "Widely supported open image-generation model; use a public browser demo or local runtime.",
+    notes: "Widely supported open image-generation model; use a public browser demo or local runtime.",
     runtime: "browser",
     project_url: "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
   },

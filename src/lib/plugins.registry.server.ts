@@ -70,26 +70,19 @@ export type PluginJobResult = {
 };
 
 function runnerForPlugin(plugin: PluginRow) {
-  if (plugin.slug === "ace-step-open")
-    return FREE_RUNNERS.find((runner) => runner.id === "hf-ace-step");
-  if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle");
-  if (plugin.runtime === "lightning")
-    return FREE_RUNNERS.find((runner) => runner.id === "lightning");
-  if (plugin.runtime === "browser") {
-    const preferred = {
-      voice: "hf-rvc",
-      stems: "hf-audio",
-      video: "hf-video",
-      music: "hf-music",
-      image: "android-local",
-      text: "android-local",
-    }[plugin.capability];
-    return (
-      FREE_RUNNERS.find((runner) => runner.id === preferred) ??
-      FREE_RUNNERS.find((runner) => runner.kind === "public")
-    );
-  }
-  return FREE_RUNNERS.find((runner) => runner.id === "android-local");
+  const preferredByCapability: Partial<Record<Capability, string[]>> = {
+    voice: ["hf-rvc", "hf-kokoro"],
+    stems: ["hf-demucs", "kaggle"],
+    video: ["hf-wan-video", "kaggle"],
+    music: ["hf-ace-step", "hf-musicgen", "kaggle"],
+    image: ["hf-sdxl", "kaggle"],
+    text: ["kaggle"],
+  };
+
+  const preferred = preferredByCapability[plugin.capability] ?? [];
+  return preferred
+    .map((id) => FREE_RUNNERS.find((runner) => runner.id === id))
+    .find(Boolean);
 }
 
 function getFreeRunnerHandoff(plugin: PluginRow) {
@@ -100,7 +93,7 @@ function getFreeRunnerHandoff(plugin: PluginRow) {
     runnerUrl: runner.url,
     runnerName: runner.name,
     message:
-      `The Studio is using the free/open route for ${plugin.name}. ` +
+      `The Studio selected the best available free route for ${plugin.name}. ` +
       `Open ${runner.name} to run it without a Studio API key or paid provider.`,
   };
 }
@@ -121,9 +114,6 @@ export async function executeBestPlugin(args: {
     throw new Error(`No free/open ${args.capability} model is registered.`);
   }
 
-  // A hosted Studio instance normally has no model process attached. Never make
-  // the user configure a runner just to discover that fact: hand the job to the
-  // best known free/open runtime automatically.
   if (!chosen.available) {
     const handoff = getFreeRunnerHandoff(chosen);
     if (!handoff) throw new Error(`${chosen.name}: ${chosen.reason}`);

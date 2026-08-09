@@ -34,8 +34,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     kind: "public",
     description: "Public Wan/LTX browser Spaces using shared free GPU infrastructure.",
     capabilities: ["video", "image-to-video"],
-    url: "https://huggingface.co/spaces/zerogpu-aoti/Wan2.2-14B-Fast",
-    notes: "Free accounts have limited daily ZeroGPU quota; no API key.",
+    url: "https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster",
+    notes: "Free ZeroGPU quota is shared and may be temporarily exhausted; no API key.",
   },
   {
     id: "hf-audio",
@@ -43,7 +43,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     kind: "public",
     description: "Public open audio-separation Space.",
     capabilities: ["stems"],
-    url: "https://huggingface.co/spaces/nakas/Demucs_V4",
+    url: "https://huggingface.co/spaces/nakas/demucs_playground",
     notes: "No Studio API credential.",
   },
   {

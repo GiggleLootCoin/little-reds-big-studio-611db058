@@ -47,7 +47,8 @@ export function buddyLine(
 ): string {
   const tone = options.tone ?? "normal";
   if (tone === "focused" && status === "working") return "On it.";
-  if (tone === "recovery" && status === "error") return "I've got you. We'll sort it without making a song and dance about it.";
+  if (tone === "recovery" && status === "error")
+    return "I've got you. We'll sort it without making a song and dance about it.";
   const lines = LINES[status];
   return lines[(options.index ?? 0) % lines.length];
 }

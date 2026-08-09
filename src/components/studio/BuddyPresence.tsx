@@ -32,25 +32,42 @@ export function BuddyPresence({ className }: { className?: string }) {
 
   return (
     <aside
-      className={cn("buddy-presence glass-panel relative overflow-hidden rounded-2xl p-3", className)}
+      className={cn(
+        "buddy-presence glass-panel relative overflow-hidden rounded-2xl p-3",
+        className,
+      )}
       data-buddy-status={snapshot.status}
       aria-label={`Buddy: ${STATUS_LABELS[snapshot.status]}`}
     >
       <div className="flex items-center gap-3">
         <div className="buddy-presence-character relative size-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/35">
           <div className="buddy-aura absolute inset-0 rounded-full bg-primary/25 blur-lg" />
-          <img src={buddyReference} alt="Buddy" className="buddy-character-image relative h-full w-full object-contain" />
+          <img
+            src={buddyReference}
+            alt="Buddy"
+            className="buddy-character-image relative h-full w-full object-contain"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <Icon className={cn("size-3.5 text-primary", snapshot.status === "working" && "animate-spin")} aria-hidden />
+            <Icon
+              className={cn(
+                "size-3.5 text-primary",
+                snapshot.status === "working" && "animate-spin",
+              )}
+              aria-hidden
+            />
             <span className="font-display text-xs font-bold uppercase tracking-[0.16em] text-primary">
               {STATUS_LABELS[snapshot.status]}
             </span>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{line}</p>
         </div>
-        <img src={logo.url} alt="Little Red's Big Studio" className="hidden h-7 w-auto shrink-0 rounded-md border border-white/10 bg-black/50 p-1 sm:block" />
+        <img
+          src={logo.url}
+          alt="Little Red's Big Studio"
+          className="hidden h-7 w-auto shrink-0 rounded-md border border-white/10 bg-black/50 p-1 sm:block"
+        />
       </div>
     </aside>
   );

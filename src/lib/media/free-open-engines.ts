@@ -1,4 +1,4 @@
-export type MediaEngineKind = "music" | "image" | "video";
+export type MediaEngineKind = "music" | "image" | "video" | "ai";
 
 export type FreeOpenMediaEngine = {
   id: string;
@@ -15,6 +15,7 @@ export type FreeOpenMediaEngine = {
 /**
  * Open/local model registry. Metadata only: model weights are downloaded on
  * demand rather than committed to Git. Hosted inference is never required.
+ * A model is not treated as installed merely because it appears here.
  */
 export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
   {
@@ -24,16 +25,9 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: [
-      "full songs",
-      "lyrics-to-song",
-      "multilingual",
-      "section control",
-      "reference audio",
-    ],
+    strengths: ["full songs", "lyrics-to-song", "multilingual", "section control", "reference audio"],
     androidFit: "runner",
-    notes:
-      "Top-tier open song-generation choice; Apache-2.0 project and weights. Heavy for most phones.",
+    notes: "Top-tier open song-generation choice; Apache-2.0 project and weights. Heavy for most phones.",
   },
   {
     id: "ace-step-1.5",
@@ -42,18 +36,42 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: [
-      "full songs",
-      "vocals",
-      "lyrics-to-song",
-      "editing",
-      "remix",
-      "cover",
-      "vocal-to-BGM",
-    ],
+    strengths: ["full songs", "vocals", "lyrics-to-song", "editing", "remix", "cover", "vocal-to-BGM"],
     androidFit: "runner",
-    notes:
-      "Primary high-performance open music engine; supports long compositions and advanced editing.",
+    notes: "Primary high-performance open music engine; supports long compositions and advanced editing.",
+  },
+  {
+    id: "diffrhythm-2",
+    name: "DiffRhythm 2",
+    kind: "music",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["full songs", "high-fidelity", "lyrics alignment", "controllable generation", "efficient synthesis"],
+    androidFit: "runner",
+    notes: "Add as a high-quality alternative to ACE-Step/HeartMuLa. Verify the exact model-weight license before commercial export.",
+  },
+  {
+    id: "laguna-s-2.1",
+    name: "Laguna S 2.1",
+    kind: "ai",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["reasoning", "coding", "long-context", "agent planning"],
+    androidFit: "runner",
+    notes: "Large local reasoning model; use only when the device/runtime can support an appropriate quantization. Not a music generator.",
+  },
+  {
+    id: "omnivore-aicore",
+    name: "Omnivore by AICore",
+    kind: "ai",
+    local: true,
+    openSource: true,
+    apiRequired: false,
+    strengths: ["multimodal workflows", "content understanding", "agent tasks"],
+    androidFit: "runner",
+    notes: "Candidate multimodal local engine. Keep as a registry entry until its exact public model/repository and license are verified; do not auto-download an ambiguous model.",
   },
   {
     id: "yue",
@@ -75,8 +93,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["music ideas", "loops", "audio experiments", "prompt exploration"],
     androidFit: "good",
-    notes:
-      "Keep as an experimental/fast ideation engine; use a locally runnable open implementation rather than a hosted API.",
+    notes: "Experimental/fast ideation engine; use a locally runnable open implementation rather than a hosted API.",
   },
   {
     id: "musicgen-small",
@@ -109,8 +126,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["instrumentals", "high-fidelity audio", "tempo/key control"],
     androidFit: "runner",
-    notes:
-      "High-quality option for instrumental generation; license/model availability must be checked per release.",
+    notes: "High-quality option; license/model availability must be checked per release.",
   },
   {
     id: "stable-diffusion-xl",
@@ -121,8 +137,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["text-to-image", "covers", "concept art", "image-to-image"],
     androidFit: "good",
-    notes:
-      "Strong general image baseline; use a quantized/mobile-compatible runtime where available.",
+    notes: "Strong general image baseline; use a quantized/mobile-compatible runtime where available.",
   },
   {
     id: "flux-schnell",
@@ -177,7 +192,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["image-to-video", "text-to-video", "high-quality motion"],
     androidFit: "runner",
-    notes: "High-end open video option; generally requires a stronger local runner.",
+    notes: "High-end open video option; generally requires a stronger local runtime.",
   },
 ];
 
@@ -185,13 +200,11 @@ export function getMediaEngines(kind: MediaEngineKind): FreeOpenMediaEngine[] {
   return FREE_OPEN_MEDIA_ENGINES.filter((engine) => engine.kind === kind);
 }
 
-export function chooseMediaEngine(
-  kind: MediaEngineKind,
-  preferQuality = false,
-): FreeOpenMediaEngine {
+export function chooseMediaEngine(kind: MediaEngineKind, preferQuality = false): FreeOpenMediaEngine | undefined {
   const engines = getMediaEngines(kind);
   return (
     engines.find((engine) => preferQuality && engine.androidFit === "runner") ??
+    engines.find((engine) => engine.androidFit === "excellent") ??
     engines.find((engine) => engine.androidFit === "good") ??
     engines[0]
   );

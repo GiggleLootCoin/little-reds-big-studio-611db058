@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - upgrade/buddy-free-open-agentic
+      - upgrade/buddy-complete
   workflow_dispatch:
 
 permissions:

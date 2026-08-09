@@ -6,6 +6,8 @@ import {
   refreshScores,
 } from "./plugins.registry.server";
 
+export type { PublicPlugin } from "./plugins.registry.server";
+
 export type ClientPluginJobResult = {
   plugin: string;
   slug: string;

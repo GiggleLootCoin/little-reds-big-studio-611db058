@@ -7,12 +7,13 @@ import {
 } from "./plugins.server";
 import type { Capability, PluginStatus } from "./plugins.server";
 import { OPEN_MODEL_CATALOG } from "./open-models.catalog";
+import { runnersFor } from "./free-runners";
 
 /** Provider-free model registry. */
 const sessionRuns: Array<{
   slug: string;
   capability: Capability;
-  status: "succeeded" | "failed";
+  status: "succeeded" | "failed" | "handoff";
   durationMs: number;
 }> = [];
 
@@ -62,7 +63,23 @@ export type PluginJobResult = {
   slug: string;
   media: string[];
   raw: unknown;
+  handoff?: boolean;
+  runnerUrl?: string;
+  runnerName?: string;
+  message?: string;
 };
+
+function getFreeRunnerHandoff(capability: Capability) {
+  const runner = runnersFor(capability)[0];
+  if (!runner) return undefined;
+  return {
+    handoff: true,
+    runnerUrl: runner.url,
+    runnerName: runner.name,
+    message:
+      "This heavy open model cannot execute inside the hosted Studio without a paid/API inference service. Open the free runner to run the job without an API key.",
+  };
+}
 
 export async function executeBestPlugin(args: {
   capability: Capability;
@@ -79,7 +96,12 @@ export async function executeBestPlugin(args: {
     throw new Error(`No free/open ${args.capability} model is registered. Available: ${names}.`);
   }
 
-  if (!chosen.available) throw new Error(`${chosen.name}: ${chosen.reason}`);
+  if (!chosen.available) {
+    const handoff = getFreeRunnerHandoff(args.capability);
+    if (!handoff) throw new Error(`${chosen.name}: ${chosen.reason}`);
+    sessionRuns.push({ slug: chosen.slug, capability: args.capability, status: "handoff", durationMs: 0 });
+    return { plugin: chosen.name, slug: chosen.slug, media: [], raw: null, ...handoff };
+  }
 
   const started = Date.now();
   try {

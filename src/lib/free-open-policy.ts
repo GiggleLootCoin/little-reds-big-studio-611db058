@@ -8,7 +8,9 @@ export type ProviderPolicy = {
 
 /** Core Studio providers must satisfy every field below. */
 export function isAllowedCoreProvider(provider: ProviderPolicy): boolean {
-  return provider.openSource && provider.local && !provider.apiKeyRequired && !provider.paidOrMetered;
+  return (
+    provider.openSource && provider.local && !provider.apiKeyRequired && !provider.paidOrMetered
+  );
 }
 
 export function assertAllowedCoreProvider(provider: ProviderPolicy): void {

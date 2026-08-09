@@ -1,17 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { PluginJobResult } from "./plugins.registry.server";
+import { executeBestPlugin, readPublicPluginCatalog, refreshScores } from "./plugins.registry.server";
 
-export const listPlugins = createServerFn({ method: "GET" }).handler(async () => {
-  const { readPublicPluginCatalog } = await import("./plugins.registry.server");
-  return readPublicPluginCatalog();
-});
+export const listPlugins = createServerFn({ method: "GET" }).handler(async () => readPublicPluginCatalog());
 
 export const runPluginJob = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({ capability: z.enum(["video", "voice", "stems", "image", "music", "text"]), slug: z.string().optional(), payload: z.record(z.string(), z.unknown()).default({}) }).parse(input))
-  .handler(async ({ data }): Promise<PluginJobResult> => {
-    const { executeBestPlugin } = await import("./plugins.registry.server");
-    return executeBestPlugin({ capability: data.capability, slug: data.slug, payload: data.payload, userId: "local" });
+  .handler(async ({ data }) => {
+    const result = await executeBestPlugin({ capability: data.capability, slug: data.slug, payload: data.payload, userId: "local" });
+    return { plugin: result.plugin, slug: result.slug, media: result.media };
   });
 
 export const savePlugin = createServerFn({ method: "POST" })
@@ -23,7 +20,6 @@ export const togglePlugin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => ({ ok: true, slug: data.slug, enabled: data.enabled }));
 
 export const refreshPluginScores = createServerFn({ method: "POST" }).handler(async () => {
-  const { refreshScores, readPublicPluginCatalog } = await import("./plugins.registry.server");
   await refreshScores();
   return readPublicPluginCatalog();
 });

@@ -25,16 +25,9 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: [
-      "full songs",
-      "lyrics-to-song",
-      "multilingual",
-      "section control",
-      "reference audio",
-    ],
+    strengths: ["full songs", "lyrics-to-song", "multilingual", "section control", "reference audio"],
     androidFit: "runner",
-    notes:
-      "Top-tier open song-generation choice; Apache-2.0 project and weights. Heavy for most phones.",
+    notes: "Top-tier open song-generation choice; Apache-2.0 project and weights. Heavy for most phones.",
   },
   {
     id: "ace-step-1.5",
@@ -43,18 +36,9 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: [
-      "full songs",
-      "vocals",
-      "lyrics-to-song",
-      "editing",
-      "remix",
-      "cover",
-      "vocal-to-BGM",
-    ],
+    strengths: ["full songs", "vocals", "lyrics-to-song", "editing", "remix", "cover", "vocal-to-BGM"],
     androidFit: "runner",
-    notes:
-      "Primary high-performance open music engine; supports long compositions and advanced editing.",
+    notes: "Primary high-performance open music engine; supports long compositions and advanced editing.",
   },
   {
     id: "diffrhythm-2",
@@ -63,16 +47,9 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     local: true,
     openSource: true,
     apiRequired: false,
-    strengths: [
-      "full songs",
-      "high-fidelity",
-      "lyrics alignment",
-      "controllable generation",
-      "efficient synthesis",
-    ],
+    strengths: ["full songs", "high-fidelity", "lyrics alignment", "controllable generation", "efficient synthesis"],
     androidFit: "runner",
-    notes:
-      "Add as a high-quality alternative to ACE-Step/HeartMuLa. Verify the exact model-weight license before commercial export.",
+    notes: "High-quality alternative to ACE-Step and HeartMuLa. Verify the exact model-weight license before commercial export.",
   },
   {
     id: "laguna-s-2.1",
@@ -83,20 +60,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["reasoning", "coding", "long-context", "agent planning"],
     androidFit: "runner",
-    notes:
-      "Large local reasoning model; use only when the device/runtime can support an appropriate quantization. Not a music generator.",
-  },
-  {
-    id: "omnivore-aicore",
-    name: "Omnivore by AICore",
-    kind: "ai",
-    local: true,
-    openSource: true,
-    apiRequired: false,
-    strengths: ["multimodal workflows", "content understanding", "agent tasks"],
-    androidFit: "runner",
-    notes:
-      "Candidate multimodal local engine. Keep as a registry entry until its exact public model/repository and license are verified; do not auto-download an ambiguous model.",
+    notes: "Large local reasoning model; use only when the device/runtime can support an appropriate quantization. Not a music generator.",
   },
   {
     id: "yue",
@@ -118,8 +82,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["music ideas", "loops", "audio experiments", "prompt exploration"],
     androidFit: "good",
-    notes:
-      "Experimental/fast ideation engine; use a locally runnable open implementation rather than a hosted API.",
+    notes: "Experimental/fast ideation engine; use a locally runnable open implementation rather than a hosted API.",
   },
   {
     id: "musicgen-small",
@@ -163,8 +126,7 @@ export const FREE_OPEN_MEDIA_ENGINES: FreeOpenMediaEngine[] = [
     apiRequired: false,
     strengths: ["text-to-image", "covers", "concept art", "image-to-image"],
     androidFit: "good",
-    notes:
-      "Strong general image baseline; use a quantized/mobile-compatible runtime where available.",
+    notes: "Strong general image baseline; use a quantized/mobile-compatible runtime where available.",
   },
   {
     id: "flux-schnell",

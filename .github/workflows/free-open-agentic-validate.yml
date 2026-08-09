@@ -3,6 +3,7 @@ name: Free Open Agentic Validation
 on:
   push:
     branches:
+      - main
       - upgrade/buddy-free-open-agentic
   workflow_dispatch:
 

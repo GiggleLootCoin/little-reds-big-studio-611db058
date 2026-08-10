@@ -6,23 +6,22 @@ The Studio is designed around one simple experience: bring in your idea, music, 
 
 ## Production
 
-- **Live app:** https://little-reds-big-studio-611db058.gigglelootcoin.workers.dev
 - **Source:** this private GitHub repository
-- **Hosting:** Cloudflare Workers
+- **Hosting:** provider-neutral static web app; GitHub Pages is the intended zero-cost deployment path when enabled
 - **Cost target:** $0 / no paid hosting required
-- **AI policy:** no mandatory paid AI API and no mandatory provider account
+- **AI policy:** no mandatory paid AI API, API key, provider account, or hosted AI service
 - **Storage:** browser-first project storage where supported
-- **Device:** Android-friendly responsive web app
+- **Device:** Android-first responsive web app
 
 ## Buddy orchestration
 
-Buddy ranks available routes by capability and keeps free/open fallbacks ready. The Studio never claims that WebGPU, WebAssembly or a browser API is itself an AI model. Heavy generative work can be handed to public open/free runners when local execution is not genuinely available.
+Buddy ranks genuinely available local capabilities and free/open runners. The Studio never claims that WebGPU, WebAssembly or a browser API is itself an AI model. Heavy generative work can be handed to public open/free runners when local execution is not genuinely available.
 
 The normal user does **not** choose models or providers.
 
 ### Current free/open routes
 
-- Writing/reasoning: Bonsai WebGPU when the device can handle it
+- Writing/reasoning: local Qwen-family models when the device can handle them
 - Voice: Applio/RVC, with browser and Qwen3-TTS fallbacks
 - Music: ACE-Step 1.5, with MusicGen Web for lighter jobs
 - Stems: Demucs, with BS-Roformer fallback
@@ -39,6 +38,8 @@ Public free GPU services can have queues or temporary outages; Buddy therefore k
 
 The repository contains the uploaded visual-reference library under `assets/visual-references/` and the Studio uses the approved visual direction for its cinematic, glass, crimson/obsidian interface.
 
+Buddy's canonical visual reference is `file_0000000070e8824391d24367b5f22d59.png`. The normal Buddy animation path uses that source asset with lightweight browser/CSS runtime behavior rather than requiring repeated external AI image generation.
+
 ## Creator support
 
 This Project Was Made With Love ❤️ By LittleRedBigSmile 🔴😁✨️
@@ -51,7 +52,7 @@ Support The Creator And Her Music On YouTube! 💃 🎧 🎶
 
 ## Development
 
-The repository is a TanStack Start application built with Vite and TypeScript.
+The repository is a TanStack Start application configured as a browser-first SPA with Vite and TypeScript.
 
 ```sh
 npm install
@@ -64,10 +65,4 @@ Production build:
 npm run build
 ```
 
-Deployment:
-
-```sh
-npm run deploy
-```
-
-GitHub Actions validates the main branch with dependency installation, TypeScript checking, formatting, linting and a production build before/alongside the Cloudflare deployment workflow.
+Deployment is intentionally provider-neutral. See `docs/DEPLOYMENT.md` for the current policy. GitHub Actions validates the main branch with dependency installation, TypeScript checking, formatting, linting and a production build.

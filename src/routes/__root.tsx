@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
-import { reportRuntimeError } from "../lib/lovable-error-reporting";
+import { reportRuntimeError } from "../lib/runtime-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -59,7 +59,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Try again
           </button>
           <a
-            href="/"
+            href="./"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Little Red's Big Studio" },
-      { name: "description", content: "Automated music video production studio." },
+      { name: "description", content: "Free/open Android-first creative studio for music and creators." },
       { name: "author", content: "LittleRedBigSmile" },
       { name: "theme-color", content: "#0d0405" },
       { property: "og:type", content: "website" },
@@ -84,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: `${import.meta.env.BASE_URL}favicon.ico`, type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,

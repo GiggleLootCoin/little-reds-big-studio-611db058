@@ -27,7 +27,7 @@ export function FreeCreatePanel() {
   const image = runner("hf-z-image");
   const video = runner("hf-wan-s2v");
   const stems = runner("hf-demucs");
-  const chat = runner("bonsai-webgpu");
+  const chat = runner("qwen3-webgpu");
 
   useEffect(() => {
     setBrief(localStorage.getItem("lrbgs-song-brief") || "");
@@ -59,47 +59,15 @@ export function FreeCreatePanel() {
   };
 
   return (
-    <Panel
-      eyebrow="Free Core"
-      title="Create — no API, no paywall"
-      icon={<Music2 className="size-5" />}
-      defaultOpen
-    >
+    <Panel eyebrow="Free Core" title="Create — no API, no paywall" icon={<Music2 className="size-5" />} defaultOpen>
       <p className="text-sm text-muted-foreground">
-        This is the honest free path: your Studio prepares the creative job, then opens the best
-        free/open engine directly. Nothing is pretending to run a paid API behind your back.
+        Your Studio prepares the creative job, then opens a free/open engine directly. Nothing here pretends to run a paid API.
       </p>
-      <textarea
-        value={brief}
-        onChange={(e) => setBrief(e.target.value)}
-        rows={4}
-        placeholder="Describe the song: genre, mood, tempo, instruments, vocal character, structure..."
-        className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-      />
-      <textarea
-        value={lyrics}
-        onChange={(e) => setLyrics(e.target.value)}
-        rows={7}
-        placeholder="Paste your lyrics here, or leave blank and ask the free engine to write them."
-        className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-      />
-      <StudioSlider
-        label="Target length"
-        value={seconds}
-        min={30}
-        max={600}
-        step={5}
-        unit="s"
-        onChange={setSeconds}
-      />
+      <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={4} placeholder="Describe the song: genre, mood, tempo, instruments, vocal character, structure..." className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+      <textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={7} placeholder="Paste your lyrics here, or leave blank and ask the free engine to write them." className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+      <StudioSlider label="Target length" value={seconds} min={30} max={600} step={5} unit="s" onChange={setSeconds} />
       <div className="grid grid-cols-2 gap-2">
-        <StudioButton
-          className="w-full"
-          onClick={() => {
-            save();
-            void launch(ace.url, songPrompt);
-          }}
-        >
+        <StudioButton className="w-full" onClick={() => { save(); void launch(ace.url, songPrompt); }}>
           <Music2 className="size-4" />
           {copied ? "Prompt copied" : "Generate song"}
         </StudioButton>
@@ -108,42 +76,12 @@ export function FreeCreatePanel() {
         </StudioButton>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <EngineButton
-          icon={Mic2}
-          title="Voice / RVC"
-          note={rvc.name}
-          onClick={() => void launch(rvc.url)}
-        />
-        <EngineButton
-          icon={Image}
-          title="Artwork"
-          note={image.name}
-          onClick={() => void launch(image.url, brief)}
-        />
-        <EngineButton
-          icon={Film}
-          title="Video"
-          note={video.name}
-          onClick={() => void launch(video.url, brief)}
-        />
-        <EngineButton
-          icon={Scissors}
-          title="Split stems"
-          note={stems.name}
-          onClick={() => void launch(stems.url)}
-        />
-        <EngineButton
-          icon={MessageCircle}
-          title="Unlimited free chat"
-          note="WebGPU"
-          onClick={() => void launch(chat.url, brief)}
-        />
-        <EngineButton
-          icon={ExternalLink}
-          title="ACE-Step"
-          note="Open music studio"
-          onClick={() => void launch(ace.url, songPrompt)}
-        />
+        <EngineButton icon={Mic2} title="Voice / RVC" note={rvc.name} onClick={() => void launch(rvc.url)} />
+        <EngineButton icon={Image} title="Artwork" note={image.name} onClick={() => void launch(image.url, brief)} />
+        <EngineButton icon={Film} title="Video" note={video.name} onClick={() => void launch(video.url, brief)} />
+        <EngineButton icon={Scissors} title="Split stems" note={stems.name} onClick={() => void launch(stems.url)} />
+        <EngineButton icon={MessageCircle} title="Free local chat" note="Qwen3 WebGPU" onClick={() => void launch(chat.url, brief)} />
+        <EngineButton icon={ExternalLink} title="ACE-Step" note="Open music studio" onClick={() => void launch(ace.url, songPrompt)} />
       </div>
       <Note>
         <Readout label="Primary music engine" value={ace.name} />
@@ -154,23 +92,9 @@ export function FreeCreatePanel() {
   );
 }
 
-function EngineButton({
-  icon: Icon,
-  title,
-  note,
-  onClick,
-}: {
-  icon: typeof Music2;
-  title: string;
-  note: string;
-  onClick: () => void;
-}) {
+function EngineButton({ icon: Icon, title, note, onClick }: { icon: typeof Music2; title: string; note: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group rounded-xl border border-border/70 bg-background/55 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5"
-    >
+    <button type="button" onClick={onClick} className="group rounded-xl border border-border/70 bg-background/55 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5">
       <Icon className="size-4 text-primary" />
       <span className="mt-2 block font-display text-xs font-semibold">{title}</span>
       <span className="mt-1 block truncate text-[0.62rem] text-muted-foreground">{note}</span>

@@ -4,9 +4,9 @@ import { buddyLine } from "@/lib/buddy-personality";
 import { getBuddyStatus, subscribeBuddyStatus } from "@/lib/buddy-presence";
 import type { BuddyStatus } from "@/lib/buddy-presence";
 import { BuddyAnimatedAssistant } from "@/components/studio/BuddyAnimatedAssistant";
-import logo from "@/assets/littlered-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 
+const LOGO_URL = "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
 const STATUS_LABELS: Record<BuddyStatus, string> = {
   idle: "Ready",
   listening: "Listening",
@@ -55,7 +55,7 @@ export function BuddyPresence({ className }: { className?: string }) {
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{line}</p>
         </div>
         <img
-          src={logo.url}
+          src={LOGO_URL}
           alt="Little Red's Big Studio"
           className="brand-mark-animated hidden h-8 w-auto shrink-0 rounded-md border border-white/10 bg-black/50 p-1 sm:block"
         />

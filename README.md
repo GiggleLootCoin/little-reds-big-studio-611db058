@@ -7,7 +7,8 @@ The Studio is designed around one simple experience: bring in your idea, music, 
 ## Production
 
 - **Source:** this public GitHub repository
-- **Hosting:** provider-neutral static web app; GitHub Pages may be used as a zero-cost host when its Pages configuration matches the provider-neutral root asset setup
+- **Hosting:** provider-neutral static web app; GitHub Pages is configured as the zero-cost deployment path
+- **Live site:** `https://gigglelootcoin.github.io/little-reds-big-studio-611db058/`
 - **Cost target:** $0 / no paid hosting required
 - **AI policy:** no mandatory paid AI API, API key, provider account, or hosted AI service
 - **Storage:** browser-first project storage where supported
@@ -29,10 +30,6 @@ The normal user does **not** choose models or providers.
 - Video: Wan 2.2 S2V / video routes, with LTX 2.3 fallback
 
 Public free GPU services can have queues or temporary outages; Buddy therefore keeps alternatives rather than presenting one provider as guaranteed.
-
-## Red's Ways Of Thinking
-
-`Red's Ways Of Thinking` is kept as private reference material for Buddy. It is treated as a perspective/creative knowledge layer, not as a list of verified facts. Buddy can use it for creative framing and personal context while separating disputed claims from independently verifiable information when factual accuracy matters.
 
 ## Visual identity
 
@@ -71,4 +68,4 @@ Full local verification:
 npm run check
 ```
 
-Deployment is intentionally provider-neutral. See `docs/DEPLOYMENT.md` for the current policy. GitHub Actions validates pull requests and the main branch with dependency installation, TypeScript checking, formatting, linting and a production build.
+Deployment is intentionally free and provider-light. GitHub Actions validates pull requests and the main branch with dependency installation, TypeScript checking, formatting, linting and a production build. A separate Pages workflow builds the SPA with the correct project base path and publishes it to GitHub Pages.

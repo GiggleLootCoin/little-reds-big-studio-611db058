@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /auth
-Disallow: /mcp
 
-Sitemap: https://little-reds-big-studio.lovable.app/sitemap.xml
+Sitemap: https://gigglelootcoin.github.io/little-reds-big-studio-611db058/sitemap.xml

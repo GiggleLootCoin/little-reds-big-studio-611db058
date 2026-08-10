@@ -16,8 +16,10 @@ const VOICES = [
   ["ef_dora", "Spanish/European • Dora"],
 ] as const;
 
+type VoiceId = (typeof VOICES)[number][0];
+
 export function VoiceLabPanel() {
-  const [voice, setVoice] = useState(VOICES[0][0]);
+  const [voice, setVoice] = useState<VoiceId>(VOICES[0][0]);
   const [text, setText] = useState("Hello from Little Red's Big Studio. Buddy is ready to create.");
   const [reference, setReference] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -29,7 +31,12 @@ export function VoiceLabPanel() {
     setAudioUrl(null);
     setStatus("Finding the best free voice engine…");
     try {
-      const result = await runGradio(FREE_SPACE_IDS.voicePreset, "/generate", [text, voice, 1, true]);
+      const result = await runGradio(FREE_SPACE_IDS.voicePreset, "/generate", [
+        text,
+        voice,
+        1,
+        true,
+      ]);
       const url = outputUrl(result);
       if (!url) throw new Error("The voice engine returned no audio.");
       setAudioUrl(url);
@@ -75,7 +82,7 @@ export function VoiceLabPanel() {
           <span className="font-semibold">Voice</span>
           <select
             value={voice}
-            onChange={(e) => setVoice(e.target.value)}
+            onChange={(e) => setVoice(e.target.value as VoiceId)}
             className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
             {VOICES.map(([id, label]) => (
@@ -118,8 +125,12 @@ export function VoiceLabPanel() {
           </a>
         </div>
       )}
-      <p className="text-xs text-muted-foreground" aria-live="polite">{status}</p>
-      <Note>Voice selection is stored locally. Cloning is intended only for voices you own or have permission to use.</Note>
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        {status}
+      </p>
+      <Note>
+        Voice selection is stored locally. Cloning is intended only for voices you own or have permission to use.
+      </Note>
     </Panel>
   );
 }

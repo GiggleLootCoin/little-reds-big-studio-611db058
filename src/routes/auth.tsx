@@ -36,7 +36,9 @@ function AuthPage() {
       }
       window.location.replace(import.meta.env.BASE_URL);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Biometric sign-in was cancelled or unavailable.");
+      setMessage(
+        error instanceof Error ? error.message : "Biometric sign-in was cancelled or unavailable.",
+      );
     } finally {
       setBusy(false);
     }
@@ -54,7 +56,9 @@ function AuthPage() {
       await registerPasskey(displayName);
       window.location.replace(import.meta.env.BASE_URL);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Passkey setup was cancelled or unavailable.");
+      setMessage(
+        error instanceof Error ? error.message : "Passkey setup was cancelled or unavailable.",
+      );
     } finally {
       setBusy(false);
     }
@@ -69,7 +73,8 @@ function AuthPage() {
             {user ? `Welcome back, ${user.user_metadata.display_name}` : "Enter the Studio"}
           </h1>
           <p className="my-3 text-center text-xs text-muted-foreground">
-            Use your name and email, then optionally protect this device with a fingerprint, face, or device passkey.
+            Use your name and email, then optionally protect this device with a fingerprint, face,
+            or device passkey.
           </p>
           {!user && (
             <form onSubmit={submit} className="space-y-3">
@@ -92,14 +97,26 @@ function AuthPage() {
                 Create / Enter Studio
               </StudioButton>
               {supportsPasskeys() && (
-                <StudioButton className="w-full" type="button" variant="outline" onClick={createPasskey} disabled={busy}>
+                <StudioButton
+                  className="w-full"
+                  type="button"
+                  variant="outline"
+                  onClick={createPasskey}
+                  disabled={busy}
+                >
                   {busy ? "Setting up…" : "Create with fingerprint / passkey"}
                 </StudioButton>
               )}
             </form>
           )}
           {user && supportsPasskeys() && (
-            <StudioButton className="w-full" type="button" variant="outline" onClick={signInWithPasskey} disabled={busy}>
+            <StudioButton
+              className="w-full"
+              type="button"
+              variant="outline"
+              onClick={signInWithPasskey}
+              disabled={busy}
+            >
               {busy ? "Checking…" : "Sign in with fingerprint / passkey"}
             </StudioButton>
           )}

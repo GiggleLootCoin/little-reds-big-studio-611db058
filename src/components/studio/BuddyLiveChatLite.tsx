@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Mic, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { runGradio, FREE_SPACE_IDS, outputUrl } from "@/lib/gradio-free";
 import { loadStoredBuddyVoice } from "./VoiceLabPanel";
-import { useAuth } from "@/hooks/use-auth";
 import { Panel, StudioButton } from "./ui";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -11,8 +10,8 @@ type RecognitionLike = { continuous: boolean; interimResults: boolean; lang: str
 type RecognitionConstructor = new () => RecognitionLike;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
-const KEY = "lrbgs-buddy-chat-v10";
-const RECORD_WINDOW_MS = 5000;
+const KEY = "lrbgs-buddy-chat-v11";
+const RECORD_WINDOW_MS = 6000;
 
 function extract(value: unknown): string {
   if (typeof value === "string") return value.trim();
@@ -26,19 +25,17 @@ function extract(value: unknown): string {
   return "";
 }
 
-function fallback(text: string, name: string) {
+function fallback(text: string) {
   const query = text.toLowerCase();
-  if (/^(hi|hello|hey)\b/.test(query)) return `Hey, ${name}. I'm Buddy. What are we making?`;
+  if (/^(hi|hello|hey)\b/.test(query)) return "Hey! I'm Buddy. What are we making?";
   if (query.includes("song") || query.includes("music")) return "Absolutely. Give me the idea, mood or lyrics and I'll handle the complicated bits.";
   if (query.includes("lyric")) return "Give me the feeling, story or subject and I'll shape it into a complete song structure.";
   if (query.includes("video")) return "Let's make it visual. Tell me the song, image or idea and I'll choose the best available route.";
   if (query.includes("voice")) return "I can work with a voice you own or have permission to use. I'll handle the technical conversion behind the scenes.";
-  return `I'm here, ${name}. Tell me what you want to make, change or figure out.`;
+  return "I'm Buddy. Tell me what you want to make, change or figure out.";
 }
 
 export function BuddyLiveChatLite() {
-  const { user } = useAuth();
-  const name = user?.user_metadata.display_name || "Creator";
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -57,63 +54,8 @@ export function BuddyLiveChatLite() {
   const brainRef = useRef<unknown>(null);
 
   const stopRecognition = () => {
-    try { recognitionRef.current?.abort(); } catch { /* browser may already be stopped */ }
+    try { recognitionRef.current?.abort(); } catch { /* already stopped */ }
     recognitionRef.current = null;
-  };
-
-  const stop = () => {
-    liveRef.current = false;
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-    stopRecognition();
-    if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
-    recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    audioRef.current?.pause();
-    window.speechSynthesis?.cancel();
-    speakingRef.current = false;
-    setListening(false);
-  };
-
-  const startListening = async () => {
-    if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
-    const speechWindow = window as SpeechWindow;
-    const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (Constructor) {
-      const recognition = new Constructor();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = navigator.language || "en-US";
-      recognition.onresult = (event) => {
-        let finalText = "";
-        for (let index = 0; index < event.results.length; index += 1) {
-          const result = event.results.item(index);
-          if (result.isFinal) finalText += result[0].transcript;
-        }
-        if (finalText.trim()) void send(finalText, true);
-      };
-      recognition.onend = () => {
-        recognitionRef.current = null;
-        setListening(false);
-        if (liveRef.current && !busyRef.current && !speakingRef.current) window.setTimeout(() => void startListening(), 120);
-      };
-      recognition.onerror = () => {
-        recognitionRef.current = null;
-        setListening(false);
-        if (liveRef.current && !busyRef.current && !speakingRef.current) void startRecorderFallback();
-      };
-      recognitionRef.current = recognition;
-      try {
-        recognition.start();
-        setListening(true);
-        setStatus(`Listening to ${name}…`);
-        return;
-      } catch {
-        recognitionRef.current = null;
-      }
-    }
-    await startRecorderFallback();
   };
 
   const speakNaturally = async (text: string) => {
@@ -128,7 +70,7 @@ export function BuddyLiveChatLite() {
         ? await runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", [reference, "", text, "English", true, "1.7B"], setStatus)
         : await runGradio(FREE_SPACE_IDS.voicePreset, "/generate_custom_voice", [text, "English", localStorage.getItem("lrbgs-buddy-voice-preset") || "Ryan", "Natural conversational delivery with gentle pauses, varied pacing and relaxed breath between phrases.", "1.7B"], setStatus);
       const url = outputUrl(result);
-      if (!url) throw new Error("TTS returned no audio.");
+      if (!url) throw new Error("No speech audio returned");
       if (!audioRef.current) audioRef.current = new Audio();
       audioRef.current.pause();
       audioRef.current.src = url;
@@ -136,7 +78,7 @@ export function BuddyLiveChatLite() {
       audioRef.current.onerror = () => { speakingRef.current = false; void startListening(); };
       await audioRef.current.play();
       return;
-    } catch (error) { console.warn("Natural Buddy TTS unavailable; using device speech", error); }
+    } catch (error) { console.warn("Buddy natural TTS unavailable", error); }
     if (!window.speechSynthesis) { speakingRef.current = false; void startListening(); return; }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -165,13 +107,10 @@ export function BuddyLiveChatLite() {
         brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: "wasm", dtype: "q4" });
       }
       const brain = brainRef.current as (messages: Message[], options: Record<string, unknown>) => Promise<unknown>;
-      const result = await brain([
-        { role: "assistant", content: `You are Buddy inside Little Red's Big Studio. Address this user as ${name}. Never call all users Red. Be concise, warm, practical and honest.` },
-        ...next,
-      ], { max_new_tokens: 180, temperature: 0.7, do_sample: true, return_full_text: false });
+      const result = await brain(next, { max_new_tokens: 180, temperature: 0.7, do_sample: true, return_full_text: false });
       reply = extract(result).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-    } catch (error) { console.warn("Buddy local brain unavailable; deterministic response used", error); }
-    if (!reply) reply = fallback(text, name);
+    } catch (error) { console.warn("Buddy local brain unavailable", error); }
+    if (!reply) reply = fallback(text);
     setMessages([...next, { role: "assistant", content: reply }]);
     busyRef.current = false;
     setBusy(false);
@@ -184,7 +123,11 @@ export function BuddyLiveChatLite() {
       const result = await runGradio(FREE_SPACE_IDS.speechToText, "/predict", { audio: blob }, setStatus);
       const text = extract(result);
       if (text) await send(text, true); else void startListening();
-    } catch (error) { console.warn("Speech-to-text failed", error); setStatus("I didn't catch that. Listening again…"); void startListening(); }
+    } catch (error) {
+      console.warn("Speech-to-text failed", error);
+      setStatus("I didn't catch that. Listening again…");
+      void startListening();
+    }
   };
 
   const startRecorderFallback = async () => {
@@ -200,8 +143,48 @@ export function BuddyLiveChatLite() {
     recorderRef.current = recorder;
     recorder.start();
     setListening(true);
-    setStatus(`Listening to ${name}…`);
+    setStatus("Listening…");
     timerRef.current = window.setTimeout(() => { if (recorderRef.current === recorder && recorder.state === "recording") recorder.stop(); }, RECORD_WINDOW_MS);
+  };
+
+  const startListening = async () => {
+    if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
+    const speechWindow = window as SpeechWindow;
+    const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (Constructor) {
+      const recognition = new Constructor();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = navigator.language || "en-US";
+      recognition.onresult = (event) => {
+        let finalText = "";
+        for (let index = 0; index < event.results.length; index += 1) {
+          const result = event.results.item(index);
+          if (result.isFinal) finalText += result[0].transcript;
+        }
+        if (finalText.trim()) void send(finalText, true);
+      };
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        setListening(false);
+        if (liveRef.current && !busyRef.current && !speakingRef.current) window.setTimeout(() => void startListening(), 150);
+      };
+      recognition.onerror = () => {
+        recognitionRef.current = null;
+        setListening(false);
+        if (liveRef.current && !busyRef.current && !speakingRef.current) void startRecorderFallback();
+      };
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setListening(true);
+        setStatus("Listening…");
+        return;
+      } catch {
+        recognitionRef.current = null;
+      }
+    }
+    await startRecorderFallback();
   };
 
   const stopAll = () => {
@@ -220,11 +203,20 @@ export function BuddyLiveChatLite() {
   };
 
   const toggle = () => {
-    if (liveRef.current) { stopAll(); setLive(false); setStatus("Buddy is ready."); return; }
+    if (liveRef.current) {
+      stopAll();
+      setLive(false);
+      setStatus("Buddy is ready.");
+      return;
+    }
     liveRef.current = true;
     setLive(true);
     setStatus("Starting Live Conversation…");
-    void startListening().catch(() => { liveRef.current = false; setLive(false); setStatus("Microphone access is required for Live Conversation."); });
+    void startListening().catch(() => {
+      liveRef.current = false;
+      setLive(false);
+      setStatus("Microphone access is required for Live Conversation.");
+    });
   };
 
   useEffect(() => {
@@ -238,20 +230,20 @@ export function BuddyLiveChatLite() {
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(messages.slice(-30))); }, [messages]);
 
   return (
-    <Panel eyebrow="BUDDY • LIVE" title={`Talk to Buddy, ${name}`} icon={<Sparkles className="size-5" />} defaultOpen>
+    <Panel eyebrow="BUDDY • LIVE" title="Talk to Buddy" icon={<Sparkles className="size-5" />} defaultOpen>
       <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground" aria-live="polite">{status}</div>
       <div className="flex flex-wrap gap-2">
         <StudioButton onClick={toggle} aria-pressed={live}><Mic className="size-4" />{live ? "Live Conversation On" : "Start Live Conversation"}</StudioButton>
         <button type="button" onClick={() => { setMuted((current) => !current); if (!muted) { audioRef.current?.pause(); window.speechSynthesis?.cancel(); } }} className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold">{muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}{muted ? "Muted" : "Sound On"}</button>
       </div>
       <div className="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-border bg-background/35 p-3">
-        {!messages.length && <p className="text-sm text-muted-foreground">“Hi {name}. What are we making?”</p>}
+        {!messages.length && <p className="text-sm text-muted-foreground">“Hi! I'm Buddy. What are we making?”</p>}
         {messages.map((message, index) => <div key={`${index}-${message.role}`} className={message.role === "user" ? "ml-auto max-w-[88%] rounded-xl bg-primary px-3 py-2 text-sm text-primary-foreground" : "max-w-[92%] rounded-xl border border-border bg-background/60 px-3 py-2 text-sm"}>{message.content}</div>)}
         {listening && <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">Listening…</div>}
         {busy && <div className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />Buddy is thinking…</div>}
       </div>
       <div className="flex gap-2">
-        <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void send(); }} disabled={busy} placeholder={`Talk to Buddy, ${name}…`} className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
+        <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void send(); }} disabled={busy} placeholder="Talk to Buddy…" className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
         <StudioButton onClick={() => void send()} disabled={busy || !input.trim()}><Send className="size-4" /></StudioButton>
       </div>
     </Panel>

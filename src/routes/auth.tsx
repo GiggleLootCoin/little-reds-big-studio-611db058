@@ -13,7 +13,7 @@ function AuthPage() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     createLocalUser(name || "Little Red", email || "local@studio");
-    window.location.replace("/");
+    window.location.replace(import.meta.env.BASE_URL);
   };
   return (
     <>
@@ -47,7 +47,7 @@ function AuthPage() {
             </StudioButton>
           </form>
         </section>
-        <a href="/" className="text-center text-xs text-muted-foreground underline">
+        <a href="./" className="text-center text-xs text-muted-foreground underline">
           Back to the studio
         </a>
       </main>

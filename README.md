@@ -6,8 +6,8 @@ The Studio is designed around one simple experience: bring in your idea, music, 
 
 ## Production
 
-- **Source:** this private GitHub repository
-- **Hosting:** provider-neutral static web app; GitHub Pages is the intended zero-cost deployment path when enabled
+- **Source:** this public GitHub repository
+- **Hosting:** provider-neutral static web app; GitHub Pages may be used as a zero-cost host when its Pages configuration matches the provider-neutral root asset setup
 - **Cost target:** $0 / no paid hosting required
 - **AI policy:** no mandatory paid AI API, API key, provider account, or hosted AI service
 - **Storage:** browser-first project storage where supported
@@ -65,4 +65,10 @@ Production build:
 npm run build
 ```
 
-Deployment is intentionally provider-neutral. See `docs/DEPLOYMENT.md` for the current policy. GitHub Actions validates the main branch with dependency installation, TypeScript checking, formatting, linting and a production build.
+Full local verification:
+
+```sh
+npm run check
+```
+
+Deployment is intentionally provider-neutral. See `docs/DEPLOYMENT.md` for the current policy. GitHub Actions validates pull requests and the main branch with dependency installation, TypeScript checking, formatting, linting and a production build.

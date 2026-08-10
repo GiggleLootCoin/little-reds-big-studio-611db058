@@ -17,3 +17,5 @@ function VoiceLab() {
     </main>
   );
 }
+
+// Mobile-first Buddy voice workspace.

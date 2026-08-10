@@ -43,7 +43,7 @@ export function BuddyLiveChat() {
     const dynamicImport = new Function("url", "return import(url)") as (
       url: string,
     ) => Promise<TransformersModule>;
-    const lib = await dynamicImport("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1");
+    const lib = await dynamicImport("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0");
     const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
     const device = hasGpu ? "webgpu" : "wasm";
     const generator = await lib.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", {
@@ -102,7 +102,7 @@ export function BuddyLiveChat() {
 
   return (
     <Panel
-      eyebrow="Buddy — unlimited local chat"
+      eyebrow="Buddy — local chat"
       title="Talk to Buddy"
       icon={<Sparkles className="size-5" />}
       defaultOpen
@@ -149,8 +149,7 @@ export function BuddyLiveChat() {
         </StudioButton>
       </div>
       <p className="text-[0.65rem] text-muted-foreground">
-        No API key. No paid model. No message quota. Qwen3 loads once into the browser; inference
-        stays on-device.
+        No API key. No paid model. The local Qwen3 model runs in your browser; actual speed and memory limits depend on the device.
       </p>
     </Panel>
   );

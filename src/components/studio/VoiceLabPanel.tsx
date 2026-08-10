@@ -41,7 +41,9 @@ export function VoiceLabPanel() {
       if (!url) throw new Error("The voice engine returned no audio.");
       setAudioUrl(url);
       localStorage.setItem("lrbgs-buddy-voice-preset", voice);
-      setStatus("Voice preview ready. This voice is saved as Buddy's preferred preset on this device.");
+      setStatus(
+        "Voice preview ready. This voice is saved as Buddy's preferred preset on this device.",
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Voice generation failed.");
     } finally {
@@ -58,11 +60,12 @@ export function VoiceLabPanel() {
     setAudioUrl(null);
     setStatus("Finding the best free cloning engine…");
     try {
-      const result = await runGradio(
-        FREE_SPACE_IDS.voiceClone,
-        "/generate_voice_clone",
-        [freeFile(reference), "", text, "English"],
-      );
+      const result = await runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", [
+        freeFile(reference),
+        "",
+        text,
+        "English",
+      ]);
       const url = outputUrl(result);
       if (!url) throw new Error("The cloning engine returned no audio.");
       setAudioUrl(url);
@@ -105,7 +108,9 @@ export function VoiceLabPanel() {
         placeholder="What should Buddy say?"
       />
       <label className="block rounded-xl border border-dashed border-border bg-background/30 p-3 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Clone a voice you own or have permission to use</span>
+        <span className="font-semibold text-foreground">
+          Clone a voice you own or have permission to use
+        </span>
         <input
           className="mt-2 block w-full text-xs"
           type="file"
@@ -129,7 +134,8 @@ export function VoiceLabPanel() {
         {status}
       </p>
       <Note>
-        Voice selection is stored locally. Cloning is intended only for voices you own or have permission to use.
+        Voice selection is stored locally. Cloning is intended only for voices you own or have
+        permission to use.
       </Note>
     </Panel>
   );

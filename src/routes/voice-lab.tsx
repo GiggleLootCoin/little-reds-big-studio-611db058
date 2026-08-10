@@ -9,7 +9,9 @@ function VoiceLab() {
   return (
     <main className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-3xl space-y-4">
-        <a href="/" className="text-sm text-primary underline">← Back to Little Red's Big Studio</a>
+        <a href="/" className="text-sm text-primary underline">
+          ← Back to Little Red's Big Studio
+        </a>
         <VoiceLabPanel />
       </div>
     </main>

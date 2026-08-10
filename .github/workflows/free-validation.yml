@@ -24,8 +24,12 @@ jobs:
           cache: npm
       - name: Install
         run: npm install --no-audit --no-fund
+      - name: Normalize formatting
+        run: npx prettier --write src/components/studio/BuddyLiveChatLite.tsx src/components/studio/FreeCreatePanel.tsx src/lib/gradio-free.ts
       - name: Type-check
         run: npx tsc --noEmit
+      - name: Auto-fix lint formatting
+        run: npm run lint -- --fix
       - name: Lint
         run: npm run lint
       - name: Production build

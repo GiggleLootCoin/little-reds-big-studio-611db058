@@ -1,36 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  LoaderCircle,
-  Mic,
-  Send,
-  Sparkles,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { LoaderCircle, Mic, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { runGradio, FREE_SPACE_IDS, outputUrl } from "@/lib/gradio-free";
 import { loadStoredBuddyVoice } from "./VoiceLabPanel";
 import { useAuth } from "@/hooks/use-auth";
 import { Panel, StudioButton } from "./ui";
 
 type Message = { role: "user" | "assistant"; content: string };
+type RecognitionEvent = { results: { length: number; item(index: number): { isFinal: boolean; 0: { transcript: string } } } };
+type RecognitionLike = { continuous: boolean; interimResults: boolean; lang: string; start: () => void; stop: () => void; abort: () => void; onresult: ((event: RecognitionEvent) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
+type RecognitionConstructor = new () => RecognitionLike;
+type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
-const KEY = "lrbgs-buddy-chat-v9";
-const WINDOW_MS = 6000;
+const KEY = "lrbgs-buddy-chat-v10";
+const RECORD_WINDOW_MS = 5000;
 
 function extract(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (Array.isArray(value)) return extract(value.at(-1));
   if (!value || typeof value !== "object") return "";
-
   const record = value as Record<string, unknown>;
-  for (const key of [
-    "generated_text",
-    "text",
-    "transcription",
-    "value",
-    "content",
-    "data",
-  ]) {
+  for (const key of ["generated_text", "text", "transcription", "value", "content", "data"]) {
     const found = extract(record[key]);
     if (found) return found;
   }
@@ -39,21 +28,11 @@ function extract(value: unknown): string {
 
 function fallback(text: string, name: string) {
   const query = text.toLowerCase();
-  if (/^(hi|hello|hey)\b/.test(query)) {
-    return `Hey, ${name}. I'm Buddy. What are we making?`;
-  }
-  if (query.includes("song") || query.includes("music")) {
-    return "Absolutely. Give me the idea, mood or lyrics and I'll handle the complicated bits.";
-  }
-  if (query.includes("lyric")) {
-    return "Give me the feeling, story or subject and I'll shape it into a complete song structure.";
-  }
-  if (query.includes("video")) {
-    return "Let's make it visual. Tell me the song, image or idea and I'll choose the best available route.";
-  }
-  if (query.includes("voice")) {
-    return "I can work with a voice you own or have permission to use. I'll handle the technical conversion behind the scenes.";
-  }
+  if (/^(hi|hello|hey)\b/.test(query)) return `Hey, ${name}. I'm Buddy. What are we making?`;
+  if (query.includes("song") || query.includes("music")) return "Absolutely. Give me the idea, mood or lyrics and I'll handle the complicated bits.";
+  if (query.includes("lyric")) return "Give me the feeling, story or subject and I'll shape it into a complete song structure.";
+  if (query.includes("video")) return "Let's make it visual. Tell me the song, image or idea and I'll choose the best available route.";
+  if (query.includes("voice")) return "I can work with a voice you own or have permission to use. I'll handle the technical conversion behind the scenes.";
   return `I'm here, ${name}. Tell me what you want to make, change or figure out.`;
 }
 
@@ -69,20 +48,25 @@ export function BuddyLiveChatLite() {
   const [status, setStatus] = useState("Buddy is ready.");
   const liveRef = useRef(false);
   const busyRef = useRef(false);
+  const speakingRef = useRef(false);
+  const recognitionRef = useRef<RecognitionLike | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
-  const speakingRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const brainRef = useRef<unknown>(null);
+
+  const stopRecognition = () => {
+    try { recognitionRef.current?.abort(); } catch { /* browser may already be stopped */ }
+    recognitionRef.current = null;
+  };
 
   const stop = () => {
     liveRef.current = false;
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = null;
-    if (recorderRef.current?.state !== "inactive") {
-      recorderRef.current?.stop();
-    }
+    stopRecognition();
+    if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
     recorderRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
@@ -92,382 +76,183 @@ export function BuddyLiveChatLite() {
     setListening(false);
   };
 
-  const schedule = () => {
-    if (!liveRef.current || busyRef.current || speakingRef.current) return;
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null;
-      void start();
-    }, 250);
-  };
-
-  const resumeListening = () => {
-    if (liveRef.current) void start();
-    else setStatus("Buddy is ready.");
+  const startListening = async () => {
+    if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
+    const speechWindow = window as SpeechWindow;
+    const Constructor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (Constructor) {
+      const recognition = new Constructor();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = navigator.language || "en-US";
+      recognition.onresult = (event) => {
+        let finalText = "";
+        for (let index = 0; index < event.results.length; index += 1) {
+          const result = event.results.item(index);
+          if (result.isFinal) finalText += result[0].transcript;
+        }
+        if (finalText.trim()) void send(finalText, true);
+      };
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        setListening(false);
+        if (liveRef.current && !busyRef.current && !speakingRef.current) window.setTimeout(() => void startListening(), 120);
+      };
+      recognition.onerror = () => {
+        recognitionRef.current = null;
+        setListening(false);
+        if (liveRef.current && !busyRef.current && !speakingRef.current) void startRecorderFallback();
+      };
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setListening(true);
+        setStatus(`Listening to ${name}…`);
+        return;
+      } catch {
+        recognitionRef.current = null;
+      }
+    }
+    await startRecorderFallback();
   };
 
   const speakNaturally = async (text: string) => {
-    if (muted) {
-      speakingRef.current = false;
-      resumeListening();
-      return;
-    }
-
+    if (muted) { speakingRef.current = false; void startListening(); return; }
     speakingRef.current = true;
+    stopRecognition();
     setStatus("Buddy is speaking…");
-
     try {
       const reference = await loadStoredBuddyVoice();
-      const cloneMode =
-        localStorage.getItem("lrbgs-buddy-voice-mode") === "clone" && reference;
+      const cloneMode = localStorage.getItem("lrbgs-buddy-voice-mode") === "clone" && reference;
       const result = cloneMode
-        ? await runGradio(
-            FREE_SPACE_IDS.voiceClone,
-            "/generate_voice_clone",
-            [reference, "", text, "English", true, "1.7B"],
-            setStatus,
-          )
-        : await runGradio(
-            FREE_SPACE_IDS.voicePreset,
-            "/generate_custom_voice",
-            [
-              text,
-              "English",
-              localStorage.getItem("lrbgs-buddy-voice-preset") || "Ryan",
-              "Natural conversational delivery with gentle pauses, varied pacing and relaxed breath between phrases.",
-              "1.7B",
-            ],
-            setStatus,
-          );
+        ? await runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", [reference, "", text, "English", true, "1.7B"], setStatus)
+        : await runGradio(FREE_SPACE_IDS.voicePreset, "/generate_custom_voice", [text, "English", localStorage.getItem("lrbgs-buddy-voice-preset") || "Ryan", "Natural conversational delivery with gentle pauses, varied pacing and relaxed breath between phrases.", "1.7B"], setStatus);
       const url = outputUrl(result);
       if (!url) throw new Error("TTS returned no audio.");
       if (!audioRef.current) audioRef.current = new Audio();
       audioRef.current.pause();
       audioRef.current.src = url;
-      audioRef.current.onended = () => {
-        speakingRef.current = false;
-        resumeListening();
-      };
-      audioRef.current.onerror = () => {
-        speakingRef.current = false;
-        resumeListening();
-      };
+      audioRef.current.onended = () => { speakingRef.current = false; void startListening(); };
+      audioRef.current.onerror = () => { speakingRef.current = false; void startListening(); };
       await audioRef.current.play();
       return;
-    } catch (error) {
-      console.warn("Natural Buddy TTS unavailable; using device voice", error);
-    }
-
-    if (!window.speechSynthesis) {
-      speakingRef.current = false;
-      resumeListening();
-      return;
-    }
-
+    } catch (error) { console.warn("Natural Buddy TTS unavailable; using device speech", error); }
+    if (!window.speechSynthesis) { speakingRef.current = false; void startListening(); return; }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.98;
+    utterance.rate = 0.96;
     utterance.pitch = 1;
-    utterance.onend = () => {
-      speakingRef.current = false;
-      resumeListening();
-    };
-    utterance.onerror = () => {
-      speakingRef.current = false;
-      resumeListening();
-    };
+    utterance.onend = () => { speakingRef.current = false; void startListening(); };
+    utterance.onerror = () => { speakingRef.current = false; void startListening(); };
     window.speechSynthesis.speak(utterance);
   };
 
   const send = async (forced?: string, voice = false) => {
     const text = (forced ?? input).trim();
     if (!text || busyRef.current) return;
-
-    const next = [
-      ...messages,
-      { role: "user" as const, content: text },
-    ].slice(-16);
+    stopRecognition();
+    const next = [...messages, { role: "user" as const, content: text }].slice(-16);
     setMessages(next);
     setInput("");
     busyRef.current = true;
     setBusy(true);
     setStatus("Buddy is thinking…");
-
     let reply = "";
     try {
       if (!brainRef.current) {
-        const load = new Function(
-          "url",
-          "return import(url)",
-        ) as (url: string) => Promise<any>;
-        const mod = await load(
-          "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm",
-        );
-        brainRef.current = await mod.pipeline(
-          "text-generation",
-          "onnx-community/Qwen3-0.6B-ONNX",
-          { device: "wasm", dtype: "q4" },
-        );
+        const load = new Function("url", "return import(url)") as (url: string) => Promise<{ pipeline: (task: string, model: string, options: Record<string, string>) => Promise<unknown> }>;
+        const mod = await load("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm");
+        brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: "wasm", dtype: "q4" });
       }
-
-      const brain = brainRef.current as any;
-      const result = await brain(
-        [
-          {
-            role: "system",
-            content: `You are Buddy inside Little Red's Big Studio. Address this user as ${name}. Never call all users Red. Be concise, warm, practical and honest.`,
-          },
-          ...next,
-        ],
-        {
-          max_new_tokens: 180,
-          temperature: 0.7,
-          do_sample: true,
-          return_full_text: false,
-        },
-      );
-      reply = extract(result)
-        .replace(/<think>[\s\S]*?<\/think>/gi, "")
-        .trim();
-    } catch (error) {
-      console.warn("Buddy brain unavailable; fallback used", error);
-    }
-
+      const brain = brainRef.current as (messages: Message[], options: Record<string, unknown>) => Promise<unknown>;
+      const result = await brain([
+        { role: "assistant", content: `You are Buddy inside Little Red's Big Studio. Address this user as ${name}. Never call all users Red. Be concise, warm, practical and honest.` },
+        ...next,
+      ], { max_new_tokens: 180, temperature: 0.7, do_sample: true, return_full_text: false });
+      reply = extract(result).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    } catch (error) { console.warn("Buddy local brain unavailable; deterministic response used", error); }
     if (!reply) reply = fallback(text, name);
     setMessages([...next, { role: "assistant", content: reply }]);
     busyRef.current = false;
     setBusy(false);
-
-    if (voice || liveRef.current) void speakNaturally(reply);
-    else setStatus("Buddy is ready.");
+    if (voice || liveRef.current) void speakNaturally(reply); else setStatus("Buddy is ready.");
   };
 
-  const transcribe = async (blob: Blob) => {
+  const transcribeRecorded = async (blob: Blob) => {
     setStatus("Buddy is understanding you…");
     try {
-      const result = await runGradio(
-        FREE_SPACE_IDS.speechToText,
-        "/predict",
-        { audio: blob },
-        setStatus,
-      );
+      const result = await runGradio(FREE_SPACE_IDS.speechToText, "/predict", { audio: blob }, setStatus);
       const text = extract(result);
-      if (text) await send(text, true);
-      else if (liveRef.current) setStatus("I didn't catch that. Listening…");
-      else setStatus("Buddy is ready.");
-    } catch (error) {
-      console.warn("Speech-to-text failed", error);
-      if (liveRef.current) schedule();
-    }
+      if (text) await send(text, true); else void startListening();
+    } catch (error) { console.warn("Speech-to-text failed", error); setStatus("I didn't catch that. Listening again…"); void startListening(); }
   };
 
-  const start = async () => {
-    if (
-      !liveRef.current ||
-      busyRef.current ||
-      speakingRef.current ||
-      recorderRef.current
-    ) {
-      return;
-    }
+  const startRecorderFallback = async () => {
+    if (!liveRef.current || busyRef.current || speakingRef.current || recorderRef.current) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Microphone capture unavailable");
+    if (!streamRef.current) streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((candidate) => MediaRecorder.isTypeSupported(candidate));
+    const recorder = type ? new MediaRecorder(streamRef.current, { mimeType: type }) : new MediaRecorder(streamRef.current);
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+    recorder.onstop = () => { recorderRef.current = null; setListening(false); if (chunks.length) void transcribeRecorded(new Blob(chunks, { type: recorder.mimeType || "audio/webm" })); };
+    recorder.onerror = () => { recorderRef.current = null; setListening(false); void startListening(); };
+    recorderRef.current = recorder;
+    recorder.start();
+    setListening(true);
+    setStatus(`Listening to ${name}…`);
+    timerRef.current = window.setTimeout(() => { if (recorderRef.current === recorder && recorder.state === "recording") recorder.stop(); }, RECORD_WINDOW_MS);
+  };
 
-    try {
-      if (
-        !navigator.mediaDevices?.getUserMedia ||
-        typeof MediaRecorder === "undefined"
-      ) {
-        throw new Error("Microphone unavailable");
-      }
-
-      if (!streamRef.current) {
-        streamRef.current = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-        });
-      }
-
-      const type = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/mp4",
-      ].find((candidate) => MediaRecorder.isTypeSupported(candidate));
-      const recorder = type
-        ? new MediaRecorder(streamRef.current, { mimeType: type })
-        : new MediaRecorder(streamRef.current);
-      const chunks: BlobPart[] = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size) chunks.push(event.data);
-      };
-      recorder.onstop = () => {
-        recorderRef.current = null;
-        setListening(false);
-        if (chunks.length) {
-          void transcribe(
-            new Blob(chunks, { type: recorder.mimeType || "audio/webm" }),
-          );
-        }
-      };
-      recorder.onerror = () => {
-        recorderRef.current = null;
-        setListening(false);
-        if (liveRef.current) schedule();
-      };
-
-      recorderRef.current = recorder;
-      recorder.start();
-      setListening(true);
-      setStatus(`Listening to ${name}… Speak naturally. Tap again to stop.`);
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(() => {
-        if (
-          recorderRef.current === recorder &&
-          recorder.state === "recording"
-        ) {
-          recorder.stop();
-        }
-      }, WINDOW_MS);
-    } catch (error) {
-      console.warn("Microphone failed", error);
-      liveRef.current = false;
-      setLive(false);
-      setStatus("Allow microphone access in your browser, then try again.");
-    }
+  const stopAll = () => {
+    liveRef.current = false;
+    stopRecognition();
+    if (recorderRef.current?.state !== "inactive") recorderRef.current?.stop();
+    recorderRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = null;
+    audioRef.current?.pause();
+    window.speechSynthesis?.cancel();
+    speakingRef.current = false;
+    setListening(false);
   };
 
   const toggle = () => {
-    if (liveRef.current) {
-      stop();
-      setLive(false);
-      setStatus("Buddy is ready.");
-      return;
-    }
-
+    if (liveRef.current) { stopAll(); setLive(false); setStatus("Buddy is ready."); return; }
     liveRef.current = true;
     setLive(true);
     setStatus("Starting Live Conversation…");
-    void start();
+    void startListening().catch(() => { liveRef.current = false; setLive(false); setStatus("Microphone access is required for Live Conversation."); });
   };
 
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || "[]") as unknown;
-      if (Array.isArray(saved)) {
-        setMessages(
-          saved
-            .filter(
-              (message): message is Message =>
-                Boolean(
-                  message &&
-                    typeof message === "object" &&
-                    (message as Message).role &&
-                    typeof (message as Message).content === "string",
-                ),
-            )
-            .slice(-30),
-        );
-      }
-    } catch {
-      setMessages([]);
-    }
-
-    return () => stop();
+      if (Array.isArray(saved)) setMessages(saved.filter((message): message is Message => Boolean(message && typeof message === "object" && (message as Message).role && typeof (message as Message).content === "string")).slice(-30));
+    } catch { setMessages([]); }
+    return () => stopAll();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(messages.slice(-30)));
-  }, [messages]);
+  useEffect(() => { localStorage.setItem(KEY, JSON.stringify(messages.slice(-30))); }, [messages]);
 
   return (
-    <Panel
-      eyebrow="BUDDY • LIVE"
-      title={`Talk to Buddy, ${name}`}
-      icon={<Sparkles className="size-5" />}
-      defaultOpen
-    >
-      <div
-        className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground"
-        aria-live="polite"
-      >
-        {status}
-      </div>
-
+    <Panel eyebrow="BUDDY • LIVE" title={`Talk to Buddy, ${name}`} icon={<Sparkles className="size-5" />} defaultOpen>
+      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground" aria-live="polite">{status}</div>
       <div className="flex flex-wrap gap-2">
-        <StudioButton onClick={toggle} aria-pressed={live}>
-          <Mic className="size-4" />
-          {live ? "Live Conversation On" : "Start Live Conversation"}
-        </StudioButton>
-        <button
-          type="button"
-          onClick={() => {
-            setMuted((current) => !current);
-            if (!muted) {
-              audioRef.current?.pause();
-              window.speechSynthesis?.cancel();
-            }
-          }}
-          className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold"
-        >
-          {muted ? (
-            <VolumeX className="mr-2 inline size-4" />
-          ) : (
-            <Volume2 className="mr-2 inline size-4" />
-          )}
-          {muted ? "Muted" : "Sound On"}
-        </button>
+        <StudioButton onClick={toggle} aria-pressed={live}><Mic className="size-4" />{live ? "Live Conversation On" : "Start Live Conversation"}</StudioButton>
+        <button type="button" onClick={() => { setMuted((current) => !current); if (!muted) { audioRef.current?.pause(); window.speechSynthesis?.cancel(); } }} className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold">{muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}{muted ? "Muted" : "Sound On"}</button>
       </div>
-
       <div className="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-border bg-background/35 p-3">
-        {!messages.length && (
-          <p className="text-sm text-muted-foreground">
-            “Hi {name}. What are we making?”
-          </p>
-        )}
-        {messages.map((message, index) => (
-          <div
-            key={`${index}-${message.role}`}
-            className={
-              message.role === "user"
-                ? "ml-auto max-w-[88%] rounded-xl bg-primary px-3 py-2 text-sm text-primary-foreground"
-                : "max-w-[92%] rounded-xl border border-border bg-background/60 px-3 py-2 text-sm"
-            }
-          >
-            {message.content}
-          </div>
-        ))}
-        {listening && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
-            Listening…
-          </div>
-        )}
-        {busy && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <LoaderCircle className="size-4 animate-spin" />
-            Buddy is thinking…
-          </div>
-        )}
+        {!messages.length && <p className="text-sm text-muted-foreground">“Hi {name}. What are we making?”</p>}
+        {messages.map((message, index) => <div key={`${index}-${message.role}`} className={message.role === "user" ? "ml-auto max-w-[88%] rounded-xl bg-primary px-3 py-2 text-sm text-primary-foreground" : "max-w-[92%] rounded-xl border border-border bg-background/60 px-3 py-2 text-sm"}>{message.content}</div>)}
+        {listening && <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">Listening…</div>}
+        {busy && <div className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />Buddy is thinking…</div>}
       </div>
-
       <div className="flex gap-2">
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") void send();
-          }}
-          disabled={busy}
-          placeholder={`Talk to Buddy, ${name}…`}
-          className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
-        <StudioButton
-          onClick={() => void send()}
-          disabled={busy || !input.trim()}
-        >
-          <Send className="size-4" />
-        </StudioButton>
+        <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void send(); }} disabled={busy} placeholder={`Talk to Buddy, ${name}…`} className="min-w-0 flex-1 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
+        <StudioButton onClick={() => void send()} disabled={busy || !input.trim()}><Send className="size-4" /></StudioButton>
       </div>
     </Panel>
   );

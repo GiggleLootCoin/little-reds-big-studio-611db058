@@ -6,8 +6,7 @@ import { Field } from "@/components/studio/AiOutput";
 import { createLocalUser, useAuth } from "@/hooks/use-auth";
 import { authenticateWithPasskey, registerPasskey, supportsPasskeys } from "@/lib/auth/passkey";
 
-const LOGO_URL =
-  "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
+const LOGO_URL = "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 function AuthPage() {
@@ -36,9 +35,7 @@ function AuthPage() {
       }
       window.location.replace(import.meta.env.BASE_URL);
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Biometric sign-in was cancelled or unavailable.",
-      );
+      setMessage(error instanceof Error ? error.message : "Biometric sign-in was cancelled or unavailable.");
     } finally {
       setBusy(false);
     }
@@ -56,9 +53,7 @@ function AuthPage() {
       await registerPasskey(displayName);
       window.location.replace(import.meta.env.BASE_URL);
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Passkey setup was cancelled or unavailable.",
-      );
+      setMessage(error instanceof Error ? error.message : "Passkey setup was cancelled or unavailable.");
     } finally {
       setBusy(false);
     }
@@ -73,58 +68,28 @@ function AuthPage() {
             {user ? `Welcome back, ${user.user_metadata.display_name}` : "Enter the Studio"}
           </h1>
           <p className="my-3 text-center text-xs text-muted-foreground">
-            Use your name and email, then optionally protect this device with a fingerprint, face,
-            or device passkey.
+            Use your name and email, then optionally protect this device with a fingerprint, face, or device passkey.
           </p>
           {!user && (
             <form onSubmit={submit} className="space-y-3">
-              <Field
-                label="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                autoComplete="name"
-              />
-              <Field
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-              <StudioButton className="w-full" type="submit">
-                Create / Enter Studio
-              </StudioButton>
+              <Field label="Your name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" />
+              <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
+              <StudioButton className="w-full" type="submit">Create / Enter Studio</StudioButton>
               {supportsPasskeys() && (
-                <StudioButton
-                  className="w-full"
-                  type="button"
-                  variant="outline"
-                  onClick={createPasskey}
-                  disabled={busy}
-                >
+                <StudioButton className="w-full" type="button" variant="ghost" onClick={createPasskey} disabled={busy}>
                   {busy ? "Setting up…" : "Create with fingerprint / passkey"}
                 </StudioButton>
               )}
             </form>
           )}
           {user && supportsPasskeys() && (
-            <StudioButton
-              className="w-full"
-              type="button"
-              variant="outline"
-              onClick={signInWithPasskey}
-              disabled={busy}
-            >
+            <StudioButton className="w-full" type="button" variant="ghost" onClick={signInWithPasskey} disabled={busy}>
               {busy ? "Checking…" : "Sign in with fingerprint / passkey"}
             </StudioButton>
           )}
           {message && <p className="mt-3 text-center text-xs text-destructive">{message}</p>}
         </section>
-        <a href="./" className="text-center text-xs text-muted-foreground underline">
-          Back to the studio
-        </a>
+        <a href="./" className="text-center text-xs text-muted-foreground underline">Back to the studio</a>
       </main>
     </>
   );

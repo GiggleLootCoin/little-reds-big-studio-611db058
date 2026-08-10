@@ -2,7 +2,7 @@ name: Free Open Validation
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   pull_request:
     branches: [main]
 
@@ -10,39 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  autoformat-main:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
-      - name: Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: npm
-      - name: Install
-        run: npm install --no-audit --no-fund
-      - name: Format source
-        run: npx prettier --write .
-      - name: Publish formatting branch
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .
-            git commit -m "chore: format source"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
-          fi
-
   validate:
-    needs: autoformat-main
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

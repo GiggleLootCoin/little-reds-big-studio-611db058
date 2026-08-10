@@ -27,7 +27,7 @@ export function FreeCreatePanel() {
   const image = runner("hf-z-image");
   const video = runner("hf-wan-s2v");
   const stems = runner("hf-demucs");
-  const chat = runner("bonsai-webgpu");
+  const chat = runner("qwen3-webgpu");
 
   useEffect(() => {
     setBrief(localStorage.getItem("lrbgs-song-brief") || "");
@@ -66,8 +66,8 @@ export function FreeCreatePanel() {
       defaultOpen
     >
       <p className="text-sm text-muted-foreground">
-        This is the honest free path: your Studio prepares the creative job, then opens the best
-        free/open engine directly. Nothing is pretending to run a paid API behind your back.
+        Your Studio prepares the creative job, then opens a free/open engine directly. Nothing here
+        pretends to run a paid API.
       </p>
       <textarea
         value={brief}
@@ -134,8 +134,8 @@ export function FreeCreatePanel() {
         />
         <EngineButton
           icon={MessageCircle}
-          title="Unlimited free chat"
-          note="WebGPU"
+          title="Free local chat"
+          note="Qwen3 WebGPU"
           onClick={() => void launch(chat.url, brief)}
         />
         <EngineButton

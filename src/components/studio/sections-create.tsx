@@ -9,7 +9,7 @@ const runner = (id: string) => FREE_RUNNERS.find((r) => r.id === id)!;
 export function QRangePanel() {
   const studio = useStudio();
   const q = studio.qrange;
-  const [applied, setApplied] = useState(false);
+  const [saved, setSaved] = useState(false);
   const update = (patch: Partial<typeof q>) => setStudio({ qrange: { ...q, ...patch } });
   return (
     <Panel
@@ -19,7 +19,8 @@ export function QRangePanel() {
       defaultOpen
     >
       <p className="text-sm text-muted-foreground">
-        Lightweight session controls stored locally. No account or API key required.
+        Local session controls. They are saved as project settings; they do not process audio until
+        a native/browser DSP engine is connected.
       </p>
       <StudioSlider label="Q range" value={q.range} onChange={(v) => update({ range: v })} />
       <StudioSlider
@@ -38,18 +39,19 @@ export function QRangePanel() {
         onChange={(v) => update({ ceiling: v })}
       />
       <div className="flex flex-wrap gap-2">
-        <Chip>Radio-ready</Chip>
-        <Chip>Local session</Chip>
+        <Chip>Local settings</Chip>
+        <Chip>Session-safe</Chip>
         <Chip>No API</Chip>
       </div>
       <StudioButton
         className="w-full"
         onClick={() => {
-          setApplied(true);
-          window.setTimeout(() => setApplied(false), 1600);
+          setStudio({ qrange: { ...q } });
+          setSaved(true);
+          window.setTimeout(() => setSaved(false), 1600);
         }}
       >
-        {applied ? "Applied ✔" : "Apply QRange"}
+        {saved ? "Saved locally ✔" : "Save QRange settings"}
       </StudioButton>
     </Panel>
   );
@@ -87,7 +89,8 @@ export function UploadPanel() {
         <UploadCloud className="mx-auto mb-2 size-8 text-primary" />
         <p className="font-display text-sm">Choose audio or reference imagery</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          The browser holds this session. No paid storage backend.
+          Files are available for this browser session. The project remembers filenames, not
+          temporary object URLs.
         </p>
         <input
           ref={inputRef}

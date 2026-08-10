@@ -20,7 +20,7 @@ const featured = [
   { id: "hf-z-image", icon: Image, label: "Make artwork", note: "Z Image Turbo" },
   { id: "hf-wan-s2v", icon: Film, label: "Make video", note: "Wan 2.2 S2V" },
   { id: "hf-demucs", icon: AudioWaveform, label: "Split stems", note: "Demucs" },
-  { id: "bonsai-webgpu", icon: MessageCircle, label: "Free AI chat", note: "Browser/WebGPU route" },
+  { id: "qwen3-webgpu", icon: MessageCircle, label: "Free local chat", note: "Qwen3 WebGPU" },
 ];
 
 export function FreeEngineDeck() {

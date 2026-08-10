@@ -26,11 +26,9 @@ import {
   SupportPanel,
 } from "@/components/studio/sections-community";
 
-const SITE_URL = "https://gigglelootcoin.github.io/little-reds-big-studio-611db058/";
 const TITLE = "Little Red's Big Studio — Free AI Music & Creator Studio";
 const DESCRIPTION =
   "Little Red's Big Studio: Android-first creative tools with Buddy, free/open AI routes, music, voice, artwork, video and project workflows.";
-const OG_IMAGE = `${SITE_URL}${logo.url}`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,14 +44,14 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: SITE_URL },
-      { property: "og:image", content: OG_IMAGE },
+      { property: "og:url", content: "/" },
+      { property: "og:image", content: logo.url },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
+      { name: "twitter:image", content: logo.url },
     ],
-    links: [{ rel: "canonical", href: SITE_URL }],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Studio,
 });

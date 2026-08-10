@@ -26,7 +26,11 @@ const routeCache = new Map<string, { ok: boolean; expires: number }>();
 const ROUTES: Record<string, RouteCandidate[]> = {
   music: [
     { space: "victor/ace-step-jam", endpoints: ["/create", "/predict"], priority: 120 },
-    { space: "ACE-Step/Ace-Step-v1.5", endpoints: ["/predict", "/generate_music", "/create"], priority: 115 },
+    {
+      space: "ACE-Step/Ace-Step-v1.5",
+      endpoints: ["/predict", "/generate_music", "/create"],
+      priority: 115,
+    },
     { space: "R-Kentaren/ace-step-jam", endpoints: ["/create", "/predict"], priority: 105 },
   ],
   image: [
@@ -36,15 +40,31 @@ const ROUTES: Record<string, RouteCandidate[]> = {
   ],
   video: [
     { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/predict", "/generate_video"], priority: 120 },
-    { space: "r3gm/Wan2.2-14B-Fast-Preview", endpoints: ["/generate_video", "/predict"], priority: 105 },
+    {
+      space: "r3gm/Wan2.2-14B-Fast-Preview",
+      endpoints: ["/generate_video", "/predict"],
+      priority: 105,
+    },
   ],
   voiceClone: [
     { space: "Qwen/Qwen3-TTS", endpoints: ["/generate_voice_clone"], priority: 120 },
-    { space: "multimodalart/higgs-audio-v3-tts", endpoints: ["/synthesize", "/generate"], priority: 105 },
+    {
+      space: "multimodalart/higgs-audio-v3-tts",
+      endpoints: ["/synthesize", "/generate"],
+      priority: 105,
+    },
   ],
   voiceSwap: [
-    { space: "Plachta/Seed-VC", endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"], priority: 120 },
-    { space: "sp2026/Seed-VC", endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"], priority: 105 },
+    {
+      space: "Plachta/Seed-VC",
+      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"],
+      priority: 120,
+    },
+    {
+      space: "sp2026/Seed-VC",
+      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"],
+      priority: 105,
+    },
   ],
 };
 
@@ -205,7 +225,9 @@ async function collect(
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("No free public generation route is currently available.");
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("No free public generation route is currently available.");
 }
 
 export async function runGradio(
@@ -216,8 +238,9 @@ export async function runGradio(
 ) {
   // `space` is retained for compatibility with existing callers. Logical IDs
   // use the live route table; unknown IDs still work as direct single-space calls.
-  const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space) ? space :
-    Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "";
+  const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
+    ? space
+    : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
   if (logicalId) return firstOutput(await collect(logicalId, inputs, onStatus));
 
   const client = await connectFreeSpace(space);
@@ -234,8 +257,9 @@ export async function runGradioAll(
   inputs: Record<string, unknown> | unknown[],
   onStatus?: (message: string) => void,
 ) {
-  const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space) ? space :
-    Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "";
+  const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
+    ? space
+    : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
   const latest = logicalId
     ? await collect(logicalId, inputs, onStatus)
     : await collectDirect(space, apiName, inputs);
@@ -247,7 +271,11 @@ export async function runGradioAll(
   return [firstOutput(latest)];
 }
 
-async function collectDirect(space: string, apiName: string, inputs: Record<string, unknown> | unknown[]) {
+async function collectDirect(
+  space: string,
+  apiName: string,
+  inputs: Record<string, unknown> | unknown[],
+) {
   const client = await connectFreeSpace(space);
   const job = client.submit(apiName, inputs);
   let latest: unknown = null;

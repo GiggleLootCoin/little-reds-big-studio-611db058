@@ -48,7 +48,8 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Ready on this device",
       runner: null,
       fallbacks: routes,
-      reason: "Buddy can handle this task locally and will use public free routes only when heavier generation is needed.",
+      reason:
+        "Buddy can handle this task locally and will use public free routes only when heavier generation is needed.",
       knowledgePolicy,
     };
   }
@@ -60,7 +61,8 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Buddy will choose the best available free engine",
       runner,
       fallbacks: routes.slice(1),
-      reason: "Buddy ranks free/open routes and keeps alternatives ready when a public engine is sleeping, busy, or unavailable.",
+      reason:
+        "Buddy ranks free/open routes and keeps alternatives ready when a public engine is sleeping, busy, or unavailable.",
       knowledgePolicy,
     };
   }

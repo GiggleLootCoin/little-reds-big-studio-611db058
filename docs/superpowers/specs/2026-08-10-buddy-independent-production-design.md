@@ -1,12 +1,15 @@
 # Buddy Independent Production Design
 
 ## Goal
+
 Make Buddy an independent, mobile-first creative runtime that remains useful when ChatGPT is unavailable while automatically preferring the strongest currently reachable free/open/public engine for each task.
 
 ## Architecture
+
 Buddy uses a local-first capability layer, a live public-engine router, and deterministic fallbacks. Local browser capabilities handle chat, speech I/O, persistence, and lightweight text generation when supported. Heavy creation routes use public Gradio/Hugging Face Spaces through the browser with no paid API key. Each route is health-checked and its Gradio API is inspected before use; failed or incompatible routes are skipped automatically.
 
 ## Requirements
+
 - ChatGPT/GPT is optional and opportunistic; Buddy must never depend on this conversation or ChatGPT quota.
 - Core operation requires no paid API key.
 - Prefer open-source/publicly accessible engines.
@@ -19,6 +22,7 @@ Buddy uses a local-first capability layer, a live public-engine router, and dete
 - Surface honest status when all free routes are unavailable.
 
 ## Task Routing
+
 - Lyrics/chat: browser WebGPU/wasm text model first, deterministic fallback second.
 - Song: ACE-Step 1.5 public Spaces, with additional compatible ACE-Step Spaces as fallbacks.
 - Image: Z Image Turbo and compatible public image Spaces.
@@ -28,10 +32,13 @@ Buddy uses a local-first capability layer, a live public-engine router, and dete
 - Browser audio: native Web Audio/Media APIs for recording and basic editing.
 
 ## Reliability
+
 The Gradio client is loaded from a current public package. A route is considered usable only after connection and API inspection. Endpoint names are discovered from `view_api()` when possible. Route failures are isolated, cached briefly, and followed by the next candidate. The UI exposes the actual result URL and never fabricates a successful output.
 
 ## Security and privacy
+
 No secrets are embedded in the client. Voice operations are restricted by copy and UI messaging to audio the user owns or has permission to transform. External public Spaces receive only files explicitly submitted by the user.
 
 ## Verification
+
 Production acceptance requires TypeScript, formatting, lint, production build, a successful GitHub Pages deployment, and live verification of each creator action's success/failure path. Public model availability is inherently variable; the router must therefore verify availability at runtime rather than treating a hard-coded provider as permanently healthy.

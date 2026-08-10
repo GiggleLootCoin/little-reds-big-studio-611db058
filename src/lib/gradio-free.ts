@@ -7,8 +7,9 @@ type GradioJob = AsyncIterable<GradioMessage>;
 type GradioClient = {
   submit: (apiName: string, inputs?: unknown) => GradioJob;
   predict?: (apiName: string, inputs?: unknown) => Promise<unknown>;
-  view_api?: (allEndpoints?: boolean) => Promise<unknown>;
+  view_api?: () => Promise<unknown>;
 };
+
 type RouteCandidate = { space: string; endpoints: string[]; priority: number };
 
 const CONNECT_TIMEOUT = 45_000;
@@ -19,34 +20,31 @@ const routeCache = new Map<string, { ok: boolean; expires: number }>();
 
 const ROUTES: Record<string, RouteCandidate[]> = {
   speechToText: [
-    { space: "hf-audio/whisper-large-v3-turbo", endpoints: ["/predict"], priority: 190 },
-    { space: "Qwen/Qwen3-ASR", endpoints: ["/transcribe", "/predict"], priority: 180 },
-    { space: "hf-audio/whisper-large-v3", endpoints: ["/transcribe", "/predict"], priority: 170 },
+    { space: "openai/whisper", endpoints: ["/predict"], priority: 240 },
+    { space: "hf-audio/whisper-large-v3", endpoints: ["/predict"], priority: 190 },
   ],
   music: [
-    { space: "ASLP-lab/DiffRhythm2", endpoints: ["/infer_music", "/predict"], priority: 200 },
-    { space: "victor/ace-step-jam", endpoints: ["/generate", "/create"], priority: 190 },
+    { space: "ASLP-lab/DiffRhythm2", endpoints: ["/infer_music", "/predict"], priority: 220 },
+    { space: "victor/ace-step-jam", endpoints: ["/generate", "/create"], priority: 210 },
     { space: "ACE-Step/Ace-Step-v1.5", endpoints: ["/generate_music", "/predict", "/create"], priority: 170 },
   ],
   image: [
-    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 200 },
+    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 230 },
     { space: "hf-applications/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 150 },
   ],
   video: [
-    { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/predict", "/generate_video"], priority: 200 },
+    { space: "r3gm/wan2-2-fp8da-aoti-preview", endpoints: ["/generate_video", "/predict"], priority: 230 },
+    { space: "zerogpu-aoti/wan2-2-fp8da-aoti-faster", endpoints: ["/generate_video", "/predict"], priority: 220 },
     { space: "dream2589632147/Dream-wan2-2-faster-Pro", endpoints: ["/generate_video", "/predict"], priority: 180 },
   ],
-  voiceClone: [{ space: "Qwen/Qwen3-TTS", endpoints: ["/generate_voice_clone"], priority: 220 }],
-  voicePreset: [
-    { space: "Qwen/Qwen3-TTS", endpoints: ["/generate_custom_voice"], priority: 220 },
-    { space: "hexgrad/Kokoro-TTS", endpoints: ["/generate", "/predict"], priority: 160 },
-  ],
+  voiceClone: [{ space: "Qwen/Qwen3-TTS", endpoints: ["/generate_voice_clone"], priority: 240 }],
+  voicePreset: [{ space: "Qwen/Qwen3-TTS", endpoints: ["/generate_custom_voice"], priority: 240 }],
   voiceSwap: [
-    { space: "Plachta/Seed-VC", endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper", "/convert"], priority: 200 },
+    { space: "Plachta/Seed-VC", endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper", "/convert"], priority: 220 },
     { space: "r3gm/RVC-Zero", endpoints: ["/convert", "/predict"], priority: 160 },
   ],
   vocalSeparation: [
-    { space: "JacobLinCool/vocal-separation", endpoints: ["/inference", "/separate", "/predict"], priority: 200 },
+    { space: "JacobLinCool/vocal-separation", endpoints: ["/inference", "/separate", "/predict"], priority: 220 },
     { space: "owiedotch/demucs-stem-separation", endpoints: ["/inference", "/predict"], priority: 180 },
   ],
 };
@@ -65,7 +63,14 @@ export const FREE_SPACE_IDS = {
 export function connectFreeSpace(space: string) {
   let client = clients.get(space);
   if (!client) {
-    client = Client.connect(space) as unknown as Promise<GradioClient>;
+    client = Client.connect(space, {
+      events: ["data", "status"],
+      space_status: (spaceStatus: { status?: string; detail?: string; message?: string }) => {
+        if (spaceStatus.status === "error" || spaceStatus.detail === "RUNTIME_ERROR") {
+          console.warn(`[Buddy] ${space} unavailable: ${spaceStatus.message ?? spaceStatus.detail ?? "unknown error"}`);
+        }
+      },
+    } as never) as unknown as Promise<GradioClient>;
     clients.set(space, client);
   }
   return client;
@@ -122,7 +127,7 @@ function endpointNames(info: unknown): string[] {
   if (!info || typeof info !== "object") return [];
   const record = info as Record<string, unknown>;
   const names: string[] = [];
-  for (const key of ["named_endpoints", "unnamed_endpoints"]) {
+  for (const key of ["named_endpoints", "unnamed_endpoints", "endpoints"]) {
     const group = record[key];
     if (group && typeof group === "object") names.push(...Object.keys(group));
   }
@@ -146,7 +151,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 async function resolveEndpoint(route: RouteCandidate, preferred?: string) {
   const client = await withTimeout(connectFreeSpace(route.space), CONNECT_TIMEOUT);
   if (!client.view_api) return { client, endpoint: preferred ?? route.endpoints[0] };
-  const info = await withTimeout(client.view_api(true), CONNECT_TIMEOUT);
+  const info = await withTimeout(client.view_api(), CONNECT_TIMEOUT);
   const available = endpointNames(info);
   const candidates = preferred
     ? [preferred, ...route.endpoints.filter((endpoint) => endpoint !== preferred)]
@@ -159,8 +164,10 @@ async function resolveEndpoint(route: RouteCandidate, preferred?: string) {
 async function normalizeInput(value: unknown): Promise<unknown> {
   if (typeof Blob !== "undefined" && value instanceof Blob) return handle_file(value);
   if (Array.isArray(value)) return Promise.all(value.map(normalizeInput));
-  if (value && typeof value === "object" && !(value instanceof Blob)) {
-    const entries = await Promise.all(Object.entries(value as Record<string, unknown>).map(async ([key, item]) => [key, await normalizeInput(item)] as const));
+  if (value && typeof value === "object") {
+    const entries = await Promise.all(
+      Object.entries(value as Record<string, unknown>).map(async ([key, item]) => [key, await normalizeInput(item)] as const),
+    );
     return Object.fromEntries(entries);
   }
   return value;
@@ -169,18 +176,19 @@ async function normalizeInput(value: unknown): Promise<unknown> {
 function adaptInputs(logicalId: string, space: string, endpoint: string, inputs: Inputs): Inputs {
   if (logicalId === "speechToText") {
     const audio = Array.isArray(inputs) ? inputs[0] : inputs.audio ?? inputs.inputs;
-    return [audio];
+    // openai/whisper exposes transcribe(inputs, task), not a one-input endpoint.
+    return space === "openai/whisper" ? [audio, "transcribe"] : [audio];
   }
   if (logicalId === "music" && space === "ASLP-lab/DiffRhythm2" && endpoint === "/infer_music" && !Array.isArray(inputs)) {
     return {
-      lrc: String(inputs.lyrics ?? inputs.lrc ?? "[00:00.00] Instrumental idea"),
+      lrc: String(inputs.lyrics ?? inputs.lrc ?? "[start]\n[verse]\nInstrumental idea\n[stop]"),
       current_prompt_type: "text",
       audio_prompt: null,
       text_prompt: String(inputs.description ?? inputs.prompt ?? "polished original song"),
       seed: Number(inputs.seed ?? 42),
       randomize_seed: true,
       steps: 16,
-      cfg_strength: 1.3,
+      cfg_strength: 1.0,
       file_type: "wav",
       odeint_method: "euler",
     };
@@ -215,10 +223,25 @@ function adaptInputs(logicalId: string, space: string, endpoint: string, inputs:
       randomize_seed: Boolean(inputs.randomize_seed ?? true),
     };
   }
+  if (logicalId === "video" && space.includes("wan2-2") && endpoint === "/generate_video" && !Array.isArray(inputs)) {
+    return {
+      input_image: inputs.image ?? inputs.input_image,
+      last_image: inputs.last_image ?? null,
+      prompt: String(inputs.prompt ?? "cinematic natural motion, smooth camera movement"),
+      steps: Number(inputs.steps ?? 6),
+      negative_prompt: String(inputs.negative_prompt ?? "blurry, distorted, flicker, warped anatomy"),
+      duration_seconds: Number(inputs.duration_seconds ?? 3),
+      guidance_scale: Number(inputs.guidance_scale ?? 1),
+      guidance_scale_2: Number(inputs.guidance_scale_2 ?? 1),
+      seed: Number(inputs.seed ?? 42),
+      randomize_seed: Boolean(inputs.randomize_seed ?? true),
+      quality: Number(inputs.quality ?? 7),
+    };
+  }
   if (logicalId === "voicePreset" && space === "Qwen/Qwen3-TTS" && endpoint === "/generate_custom_voice") {
     const values = Array.isArray(inputs) ? inputs : [];
     const speakers = new Set(["Aiden", "Dylan", "Eric", "Ono_anna", "Ryan", "Serena", "Sohee", "Uncle_fu", "Vivian"]);
-    return [String(values[0] ?? "Hello from Buddy."), "English", speakers.has(String(values[1])) ? String(values[1]) : "Ryan", "", "1.7B"];
+    return [String(values[0] ?? "Hello from Buddy."), "English", speakers.has(String(values[1])) ? String(values[1]) : "Ryan", String(values[3] ?? "Natural conversational delivery with gentle pauses and varied pacing."), "1.7B"];
   }
   if (logicalId === "voiceClone" && space === "Qwen/Qwen3-TTS" && endpoint === "/generate_voice_clone") {
     const values = Array.isArray(inputs) ? inputs : [];
@@ -233,14 +256,25 @@ async function execute(client: GradioClient, endpoint: string, inputs: unknown) 
     try {
       return await withTimeout(client.predict(endpoint, normalized), JOB_TIMEOUT);
     } catch {
-      // Queue-only Spaces need submit() instead.
+      // Queue-only Spaces need submit().
     }
   }
   const job = client.submit(endpoint, normalized);
   let latest: unknown = null;
-  for await (const message of job) if (message.type === "data") latest = message.data ?? null;
+  for await (const message of job) {
+    if (message.type === "status" && message.status) console.debug("[Buddy] generation status", message.status);
+    if (message.type === "data") latest = message.data ?? null;
+  }
   if (latest == null) throw new Error("The generation service returned no result.");
   return latest;
+}
+
+function usableResult(value: unknown, logicalId: string) {
+  const result = firstOutput(value);
+  if (logicalId === "speechToText" || logicalId === "lyrics") {
+    return typeof result === "string" && result.trim().length > 0;
+  }
+  return Boolean(outputUrl(result));
 }
 
 async function collect(logicalId: string, inputs: Inputs, onStatus?: (message: string) => void, preferred?: string) {
@@ -254,14 +288,16 @@ async function collect(logicalId: string, inputs: Inputs, onStatus?: (message: s
     try {
       onStatus?.("Finding the best available engine…");
       const { client, endpoint } = await resolveEndpoint(route, preferred);
-      const result = firstOutput(await execute(client, endpoint, adaptInputs(logicalId, route.space, endpoint, inputs)));
-      if (result == null) throw new Error("The selected engine returned no result.");
+      const adapted = adaptInputs(logicalId, route.space, endpoint, inputs);
+      const result = await execute(client, endpoint, adapted);
+      if (!usableResult(result, logicalId)) throw new Error("The selected engine returned no usable artifact.");
       routeCache.set(cacheKey, { ok: true, expires: Date.now() + ROUTE_TTL });
-      return result;
+      return firstOutput(result);
     } catch (error) {
       lastError = error;
       routeCache.set(cacheKey, { ok: false, expires: Date.now() + 30_000 });
       onStatus?.("That engine is unavailable; Buddy is switching automatically…");
+      console.warn(`[Buddy] ${logicalId} route failed: ${route.space}`, error);
     }
   }
   throw lastError instanceof Error ? lastError : new Error("No free public generation route is currently available.");
@@ -269,7 +305,8 @@ async function collect(logicalId: string, inputs: Inputs, onStatus?: (message: s
 
 function logicalIdFor(space: string) {
   if (Object.prototype.hasOwnProperty.call(ROUTES, space)) return space;
-  return Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "";
+  const direct = Object.entries(ROUTES).find(([, routes]) => routes.some((route) => route.space === space));
+  return direct?.[0] ?? Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "";
 }
 
 export async function probeFreeRoute(logicalId: string): Promise<boolean> {
@@ -288,12 +325,13 @@ export async function probeFreeRoute(logicalId: string): Promise<boolean> {
 export async function runGradio(space: string, apiName: string, inputs: Inputs, onStatus?: (message: string) => void) {
   const logicalId = logicalIdFor(space);
   if (!logicalId) throw new Error(`Unknown free generation service: ${space}`);
-  return collect(logicalId, inputs, onStatus, apiName);
+  const preferred = apiName || undefined;
+  return collect(logicalId, inputs, onStatus, preferred);
 }
 
 export async function runGradioAll(space: string, apiName: string, inputs: Inputs, onStatus?: (message: string) => void) {
   const logicalId = logicalIdFor(space);
   if (!logicalId) throw new Error(`Unknown free generation service: ${space}`);
-  const result = await collect(logicalId, inputs, onStatus, apiName);
+  const result = await collect(logicalId, inputs, onStatus, apiName || undefined);
   return Array.isArray(result) ? result : [result];
 }

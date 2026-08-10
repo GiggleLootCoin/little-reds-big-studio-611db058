@@ -16,6 +16,16 @@ export type FreeRunner = {
  */
 export const FREE_RUNNERS: FreeRunner[] = [
   {
+    id: "qwen3-webgpu",
+    name: "Qwen3 WebGPU",
+    kind: "android",
+    description: "Local browser reasoning and writing on capable WebGPU devices.",
+    capabilities: ["text", "writing"],
+    url: "https://huggingface.co/spaces/webml-community/qwen3-webgpu",
+    notes: "Verified public WebGPU Space; runs locally in the browser and depends on device capability.",
+    priority: 110,
+  },
+  {
     id: "bonsai-webgpu",
     name: "Bonsai WebGPU",
     kind: "android",

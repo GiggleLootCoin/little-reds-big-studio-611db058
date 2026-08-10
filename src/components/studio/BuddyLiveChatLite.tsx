@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { LoaderCircle, Mic, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { Panel, StudioButton } from "./ui";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -20,7 +20,7 @@ type Recognition = {
   onerror: ((event: RecognitionError) => void) | null;
 };
 type RecognitionConstructor = new () => Recognition;
-const KEY = "lrbgs-buddy-chat-v3";
+const KEY = "lrbgs-buddy-chat-v4";
 const SYSTEM =
   "You are Buddy, the warm, practical creative assistant inside Little Red's Big Studio. Help with music, lyrics, artwork, video, vocals and YouTube. Be concise, useful and honest. Never claim a file was created unless the Studio actually returned one.";
 const LOCAL_MODELS = ["onnx-community/Qwen3-0.6B-ONNX", "onnx-community/Qwen2.5-0.5B"];
@@ -64,7 +64,9 @@ export function BuddyLiveChatLite() {
   const generatorRef = useRef<Generator | null>(null),
     recognitionRef = useRef<Recognition | null>(null),
     handsFreeRef = useRef(false),
-    speakingRef = useRef(false);
+    busyRef = useRef(false),
+    speakingRef = useRef(false),
+    restartingRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -86,6 +88,7 @@ export function BuddyLiveChatLite() {
       console.warn("Buddy history could not be restored", error);
     }
     return () => {
+      handsFreeRef.current = false;
       recognitionRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
@@ -97,30 +100,101 @@ export function BuddyLiveChatLite() {
   const loadBrain = async () => {
     if (generatorRef.current) return generatorRef.current;
     setStatus("Buddy is waking his local brain…");
-    const dynamicImport = new Function("url", "return import(url)") as (
-      url: string,
-    ) => Promise<GeneratorModule>;
-    const mod = await dynamicImport(
-      "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm",
-    );
-    const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
-    let lastError: unknown = null;
-    for (const model of LOCAL_MODELS) {
-      try {
-        const pipe = await mod.pipeline("text-generation", model, {
-          device: hasGpu ? "webgpu" : "wasm",
-          dtype: hasGpu ? "q4f16" : "q4",
-        });
-        generatorRef.current = pipe;
-        return pipe;
-      } catch (error) {
-        lastError = error;
+    try {
+      const dynamicImport = new Function("url", "return import(url)") as (
+        url: string,
+      ) => Promise<GeneratorModule>;
+      const mod = await dynamicImport(
+        "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm",
+      );
+      const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
+      let lastError: unknown = null;
+      for (const model of LOCAL_MODELS) {
+        try {
+          const pipe = await mod.pipeline("text-generation", model, {
+            device: hasGpu ? "webgpu" : "wasm",
+            dtype: hasGpu ? "q4f16" : "q4",
+          });
+          generatorRef.current = pipe;
+          return pipe;
+        } catch (error) {
+          lastError = error;
+        }
       }
+      throw lastError instanceof Error ? lastError : new Error("No local model loaded.");
+    } catch (error) {
+      console.warn(
+        "Buddy local brain could not load; deterministic fallback remains available",
+        error,
+      );
+      throw error;
     }
-    throw lastError instanceof Error ? lastError : new Error("No local model loaded.");
   };
+
+  const startListening = () => {
+    if (speakingRef.current || busyRef.current || listening) return;
+    const W = window as unknown as {
+      SpeechRecognition?: RecognitionConstructor;
+      webkitSpeechRecognition?: RecognitionConstructor;
+    };
+    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
+    if (!Ctor) {
+      setStatus("Live voice isn't available in this browser. Type to Buddy instead.");
+      return;
+    }
+    if (!recognitionRef.current) {
+      const r = new Ctor();
+      r.continuous = true;
+      r.interimResults = false;
+      r.lang = "en-US";
+      r.onresult = (e) => {
+        const last = e.results?.[e.results.length - 1];
+        const text = last?.[0]?.transcript?.trim();
+        if (text && handsFreeRef.current && !busyRef.current && !speakingRef.current) {
+          void send(text, true);
+        }
+      };
+      r.onend = () => {
+        setListening(false);
+        if (
+          handsFreeRef.current &&
+          !speakingRef.current &&
+          !busyRef.current &&
+          !restartingRef.current
+        ) {
+          restartingRef.current = true;
+          window.setTimeout(() => {
+            restartingRef.current = false;
+            if (handsFreeRef.current) startListening();
+          }, 250);
+        }
+      };
+      r.onerror = (e) => {
+        setListening(false);
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          handsFreeRef.current = false;
+          setHandsFree(false);
+          setStatus("Allow microphone access in Chrome to use Live Conversation.");
+        } else if (handsFreeRef.current) {
+          setStatus("Live Conversation is reconnecting…");
+        }
+      };
+      recognitionRef.current = r;
+    }
+    try {
+      recognitionRef.current.start();
+      setListening(true);
+      setStatus("Listening… Tap Live Conversation again to stop.");
+    } catch (error) {
+      console.warn("Speech recognition could not start", error);
+    }
+  };
+
   const speak = (text: string) => {
-    if (muted || !window.speechSynthesis) return;
+    if (muted || !window.speechSynthesis) {
+      if (handsFreeRef.current) window.setTimeout(startListening, 250);
+      return;
+    }
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1.02;
@@ -128,25 +202,27 @@ export function BuddyLiveChatLite() {
     setStatus("Buddy is speaking…");
     u.onend = () => {
       speakingRef.current = false;
-      setStatus("Buddy is ready.");
-      if (handsFreeRef.current) startListening();
+      setStatus(handsFreeRef.current ? "Listening…" : "Buddy is ready.");
+      if (handsFreeRef.current) window.setTimeout(startListening, 250);
     };
     u.onerror = () => {
       speakingRef.current = false;
-      if (handsFreeRef.current) startListening();
+      if (handsFreeRef.current) window.setTimeout(startListening, 250);
     };
     window.speechSynthesis.speak(u);
   };
+
   const send = async (forced?: string, fromVoice = false) => {
     const text = (forced ?? input).trim();
-    if (!text || busy) return;
-    recognitionRef.current?.stop();
+    if (!text || busyRef.current) return;
+    if (!handsFreeRef.current) recognitionRef.current?.stop();
     setListening(false);
     const next = [...messages, { role: "user" as const, content: text }].slice(-16);
     setMessages(next);
     setInput("");
+    busyRef.current = true;
     setBusy(true);
-    setStatus("Buddy is thinking locally…");
+    setStatus("Buddy is thinking…");
     try {
       let reply = "";
       try {
@@ -166,66 +242,33 @@ export function BuddyLiveChatLite() {
       }
       if (!reply) reply = fallbackReply(text);
       setMessages([...next, { role: "assistant", content: reply }]);
+      busyRef.current = false;
       setBusy(false);
-      setStatus("Buddy is ready.");
+      setStatus(handsFreeRef.current ? "Buddy is listening…" : "Buddy is ready.");
       if (fromVoice || handsFreeRef.current) speak(reply);
     } catch (error) {
       console.warn("Buddy response failed", error);
       const reply = fallbackReply(text);
       setMessages([...next, { role: "assistant", content: reply }]);
+      busyRef.current = false;
       setBusy(false);
-      setStatus("Buddy is ready.");
+      setStatus(handsFreeRef.current ? "Buddy is listening…" : "Buddy is ready.");
+      if (fromVoice || handsFreeRef.current) speak(reply);
     }
   };
-  const startListening = () => {
-    if (speakingRef.current || busy || listening) return;
-    const W = window as unknown as {
-      SpeechRecognition?: RecognitionConstructor;
-      webkitSpeechRecognition?: RecognitionConstructor;
-    };
-    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
-    if (!Ctor) {
-      setStatus("Live voice isn't available in this browser. You can still type to Buddy.");
-      return;
-    }
-    if (!recognitionRef.current) {
-      const r = new Ctor();
-      r.continuous = true;
-      r.interimResults = false;
-      r.lang = "en-GB";
-      r.onresult = (e) => {
-        const last = e.results?.[e.results.length - 1];
-        const text = last?.[0]?.transcript?.trim();
-        if (text) void send(text, true);
-      };
-      r.onend = () => {
-        setListening(false);
-        if (handsFreeRef.current && !speakingRef.current && !busy)
-          window.setTimeout(startListening, 300);
-      };
-      r.onerror = (e) => {
-        setListening(false);
-        if (e.error === "not-allowed")
-          setStatus("Allow microphone access in Chrome to use Live Voice.");
-      };
-      recognitionRef.current = r;
-    }
-    try {
-      recognitionRef.current.start();
-      setListening(true);
-      setStatus("Listening…");
-    } catch (error) {
-      console.warn("Speech recognition could not start", error);
-    }
-  };
+
   const toggleLive = () => {
-    const next = !handsFree;
+    const next = !handsFreeRef.current;
     handsFreeRef.current = next;
     setHandsFree(next);
-    if (next) startListening();
-    else {
+    if (next) {
+      setStatus("Starting Live Conversation…");
+      startListening();
+    } else {
       recognitionRef.current?.stop();
       setListening(false);
+      window.speechSynthesis?.cancel();
+      speakingRef.current = false;
       setStatus("Buddy is ready.");
     }
   };
@@ -245,19 +288,9 @@ export function BuddyLiveChatLite() {
       </div>
       <div className="flex flex-wrap gap-2">
         <StudioButton onClick={toggleLive} aria-pressed={handsFree}>
-          {handsFree ? <Mic className="size-4" /> : <MicOff className="size-4" />}
-          {handsFree ? "Live Voice On" : "Live Voice"}
+          <Mic className="size-4" />
+          {handsFree ? "Live Conversation On" : "Start Live Conversation"}
         </StudioButton>
-        <button
-          type="button"
-          onPointerDown={() => !handsFree && startListening()}
-          onPointerUp={() => !handsFree && recognitionRef.current?.stop()}
-          className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold"
-          disabled={handsFree}
-        >
-          <Mic className="mr-2 inline size-4" />
-          Hold to Talk
-        </button>
         <button
           type="button"
           onClick={() => {

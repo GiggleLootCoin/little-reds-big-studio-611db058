@@ -1,0 +1,24 @@
+name: Validate Buddy Live Chat
+
+on:
+  push:
+    branches:
+      - fix/buddy-live-continuous-voice
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx prettier --check .
+      - run: npm run lint
+      - run: npm run build

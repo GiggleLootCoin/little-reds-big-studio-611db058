@@ -50,7 +50,9 @@ export async function loadStoredBuddyVoice(): Promise<Blob | null> {
 
 export function VoiceLabPanel() {
   const [voice, setVoice] = useState<VoiceId>(VOICES[0][0]);
-  const [text, setText] = useState("Hello. I'm Buddy, and I'm ready to make something brilliant with you.");
+  const [text, setText] = useState(
+    "Hello. I'm Buddy, and I'm ready to make something brilliant with you.",
+  );
   const [reference, setReference] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,19 +63,26 @@ export function VoiceLabPanel() {
     setAudioUrl(null);
     setStatus("Finding the best natural voice engine…");
     try {
-      const result = await runGradio(FREE_SPACE_IDS.voicePreset, "/generate_custom_voice", [
-        text,
-        "English",
-        voice,
-        "Natural, warm conversational delivery with realistic pauses, varied pacing and gentle breaths.",
-        "1.7B",
-      ], setStatus);
+      const result = await runGradio(
+        FREE_SPACE_IDS.voicePreset,
+        "/generate_custom_voice",
+        [
+          text,
+          "English",
+          voice,
+          "Natural, warm conversational delivery with realistic pauses, varied pacing and gentle breaths.",
+          "1.7B",
+        ],
+        setStatus,
+      );
       const url = outputUrl(result);
       if (!url) throw new Error("The voice engine returned no audio.");
       setAudioUrl(url);
       localStorage.setItem("lrbgs-buddy-voice-preset", voice);
       localStorage.setItem("lrbgs-buddy-voice-mode", "preset");
-      setStatus("Natural voice preview ready. Buddy will use this voice for live replies on this device.");
+      setStatus(
+        "Natural voice preview ready. Buddy will use this voice for live replies on this device.",
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Voice generation failed.");
     } finally {
@@ -92,19 +101,19 @@ export function VoiceLabPanel() {
     try {
       await storeReference(reference);
       localStorage.setItem("lrbgs-buddy-voice-language", "English");
-      const result = await runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", [
-        freeFile(reference),
-        "",
-        text,
-        "English",
-        true,
-        "1.7B",
-      ], setStatus);
+      const result = await runGradio(
+        FREE_SPACE_IDS.voiceClone,
+        "/generate_voice_clone",
+        [freeFile(reference), "", text, "English", true, "1.7B"],
+        setStatus,
+      );
       const url = outputUrl(result);
       if (!url) throw new Error("The cloning engine returned no audio.");
       setAudioUrl(url);
       localStorage.setItem("lrbgs-buddy-voice-mode", "clone");
-      setStatus("Voice clone ready. Buddy will use your permitted voice reference for live replies on this device.");
+      setStatus(
+        "Voice clone ready. Buddy will use your permitted voice reference for live replies on this device.",
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Voice cloning failed.");
     } finally {
@@ -117,25 +126,64 @@ export function VoiceLabPanel() {
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <label className="rounded-xl border border-border bg-background/30 p-3 text-xs">
           <span className="font-semibold">Natural voice</span>
-          <select value={voice} onChange={(e) => setVoice(e.target.value as VoiceId)} className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            {VOICES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          <select
+            value={voice}
+            onChange={(e) => setVoice(e.target.value as VoiceId)}
+            className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            {VOICES.map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
         <StudioButton onClick={() => void preview()} disabled={busy}>
-          {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />} Preview
+          {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}{" "}
+          Preview
         </StudioButton>
       </div>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm" placeholder="What should Buddy say?" />
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm"
+        placeholder="What should Buddy say?"
+      />
       <label className="block rounded-xl border border-dashed border-border bg-background/30 p-3 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Clone a voice you own or have permission to use</span>
-        <input className="mt-2 block w-full text-xs" type="file" accept="audio/*" onChange={(e) => { const file = e.target.files?.[0] ?? null; setReference(file); if (file) void storeReference(file).catch(() => undefined); }} />
+        <span className="font-semibold text-foreground">
+          Clone a voice you own or have permission to use
+        </span>
+        <input
+          className="mt-2 block w-full text-xs"
+          type="file"
+          accept="audio/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setReference(file);
+            if (file) void storeReference(file).catch(() => undefined);
+          }}
+        />
       </label>
       <StudioButton variant="ghost" onClick={() => void clone()} disabled={busy || !reference}>
-        {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />} Create clone preview
+        {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />}{" "}
+        Create clone preview
       </StudioButton>
-      {audioUrl && <div className="rounded-xl border border-primary/25 bg-primary/5 p-3"><audio controls className="w-full" src={audioUrl} /><a className="mt-2 inline-flex text-xs text-primary" href={audioUrl} download><Save className="mr-1 size-3.5" /> Save voice preview</a></div>}
-      <p className="text-xs text-muted-foreground" aria-live="polite">{status}</p>
-      <Note>Voice samples stay on this device. Cloning is intended only for voices you own or have permission to use.</Note>
+      {audioUrl && (
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-3">
+          <audio controls className="w-full" src={audioUrl} />
+          <a className="mt-2 inline-flex text-xs text-primary" href={audioUrl} download>
+            <Save className="mr-1 size-3.5" /> Save voice preview
+          </a>
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        {status}
+      </p>
+      <Note>
+        Voice samples stay on this device. Cloning is intended only for voices you own or have
+        permission to use.
+      </Note>
     </Panel>
   );
 }

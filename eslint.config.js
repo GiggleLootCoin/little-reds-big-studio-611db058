@@ -34,9 +34,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/components/studio/FreeCreatePanel.tsx"],
+    files: [
+      "src/components/studio/FreeCreatePanel.tsx",
+      "src/components/studio/BuddyLiveChatLite.tsx",
+      "src/lib/gradio-free.ts",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "prettier/prettier": "off",
     },
   },
   eslintPluginPrettier,

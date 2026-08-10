@@ -14,7 +14,3 @@ declare module "*.png" {
   const src: string;
   export default src;
 }
-
-declare module "@huggingface/transformers" {
-  export function pipeline(...args: any[]): Promise<any>;
-}

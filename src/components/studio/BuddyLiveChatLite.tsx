@@ -3,10 +3,23 @@ import { LoaderCircle, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from "luc
 import { Panel, StudioButton } from "./ui";
 
 type Message = { role: "user" | "assistant"; content: string };
-type Generator = (
-  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-  options: Record<string, unknown>,
-) => Promise<any>;
+type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+type Generator = (messages: ChatMessage[], options: Record<string, unknown>) => Promise<unknown>;
+type GeneratorModule = { pipeline: (...args: unknown[]) => Promise<Generator> };
+type RecognitionEvent = { results?: ArrayLike<ArrayLike<{ transcript?: string }>> };
+type RecognitionError = { error?: string };
+type Recognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: RecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: RecognitionError) => void) | null;
+};
+type RecognitionConstructor = new () => Recognition;
 const KEY = "lrbgs-buddy-chat-v2";
 const SYSTEM =
   "You are Buddy, the warm, practical creative assistant inside Little Red's Big Studio. Help with music, lyrics, artwork, video, vocals and YouTube. Be concise, useful and honest. Never claim a file was created unless the Studio actually returned one.";
@@ -25,26 +38,54 @@ function fallbackReply(text: string) {
   return "I'm with you. Tell me what you want to make, change or figure out, and we'll take it one step at a time.";
 }
 
+function generatedText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+  if (Array.isArray(value)) return generatedText(value[0]);
+  const record = value as Record<string, unknown>;
+  if (typeof record.generated_text === "string") return record.generated_text;
+  if (Array.isArray(record.generated_text)) return generatedText(record.generated_text.at(-1));
+  if (record.generated_text && typeof record.generated_text === "object") {
+    const nested = record.generated_text as Record<string, unknown>;
+    return typeof nested.content === "string" ? nested.content : "";
+  }
+  return "";
+}
+
 export function BuddyLiveChatLite() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [handsFree, setHandsFree] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [status, setStatus] = useState("Buddy is ready.");
-  const generatorRef = useRef<Generator | null>(null);
-  const recognitionRef = useRef<any>(null);
-  const handsFreeRef = useRef(false);
-  const speakingRef = useRef(false);
+  const [messages, setMessages] = useState<Message[]>([]),
+    [input, setInput] = useState(""),
+    [busy, setBusy] = useState(false),
+    [handsFree, setHandsFree] = useState(false),
+    [muted, setMuted] = useState(false),
+    [listening, setListening] = useState(false),
+    [status, setStatus] = useState("Buddy is ready.");
+  const generatorRef = useRef<Generator | null>(null),
+    recognitionRef = useRef<Recognition | null>(null),
+    handsFreeRef = useRef(false),
+    speakingRef = useRef(false);
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
-      if (Array.isArray(saved)) setMessages(saved.slice(-30));
-    } catch {}
+      const saved: unknown = JSON.parse(localStorage.getItem(KEY) || "[]");
+      if (Array.isArray(saved))
+        setMessages(
+          saved
+            .filter((m): m is Message =>
+              Boolean(
+                m &&
+                typeof m === "object" &&
+                (m as Record<string, unknown>).role &&
+                typeof (m as Record<string, unknown>).content === "string",
+              ),
+            )
+            .slice(-30),
+        );
+    } catch (error) {
+      console.warn("Buddy history could not be restored", error);
+    }
     return () => {
-      recognitionRef.current?.abort?.();
+      recognitionRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -55,15 +96,19 @@ export function BuddyLiveChatLite() {
   const loadBrain = async () => {
     if (generatorRef.current) return generatorRef.current;
     setStatus("Buddy is waking up…");
-    const mod = await import("@huggingface/transformers");
+    const dynamicImport = new Function("url", "return import(url)") as (
+      url: string,
+    ) => Promise<GeneratorModule>;
+    const mod = await dynamicImport(
+      "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm",
+    );
     const pipe = await mod.pipeline("text-generation", "onnx-community/Qwen2.5-0.5B", {
       device: "webgpu",
       dtype: "q4f16",
-    } as any);
-    generatorRef.current = pipe as Generator;
-    return pipe as Generator;
+    });
+    generatorRef.current = pipe;
+    return pipe;
   };
-
   const speak = (text: string) => {
     if (muted || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -82,11 +127,10 @@ export function BuddyLiveChatLite() {
     };
     window.speechSynthesis.speak(u);
   };
-
   const send = async (forced?: string, fromVoice = false) => {
     const text = (forced ?? input).trim();
     if (!text || busy) return;
-    recognitionRef.current?.stop?.();
+    recognitionRef.current?.stop();
     setListening(false);
     const next = [...messages, { role: "user" as const, content: text }].slice(-16);
     setMessages(next);
@@ -103,12 +147,11 @@ export function BuddyLiveChatLite() {
           do_sample: true,
           return_full_text: false,
         });
-        const raw = Array.isArray(out) ? out[0]?.generated_text : out?.generated_text;
-        reply = typeof raw === "string" ? raw : raw?.at?.(-1)?.content || "";
-        reply = String(reply)
+        reply = generatedText(out)
           .replace(/<think>[\s\S]*?<\/think>/gi, "")
           .trim();
-      } catch {
+      } catch (error) {
+        console.warn("Buddy local model unavailable; using conversational fallback", error);
         reply = fallbackReply(text);
       }
       if (!reply) reply = fallbackReply(text);
@@ -116,17 +159,20 @@ export function BuddyLiveChatLite() {
       setBusy(false);
       setStatus("Buddy is ready.");
       if (fromVoice || handsFreeRef.current) speak(reply);
-    } catch {
+    } catch (error) {
+      console.warn("Buddy response failed", error);
       const reply = fallbackReply(text);
       setMessages([...next, { role: "assistant", content: reply }]);
       setBusy(false);
       setStatus("Buddy is ready.");
     }
   };
-
   const startListening = () => {
     if (speakingRef.current || busy || listening) return;
-    const W = window as any;
+    const W = window as unknown as {
+      SpeechRecognition?: RecognitionConstructor;
+      webkitSpeechRecognition?: RecognitionConstructor;
+    };
     const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
     if (!Ctor) {
       setStatus("Live voice isn't available in this browser. You can still type to Buddy.");
@@ -137,7 +183,7 @@ export function BuddyLiveChatLite() {
       r.continuous = true;
       r.interimResults = false;
       r.lang = "en-GB";
-      r.onresult = (e: any) => {
+      r.onresult = (e) => {
         const last = e.results?.[e.results.length - 1];
         const text = last?.[0]?.transcript?.trim();
         if (text) void send(text, true);
@@ -147,9 +193,9 @@ export function BuddyLiveChatLite() {
         if (handsFreeRef.current && !speakingRef.current && !busy)
           window.setTimeout(startListening, 300);
       };
-      r.onerror = (e: any) => {
+      r.onerror = (e) => {
         setListening(false);
-        if (e?.error === "not-allowed")
+        if (e.error === "not-allowed")
           setStatus("Allow microphone access in Chrome to use Live Voice.");
       };
       recognitionRef.current = r;
@@ -158,7 +204,9 @@ export function BuddyLiveChatLite() {
       recognitionRef.current.start();
       setListening(true);
       setStatus("Listening…");
-    } catch {}
+    } catch (error) {
+      console.warn("Speech recognition could not start", error);
+    }
   };
   const toggleLive = () => {
     const next = !handsFree;
@@ -166,7 +214,7 @@ export function BuddyLiveChatLite() {
     setHandsFree(next);
     if (next) startListening();
     else {
-      recognitionRef.current?.stop?.();
+      recognitionRef.current?.stop();
       setListening(false);
       setStatus("Buddy is ready.");
     }
@@ -193,7 +241,7 @@ export function BuddyLiveChatLite() {
         <button
           type="button"
           onPointerDown={() => !handsFree && startListening()}
-          onPointerUp={() => !handsFree && recognitionRef.current?.stop?.()}
+          onPointerUp={() => !handsFree && recognitionRef.current?.stop()}
           className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold"
           disabled={handsFree}
         >

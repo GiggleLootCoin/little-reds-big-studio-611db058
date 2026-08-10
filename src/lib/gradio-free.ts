@@ -1,7 +1,7 @@
 type FileLike = File | Blob | string;
-type GradioClient = {
-  submit: (apiName: string, inputs: unknown) => AsyncIterable<{ type: string; data?: unknown }>;
-};
+type GradioMessage = { type: string; data?: unknown };
+type GradioJob = AsyncIterable<GradioMessage>;
+type GradioClient = { submit: (apiName: string, inputs: unknown) => GradioJob };
 type GradioModule = { Client: { connect: (space: string) => Promise<GradioClient> } };
 const GRADIO_CDN = "https://esm.sh/@gradio/client@1.17.0";
 let modulePromise: Promise<GradioModule> | null = null;
@@ -29,7 +29,9 @@ export function outputUrl(value: unknown): string | null {
     if (s.startsWith("{") || s.startsWith("[")) {
       try {
         return outputUrl(JSON.parse(s));
-      } catch {}
+      } catch (error) {
+        console.warn("Could not parse media result", error);
+      }
     }
     return null;
   }
@@ -52,7 +54,8 @@ export function firstOutput(result: unknown): unknown {
   if (typeof result === "string") {
     try {
       return firstOutput(JSON.parse(result));
-    } catch {
+    } catch (error) {
+      console.warn("Could not parse Gradio result", error);
       return result;
     }
   }
@@ -86,8 +89,10 @@ export async function runGradioAll(
 ) {
   const latest = await collect(space, apiName, inputs);
   if (Array.isArray(latest)) return latest;
-  if (latest && typeof latest === "object" && Array.isArray((latest as any).data))
-    return (latest as any).data;
+  if (latest && typeof latest === "object") {
+    const data = (latest as { data?: unknown }).data;
+    if (Array.isArray(data)) return data;
+  }
   return [firstOutput(latest)];
 }
 export const FREE_SPACE_IDS = {

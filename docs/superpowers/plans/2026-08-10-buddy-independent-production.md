@@ -23,10 +23,12 @@
 ### Task 1: Make Gradio routing live and fault tolerant
 
 **Files:**
+
 - Modify: `src/lib/gradio-free.ts`
 - Modify: `src/lib/free-runners.ts`
 
 **Interfaces:**
+
 - Produces `runGradio`, `runGradioAll`, `probeFreeRoute`, and `FREE_SPACE_IDS` compatibility for existing callers.
 - Existing `FreeCreatePanel` calls continue to compile without changing their public shape.
 
@@ -43,10 +45,12 @@
 ### Task 2: Strengthen Buddy's independent local brain
 
 **Files:**
+
 - Modify: `src/components/studio/BuddyLiveChatLite.tsx`
 - Modify: `src/lib/buddy-orchestrator.ts`
 
 **Interfaces:**
+
 - Buddy chat remains usable without any remote service.
 - `buddyPlan()` returns a local-first plan when the browser can support it and free-open fallbacks otherwise.
 
@@ -63,9 +67,11 @@
 ### Task 3: Make the six creator actions use the router
 
 **Files:**
+
 - Modify: `src/components/studio/FreeCreatePanel.tsx`
 
 **Interfaces:**
+
 - Existing buttons remain: lyrics, song, artwork, video, clone voice, swap voice.
 - Each action reports actual returned media or an honest failure.
 
@@ -83,6 +89,7 @@
 ### Task 4: Remove validation workflow self-blocking
 
 **Files:**
+
 - Modify: `.github/workflows/free-validation.yml`
 
 - [ ] **Step 1: Remove unnecessary write permission from pull-request validation.**
@@ -95,6 +102,7 @@
 ### Task 5: Production verification
 
 **Files:**
+
 - Modify only if verification identifies a concrete failure.
 
 - [ ] **Step 1: Run TypeScript validation.**

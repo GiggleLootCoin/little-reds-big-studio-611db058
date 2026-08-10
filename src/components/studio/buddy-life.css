@@ -1,1 +1,129 @@
-.buddy-assistant{animation:buddy-float-life 4.8s ease-in-out infinite}.buddy-character{animation:buddy-body 4.2s ease-in-out infinite}.buddy-blink{animation:buddy-blink 4.7s ease-in-out infinite}.buddy-mouth{animation:buddy-mouth 0.55s ease-in-out infinite}.buddy-bar{animation:buddy-bar 0.48s ease-in-out infinite alternate}.buddy-assistant[data-buddy-status="listening"] .buddy-character{animation:buddy-listen-life 1.4s ease-in-out infinite}.buddy-assistant[data-buddy-status="thinking"] .buddy-character{animation:buddy-think-life 1.9s ease-in-out infinite}.buddy-assistant[data-buddy-status="working"] .buddy-character{animation:buddy-work-life .95s ease-in-out infinite}.buddy-assistant[data-buddy-status="success"] .buddy-character{animation:buddy-success-life .8s ease-out both}@keyframes buddy-float-life{0%,100%{transform:translateY(2px) rotate(-.7deg)}50%{transform:translateY(-9px) rotate(.7deg)}}@keyframes buddy-body{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}@keyframes buddy-blink{0%,44%,48%,100%{transform:scaleY(1);opacity:.75}46%{transform:scaleY(.08);opacity:.2}}@keyframes buddy-mouth{0%,100%{transform:translateX(-50%) scale(.82,.7);opacity:.35}50%{transform:translateX(-50%) scale(1.08,1.25);opacity:.8}}@keyframes buddy-bar{from{transform:scaleY(.35);opacity:.45}to{transform:scaleY(1);opacity:1}}@keyframes buddy-listen-life{0%,100%{transform:scale(1) rotate(-1deg)}50%{transform:scale(1.04) rotate(1deg)}}@keyframes buddy-think-life{0%,100%{transform:translate(0,2px) rotate(-1deg)}50%{transform:translate(3px,-5px) rotate(1deg)}}@keyframes buddy-work-life{0%,100%{transform:translate(-2px,2px) rotate(-1deg)}50%{transform:translate(2px,-4px) rotate(1deg)}}@keyframes buddy-success-life{0%{transform:scale(.96)}45%{transform:scale(1.08) rotate(-2deg)}75%{transform:scale(1.03) rotate(2deg)}100%{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.buddy-assistant,.buddy-character,.buddy-blink,.buddy-mouth,.buddy-bar{animation:none!important}}
+.buddy-assistant {
+  animation: buddy-float-life 4.8s ease-in-out infinite;
+}
+.buddy-character {
+  animation: buddy-body 4.2s ease-in-out infinite;
+}
+.buddy-blink {
+  animation: buddy-blink 4.7s ease-in-out infinite;
+}
+.buddy-mouth {
+  animation: buddy-mouth 0.55s ease-in-out infinite;
+}
+.buddy-bar {
+  animation: buddy-bar 0.48s ease-in-out infinite alternate;
+}
+.buddy-assistant[data-buddy-status="listening"] .buddy-character {
+  animation: buddy-listen-life 1.4s ease-in-out infinite;
+}
+.buddy-assistant[data-buddy-status="thinking"] .buddy-character {
+  animation: buddy-think-life 1.9s ease-in-out infinite;
+}
+.buddy-assistant[data-buddy-status="working"] .buddy-character {
+  animation: buddy-work-life 0.95s ease-in-out infinite;
+}
+.buddy-assistant[data-buddy-status="success"] .buddy-character {
+  animation: buddy-success-life 0.8s ease-out both;
+}
+@keyframes buddy-float-life {
+  0%,
+  100% {
+    transform: translateY(2px) rotate(-0.7deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.7deg);
+  }
+}
+@keyframes buddy-body {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018);
+  }
+}
+@keyframes buddy-blink {
+  0%,
+  44%,
+  48%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.75;
+  }
+  46% {
+    transform: scaleY(0.08);
+    opacity: 0.2;
+  }
+}
+@keyframes buddy-mouth {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(0.82, 0.7);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.08, 1.25);
+    opacity: 0.8;
+  }
+}
+@keyframes buddy-bar {
+  from {
+    transform: scaleY(0.35);
+    opacity: 0.45;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes buddy-listen-life {
+  0%,
+  100% {
+    transform: scale(1) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.04) rotate(1deg);
+  }
+}
+@keyframes buddy-think-life {
+  0%,
+  100% {
+    transform: translate(0, 2px) rotate(-1deg);
+  }
+  50% {
+    transform: translate(3px, -5px) rotate(1deg);
+  }
+}
+@keyframes buddy-work-life {
+  0%,
+  100% {
+    transform: translate(-2px, 2px) rotate(-1deg);
+  }
+  50% {
+    transform: translate(2px, -4px) rotate(1deg);
+  }
+}
+@keyframes buddy-success-life {
+  0% {
+    transform: scale(0.96);
+  }
+  45% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+  75% {
+    transform: scale(1.03) rotate(2deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .buddy-assistant,
+  .buddy-character,
+  .buddy-blink,
+  .buddy-mouth,
+  .buddy-bar {
+    animation: none !important;
+  }
+}

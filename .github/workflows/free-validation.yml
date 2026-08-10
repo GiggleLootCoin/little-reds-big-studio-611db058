@@ -29,14 +29,14 @@ jobs:
         run: npm ci
       - name: Format source
         run: npx prettier --write .
-      - name: Commit formatting fixes
+      - name: Publish formatting branch
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add .
             git commit -m "chore: format source"
-            git push origin HEAD:main
+            git push origin HEAD:format/prettier-output --force
           fi
 
   validate:

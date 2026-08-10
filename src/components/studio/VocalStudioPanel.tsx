@@ -139,7 +139,7 @@ export function VocalStudioPanel() {
     setBusy("make");
     setResult(null);
     try {
-      let backing = instrumental;
+      const backing = instrumental;
       let sourceSongUrl: string | null = null;
       if (!backing) {
         setStatus("Buddy is composing a full song around your lyrics…");
@@ -210,9 +210,7 @@ export function VocalStudioPanel() {
             <Mic className="size-5" />
           </span>
           <div>
-            <h3 className="font-display font-black">
-              One voice sample. Buddy does the technical work.
-            </h3>
+            <h3 className="font-display font-black">One voice sample. Buddy does the technical work.</h3>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
               Record yourself or upload a sample you own. Buddy automatically handles separation,
               voice conversion, timing and the final mix.
@@ -221,11 +219,7 @@ export function VocalStudioPanel() {
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <StudioButton onClick={() => void recordVoice()} disabled={disabled}>
-            {recording ? (
-              <LoaderCircle className="size-4 animate-spin" />
-            ) : (
-              <Mic className="size-4" />
-            )}
+            {recording ? <LoaderCircle className="size-4 animate-spin" /> : <Mic className="size-4" />}
             {recording ? "Stop recording" : "Record my voice"}
           </StudioButton>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background/60 px-4 py-2.5 text-sm font-semibold hover:bg-background">
@@ -244,9 +238,7 @@ export function VocalStudioPanel() {
 
       <section className="rounded-2xl border border-border/70 bg-background/40 p-4">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-            01
-          </span>
+          <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">01</span>
           <div>
             <h3 className="font-display font-black">Put your voice on any song</h3>
             <p className="text-xs text-muted-foreground">
@@ -257,9 +249,7 @@ export function VocalStudioPanel() {
         </div>
         <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border p-4 text-sm">
           <Upload className="size-4 text-primary" />
-          <span className="min-w-0 flex-1 truncate">
-            {song?.name ?? "Choose the song to transform"}
-          </span>
+          <span className="min-w-0 flex-1 truncate">{song?.name ?? "Choose the song to transform"}</span>
           <input
             type="file"
             accept="audio/*"
@@ -268,25 +258,15 @@ export function VocalStudioPanel() {
             onChange={(e) => setSong(e.target.files?.[0] ?? null)}
           />
         </label>
-        <StudioButton
-          className="mt-3 w-full"
-          onClick={() => void swapSong()}
-          disabled={disabled || !voice || !song}
-        >
-          {busy === "swap" ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <WandSparkles className="size-4" />
-          )}
+        <StudioButton className="mt-3 w-full" onClick={() => void swapSong()} disabled={disabled || !voice || !song}>
+          {busy === "swap" ? <LoaderCircle className="size-4 animate-spin" /> : <WandSparkles className="size-4" />}
           {busy === "swap" ? "Buddy is doing the whole swap…" : "Make me the singer"}
         </StudioButton>
       </section>
 
       <section className="rounded-2xl border border-border/70 bg-background/40 p-4">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-            02
-          </span>
+          <span className="flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">02</span>
           <div>
             <h3 className="font-display font-black">Create a new song with my voice</h3>
             <p className="text-xs text-muted-foreground">
@@ -312,9 +292,7 @@ export function VocalStudioPanel() {
         />
         <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border p-4 text-sm">
           <Upload className="size-4 text-primary" />
-          <span className="min-w-0 flex-1 truncate">
-            {instrumental?.name ?? "Optional instrumental / backing track"}
-          </span>
+          <span className="min-w-0 flex-1 truncate">{instrumental?.name ?? "Optional instrumental / backing track"}</span>
           <input
             type="file"
             accept="audio/*"
@@ -323,16 +301,8 @@ export function VocalStudioPanel() {
             onChange={(e) => setInstrumental(e.target.files?.[0] ?? null)}
           />
         </label>
-        <StudioButton
-          className="mt-3 w-full"
-          onClick={() => void makeSong()}
-          disabled={disabled || !voice || (!lyrics.trim() && !brief.trim())}
-        >
-          {busy === "make" ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Music2 className="size-4" />
-          )}
+        <StudioButton className="mt-3 w-full" onClick={() => void makeSong()} disabled={disabled || !voice || (!lyrics.trim() && !brief.trim())}>
+          {busy === "make" ? <LoaderCircle className="size-4 animate-spin" /> : <Music2 className="size-4" />}
           {busy === "make" ? "Buddy is creating your song…" : "Create my song"}
         </StudioButton>
       </section>
@@ -343,18 +313,12 @@ export function VocalStudioPanel() {
             <CheckCircle2 className="size-5 text-primary" /> Finished
           </div>
           <audio controls src={result} className="mt-3 w-full" />
-          <a
-            href={result}
-            download="little-reds-big-studio-my-voice-song.wav"
-            className="mt-3 inline-flex text-xs font-semibold text-primary"
-          >
+          <a href={result} download="little-reds-big-studio-my-voice-song.wav" className="mt-3 inline-flex text-xs font-semibold text-primary">
             Save finished song
           </a>
         </div>
       )}
-      <p aria-live="polite" className="text-xs text-muted-foreground">
-        {status}
-      </p>
+      <p aria-live="polite" className="text-xs text-muted-foreground">{status}</p>
       <Note>
         Buddy automatically chooses the best available free engine and keeps technical controls out
         of your way. Only use voice samples and songs you own or are authorized to transform.

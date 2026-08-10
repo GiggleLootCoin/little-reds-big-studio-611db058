@@ -1,17 +1,14 @@
 # Buddy Visual Reference
 
-## Source reference
+## Canonical source reference
 
-Reference image supplied by Little Red in ChatGPT on 2026-08-09:
+The canonical Buddy character reference is the exact repository asset:
 
-- Local source asset: `1000033125(2).png`
-- Description: Buddy character sheet featuring the primary full-body Buddy, multiple poses, front/side/back views, laptop, microphone, notebook, and the `RED'S LITTLE BUDDY` pedestal treatment.
+- `file_0000000070e8824391d24367b5f22d59.png`
 
-## Canonical visual direction
+This asset is the source-of-truth character reference for Buddy's visual identity. It must not be silently replaced by a newly generated character or by an unrelated stock/AI image.
 
-This image is a visual reference, not a requirement to reproduce every generated image identically.
-
-### Character identity
+## Character identity
 
 - Friendly compact hooded character.
 - Black primary materials with strong red accents.
@@ -24,7 +21,7 @@ This image is a visual reference, not a requirement to reproduce every generated
 - Cute and approachable without becoming childish.
 - Futuristic without looking sterile or generic.
 
-### Consistency requirements
+## Consistency requirements
 
 Future Buddy artwork should preserve the recognizable character identity unless a deliberate alternate form is requested.
 
@@ -38,10 +35,11 @@ Maintain consistency across:
 - Body proportions
 - Overall friendly personality
 
-### Planned expressive states
+## Planned expressive states
 
-The reference sheet can guide future variants including:
+The canonical reference can guide lightweight runtime states including:
 
+- Idle
 - Listening
 - Speaking
 - Thinking
@@ -59,6 +57,20 @@ The reference sheet can guide future variants including:
 - Error/recovery
 - Buddy Off the Chain
 
+## Animation architecture
+
+Buddy's normal on-screen animation is a lightweight Studio runtime layer. The canonical PNG remains the visual source; CSS/browser animation supplies movement such as floating, aura pulsing, listening, thinking, working, success and recovery states.
+
+The animation layer must:
+
+- Reuse the canonical local asset.
+- Avoid repeatedly uploading the Buddy reference to an external AI service merely to animate it.
+- Remain functional on Android/mobile Chrome.
+- Respect `prefers-reduced-motion`.
+- Keep the character recognizable rather than morphing it into a different design.
+
+Heavy generative animation may be offered as an optional external workflow, but it is not required for Buddy's normal Studio presence.
+
 ## Implementation note
 
-The actual PNG should be stored as a project asset/reference once binary asset upload is available. The current GitHub connector can create/update UTF-8 text files but cannot directly commit binary image attachments from this chat, so this document preserves the reference specification without fabricating or replacing the supplied artwork.
+The canonical PNG is already committed to the repository. Components should import this exact asset rather than duplicating or regenerating it. The current implementation uses the image as the source layer and the browser runtime for lightweight animation, keeping the normal Buddy experience free and local to the Studio UI.

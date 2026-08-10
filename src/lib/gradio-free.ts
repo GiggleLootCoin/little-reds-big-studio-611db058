@@ -210,7 +210,8 @@ async function resolveEndpoint(route: RouteCandidate, preferredEndpoint?: string
 }
 
 async function normalizeInput(value: unknown): Promise<unknown> {
-  if (typeof Blob !== "undefined" && value instanceof Blob) return gradioModule.handle_file?.(value) ?? value;
+  if (typeof Blob !== "undefined" && value instanceof Blob)
+    return gradioModule.handle_file?.(value) ?? value;
   if (Array.isArray(value)) return Promise.all(value.map((item) => normalizeInput(item)));
   if (value && typeof value === "object" && !(value instanceof Blob)) {
     const entries = await Promise.all(

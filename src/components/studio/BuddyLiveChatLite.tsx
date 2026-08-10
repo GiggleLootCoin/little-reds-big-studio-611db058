@@ -77,14 +77,13 @@ export function BuddyLiveChatLite() {
       if (Array.isArray(saved)) {
         setMessages(
           saved
-            .filter(
-              (m): m is Message =>
-                Boolean(
-                  m &&
-                    typeof m === "object" &&
-                    (m as Record<string, unknown>).role &&
-                    typeof (m as Record<string, unknown>).content === "string",
-                ),
+            .filter((m): m is Message =>
+              Boolean(
+                m &&
+                typeof m === "object" &&
+                (m as Record<string, unknown>).role &&
+                typeof (m as Record<string, unknown>).content === "string",
+              ),
             )
             .slice(-30),
         );
@@ -132,7 +131,10 @@ export function BuddyLiveChatLite() {
       }
       throw lastError instanceof Error ? lastError : new Error("No local model loaded.");
     } catch (error) {
-      console.warn("Buddy local brain could not load; deterministic fallback remains available", error);
+      console.warn(
+        "Buddy local brain could not load; deterministic fallback remains available",
+        error,
+      );
       throw error;
     }
   };
@@ -147,7 +149,13 @@ export function BuddyLiveChatLite() {
   };
 
   const startListening = () => {
-    if (!handsFreeRef.current || speakingRef.current || busyRef.current || recognitionRunningRef.current) return;
+    if (
+      !handsFreeRef.current ||
+      speakingRef.current ||
+      busyRef.current ||
+      recognitionRunningRef.current
+    )
+      return;
     const W = window as unknown as {
       SpeechRecognition?: RecognitionConstructor;
       webkitSpeechRecognition?: RecognitionConstructor;
@@ -250,7 +258,9 @@ export function BuddyLiveChatLite() {
           do_sample: true,
           return_full_text: false,
         });
-        reply = generatedText(out).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+        reply = generatedText(out)
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .trim();
       } catch (error) {
         console.warn("Buddy local model unavailable; using conversational fallback", error);
         reply = fallbackReply(text);
@@ -291,8 +301,16 @@ export function BuddyLiveChatLite() {
   };
 
   return (
-    <Panel eyebrow="BUDDY • LIVE" title="Talk to Buddy" icon={<Sparkles className="size-5" />} defaultOpen>
-      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground" aria-live="polite">
+    <Panel
+      eyebrow="BUDDY • LIVE"
+      title="Talk to Buddy"
+      icon={<Sparkles className="size-5" />}
+      defaultOpen
+    >
+      <div
+        className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground"
+        aria-live="polite"
+      >
         {status}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -308,12 +326,18 @@ export function BuddyLiveChatLite() {
           }}
           className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold"
         >
-          {muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}
+          {muted ? (
+            <VolumeX className="mr-2 inline size-4" />
+          ) : (
+            <Volume2 className="mr-2 inline size-4" />
+          )}
           {muted ? "Muted" : "Sound On"}
         </button>
       </div>
       <div className="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-border bg-background/35 p-3">
-        {!messages.length && <p className="text-sm text-muted-foreground">“Alright, Red. What are we making?”</p>}
+        {!messages.length && (
+          <p className="text-sm text-muted-foreground">“Alright, Red. What are we making?”</p>
+        )}
         {messages.map((m, i) => (
           <div
             key={`${i}-${m.role}`}
@@ -326,7 +350,11 @@ export function BuddyLiveChatLite() {
             {m.content}
           </div>
         ))}
-        {listening && <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">Listening…</div>}
+        {listening && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+            Listening…
+          </div>
+        )}
         {busy && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" /> Buddy is thinking…

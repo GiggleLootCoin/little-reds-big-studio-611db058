@@ -5,11 +5,14 @@ export function freeSpaceOrigin(space: string) {
 }
 
 export function freeArtifactUrl(value: unknown, space: string) {
-  const url = outputUrl(value);
-  if (!url) return null;
-  if (/^(https?:|blob:|data:)/.test(url)) return url;
+  const url = outputUrl(value, space);
+  if (url) return url;
+  if (typeof value !== "string") return null;
   try {
-    return new URL(url.startsWith("/") ? url : `/${url}`, freeSpaceOrigin(space)).toString();
+    const text = value.trim();
+    if (!text) return null;
+    if (/^(https?:|blob:|data:)/.test(text)) return text;
+    return new URL(text.startsWith("/") ? text : `/${text}`, freeSpaceOrigin(space)).toString();
   } catch {
     return null;
   }

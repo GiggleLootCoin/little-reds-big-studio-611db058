@@ -149,7 +149,8 @@ export function BuddyLiveChat() {
         </StudioButton>
       </div>
       <p className="text-[0.65rem] text-muted-foreground">
-        No API key. No paid model. The local Qwen3 model runs in your browser; actual speed and memory limits depend on the device.
+        No API key. No paid model. The local Qwen3 model runs in your browser; actual speed and
+        memory limits depend on the device.
       </p>
     </Panel>
   );

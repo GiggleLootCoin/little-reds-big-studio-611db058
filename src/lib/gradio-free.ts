@@ -1,10 +1,6 @@
 type FileLike = File | Blob | string;
 type GradioMessage = { type: string; data?: unknown; status?: unknown };
 type GradioJob = AsyncIterable<GradioMessage>;
-type GradioEndpoint = {
-  parameters?: unknown[];
-  [key: string]: unknown;
-};
 type GradioClient = {
   submit: (apiName: string, inputs: unknown) => GradioJob;
   view_api?: () => Promise<unknown>;
@@ -25,21 +21,34 @@ const routeCache = new Map<string, { ok: boolean; expires: number }>();
 
 const ROUTES: Record<string, RouteCandidate[]> = {
   music: [
-    { space: "victor/ace-step-jam", endpoints: ["/create", "/predict"], priority: 120 },
+    {
+      space: "victor/ace-step-jam",
+      endpoints: ["/create", "/predict", "/generate_music"],
+      priority: 140,
+    },
     {
       space: "ACE-Step/Ace-Step-v1.5",
-      endpoints: ["/predict", "/generate_music", "/create"],
-      priority: 115,
+      endpoints: ["/generate_music", "/predict", "/create"],
+      priority: 130,
     },
-    { space: "R-Kentaren/ace-step-jam", endpoints: ["/create", "/predict"], priority: 105 },
+    {
+      space: "R-Kentaren/ace-step-jam",
+      endpoints: ["/create", "/predict", "/generate_music"],
+      priority: 110,
+    },
   ],
   image: [
-    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 120 },
-    { space: "hf-applications/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 115 },
+    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 140 },
+    { space: "hf-applications/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 120 },
     { space: "xiaopeng/Awesome-Z-Image-Turbo", endpoints: ["/generate_image"], priority: 100 },
   ],
   video: [
-    { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/predict", "/generate_video"], priority: 120 },
+    { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/generate_video", "/predict"], priority: 145 },
+    {
+      space: "dream2589632147/Dream-wan2-2-faster-Pro",
+      endpoints: ["/generate_video", "/predict"],
+      priority: 140,
+    },
     {
       space: "r3gm/Wan2.2-14B-Fast-Preview",
       endpoints: ["/generate_video", "/predict"],
@@ -47,31 +56,58 @@ const ROUTES: Record<string, RouteCandidate[]> = {
     },
   ],
   voiceClone: [
-    { space: "Qwen/Qwen3-TTS", endpoints: ["/generate_voice_clone"], priority: 120 },
+    {
+      space: "Qwen/Qwen3-TTS",
+      endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"],
+      priority: 150,
+    },
+    {
+      space: "chanikul/Qwen3-TTS",
+      endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"],
+      priority: 140,
+    },
     {
       space: "multimodalart/higgs-audio-v3-tts",
       endpoints: ["/synthesize", "/generate"],
-      priority: 105,
+      priority: 125,
     },
+    { space: "mrfakename/F5-TTS", endpoints: ["/generate", "/synthesize"], priority: 115 },
+  ],
+  voicePreset: [
+    { space: "hexgrad/Kokoro-TTS", endpoints: ["/generate", "/predict"], priority: 150 },
+    {
+      space: "Qwen/Qwen3-TTS",
+      endpoints: ["/generate_custom_voice", "/generate_speech", "/generate_voice_clone"],
+      priority: 140,
+    },
+    { space: "mrfakename/F5-TTS", endpoints: ["/generate", "/synthesize"], priority: 120 },
   ],
   voiceSwap: [
     {
       space: "Plachta/Seed-VC",
-      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"],
-      priority: 120,
+      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper", "/convert"],
+      priority: 150,
+    },
+    { space: "r3gm/RVC-Zero", endpoints: ["/convert", "/predict"], priority: 120 },
+  ],
+  vocalSeparation: [
+    {
+      space: "JacobLinCool/vocal-separation",
+      endpoints: ["/inference", "/separate"],
+      priority: 150,
     },
     {
-      space: "sp2026/Seed-VC",
-      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper"],
-      priority: 105,
+      space: "owiedotch/demucs-stem-separation",
+      endpoints: ["/inference", "/predict"],
+      priority: 140,
     },
+    { space: "abidlabs/music-separation", endpoints: ["/inference", "/predict"], priority: 120 },
   ],
 };
 
 async function loadGradio(): Promise<GradioModule> {
-  if (!modulePromise) {
+  if (!modulePromise)
     modulePromise = import(/* @vite-ignore */ GRADIO_CDN) as Promise<GradioModule>;
-  }
   return modulePromise;
 }
 
@@ -126,8 +162,7 @@ export function firstOutput(result: unknown): unknown {
     }
   }
   if (!result || typeof result !== "object") return result;
-  const data = (result as { data?: unknown }).data;
-  return data ?? result;
+  return (result as { data?: unknown }).data ?? result;
 }
 
 function endpointNames(info: unknown): string[] {
@@ -164,10 +199,6 @@ async function resolveEndpoint(route: RouteCandidate) {
   return { client, endpoint };
 }
 
-/**
- * Probe a logical route without starting a generation job. Results are cached
- * briefly so the Android client does not repeatedly wake public Spaces.
- */
 export async function probeFreeRoute(logicalId: string): Promise<boolean> {
   const candidates = ROUTES[logicalId] ?? [];
   for (const route of [...candidates].sort((a, b) => b.priority - a.priority)) {
@@ -196,7 +227,6 @@ async function collect(
   const candidates = ROUTES[logicalId] ?? [];
   if (!candidates.length) throw new Error(`No free route is configured for ${logicalId}.`);
   let lastError: unknown = null;
-
   for (const route of [...candidates].sort((a, b) => b.priority - a.priority)) {
     const key = `${logicalId}:${route.space}`;
     const cached = routeCache.get(key);
@@ -224,7 +254,6 @@ async function collect(
       onStatus?.(`${route.space} unavailable; trying the next free route…`);
     }
   }
-
   throw lastError instanceof Error
     ? lastError
     : new Error("No free public generation route is currently available.");
@@ -236,13 +265,10 @@ export async function runGradio(
   inputs: Record<string, unknown> | unknown[],
   onStatus?: (message: string) => void,
 ) {
-  // `space` is retained for compatibility with existing callers. Logical IDs
-  // use the live route table; unknown IDs still work as direct single-space calls.
   const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
     ? space
     : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
   if (logicalId) return firstOutput(await collect(logicalId, inputs, onStatus));
-
   const client = await connectFreeSpace(space);
   const job = client.submit(apiName, inputs);
   let latest: unknown = null;
@@ -289,5 +315,7 @@ export const FREE_SPACE_IDS = {
   image: "image",
   video: "video",
   voiceClone: "voiceClone",
+  voicePreset: "voicePreset",
   voiceSwap: "voiceSwap",
+  vocalSeparation: "vocalSeparation",
 } as const;

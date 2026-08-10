@@ -24,7 +24,8 @@ function readUser(): LocalUser | null {
       typeof value.user_metadata !== "object" ||
       typeof value.user_metadata.display_name !== "string" ||
       !value.user_metadata.display_name.trim()
-    ) return null;
+    )
+      return null;
     return value as LocalUser;
   } catch {
     return null;
@@ -32,7 +33,8 @@ function readUser(): LocalUser | null {
 }
 
 function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+    return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -53,11 +55,14 @@ function readProfile(id: string): Profile {
     if (parsed && typeof parsed === "object") {
       const value = parsed as Partial<Profile>;
       if (
-        typeof value.id === "string" && typeof value.handle === "string" &&
-        typeof value.display_name === "string" && typeof value.about === "string" &&
+        typeof value.id === "string" &&
+        typeof value.handle === "string" &&
+        typeof value.display_name === "string" &&
+        typeof value.about === "string" &&
         (value.avatar_url === null || typeof value.avatar_url === "string") &&
         (value.banner_url === null || typeof value.banner_url === "string")
-      ) return value as Profile;
+      )
+        return value as Profile;
     }
   } catch {
     // Rebuild a safe default profile below.
@@ -84,7 +89,12 @@ export function useProfile(userId: string | undefined) {
     if (userId) void load(userId);
     else setProfile(null);
   }, [userId]);
-  return { profile, loading, setProfile, reload: () => (userId ? load(userId) : Promise.resolve()) };
+  return {
+    profile,
+    loading,
+    setProfile,
+    reload: () => (userId ? load(userId) : Promise.resolve()),
+  };
 }
 
 export function createLocalUser(displayName: string, email = "local@studio") {

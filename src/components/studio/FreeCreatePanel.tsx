@@ -7,7 +7,28 @@ type Busy = "lyrics" | "song" | "image" | "video" | "clone" | "swap" | null;
 const TIMEOUT = 180_000;
 function messageOf(error: unknown) { return error instanceof Error ? error.message.replace(/https?:\/\/\S+/g, "").trim() : "The creation service did not return a result."; }
 async function withTimeout<T>(promise: Promise<T>, ms = TIMEOUT) { let timer: ReturnType<typeof setTimeout> | undefined; try { return await Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error("The creation service timed out.")), ms); })]); } finally { if (timer) clearTimeout(timer); } }
-function resultUrl(value: unknown) { return outputUrl(value) ?? outputUrl(firstOutput(value)); }
+function resultUrl(value: unknown, space: string) {
+  const direct = outputUrl(value) ?? outputUrl(firstOutput(value));
+  if (direct && !/^\/?(?:gradio_api\/)?file=/.test(direct)) return direct;
+  const host = `https://${space.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.hf.space`;
+  const find = (item: unknown): string | null => {
+    if (typeof item === "string") {
+      const text = item.trim();
+      if (/^(https?:|blob:|data:)/.test(text)) return text;
+      if (/^\/?(?:gradio_api\/)?file=/.test(text)) return `${host}/${text.replace(/^\//, "")}`;
+      try { if (text.startsWith("{") || text.startsWith("[")) return find(JSON.parse(text)); } catch { /* ignore */ }
+      return null;
+    }
+    if (Array.isArray(item)) { for (const child of item) { const found = find(child); if (found) return found; } return null; }
+    if (item && typeof item === "object") {
+      for (const field of ["url", "path", "data", "value", "audio", "image", "video", "audio_url", "video_url", "image_url"]) {
+        const found = find((item as Record<string, unknown>)[field]); if (found) return found;
+      }
+    }
+    return null;
+  };
+  return find(value) ?? find(firstOutput(value));
+}
 
 export function FreeCreatePanel() {
   const [brief, setBrief] = useState(""); const [lyrics, setLyrics] = useState(""); const [busy, setBusy] = useState<Busy>(null); const [status, setStatus] = useState("Buddy is ready.");
@@ -26,23 +47,23 @@ export function FreeCreatePanel() {
   const generateSong = async () => { setBusy("song"); setAudioUrl(null); setStatus("Buddy is creating your song…"); try {
     const lrc = lyrics.trim() || "[start]\n[verse]\nA brand new song begins tonight\n[chorus]\nWe are alive, we are alright\n[outro]";
     const result = await withTimeout(runGradio(FREE_SPACE_IDS.music, "/infer_music", { lrc, current_prompt_type: "text", text_prompt: brief.trim() || "polished contemporary pop, warm vocals, piano, bass, drums, uplifting", audio_prompt: null, seed: 42, randomize_seed: true, steps: 16, cfg_strength: 1.0, file_type: "wav", odeint_method: "euler" }, setStatus), 720_000);
-    const url = resultUrl(result); if (!url) throw new Error("The music service returned no audio file."); setAudioUrl(url); setStatus("Your song is ready.");
+    const url = resultUrl(result, "ASLP-lab/DiffRhythm2"); if (!url) throw new Error("The music service returned no audio file."); setAudioUrl(url); setStatus("Your song is ready.");
   } catch (e) { setStatus(`Song could not be completed: ${messageOf(e)}`); } finally { setBusy(null); } };
   const generateImage = async () => { setBusy("image"); setImageUrl(null); setStatus("Buddy is creating your artwork…"); try {
     const result = await withTimeout(runGradio(FREE_SPACE_IDS.image, "/generate_image", { prompt: brief.trim() || "A cinematic premium album cover for an original song", height: 1024, width: 1024, num_inference_steps: 9, seed: 42, randomize_seed: true }, setStatus), 300_000);
-    const url = resultUrl(result); if (!url) throw new Error("The image service returned no image file."); setImageUrl(url); setStatus("Your artwork is ready.");
+    const url = resultUrl(result, "mrfakename/Z-Image-Turbo"); if (!url) throw new Error("The image service returned no image file."); setImageUrl(url); setStatus("Your artwork is ready.");
   } catch (e) { setStatus(`Artwork could not be completed: ${messageOf(e)}`); } finally { setBusy(null); } };
   const generateVideo = async () => { const audio = videoAudio ?? audioUrl; if (!videoImage) { setStatus("Add an image for your video first."); return; } if (!audio) { setStatus("Create a song or add audio first."); return; } setBusy("video"); setVideoUrl(null); setStatus("Buddy is creating your video…"); try {
     const result = await withTimeout(runGradio(FREE_SPACE_IDS.video, "/predict", { image: freeFile(videoImage), input_image: freeFile(videoImage), audio: typeof audio === "string" ? audio : freeFile(audio), prompt: brief.trim() || "Cinematic natural motion synchronized to the music, smooth camera movement.", duration_seconds: 5 }, setStatus), 720_000);
-    const url = resultUrl(result); if (!url) throw new Error("The video service returned no video file."); setVideoUrl(url); setStatus("Your video is ready.");
+    const url = resultUrl(result, "Wan-AI/Wan2.2-S2V"); if (!url) throw new Error("The video service returned no video file."); setVideoUrl(url); setStatus("Your video is ready.");
   } catch (e) { setStatus(`Video could not be completed: ${messageOf(e)}`); } finally { setBusy(null); } };
   const cloneVoice = async () => { if (!referenceVoice) { setStatus("Choose a reference voice first."); return; } setBusy("clone"); setCloneUrl(null); setStatus("Buddy is creating the voice result…"); try {
     const result = await withTimeout(runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", { ref_audio: freeFile(referenceVoice), ref_text: "", target_text: brief.trim() || "Hello from Little Red's Big Studio.", language: "English", use_xvector_only: true, model_size: "1.7B" }, setStatus), 240_000);
-    const url = resultUrl(result); if (!url) throw new Error("The voice service returned no audio file."); setCloneUrl(url); setStatus("Your voice result is ready.");
+    const url = resultUrl(result, "Qwen/Qwen3-TTS"); if (!url) throw new Error("The voice service returned no audio file."); setCloneUrl(url); setStatus("Your voice result is ready.");
   } catch (e) { setStatus(`Voice creation could not be completed: ${messageOf(e)}`); } finally { setBusy(null); } };
   const swapVoice = async () => { if (!swapSource || !referenceVoice) { setStatus("Choose both voice files first."); return; } setBusy("swap"); setSwapUrl(null); setStatus("Buddy is transforming the voice…"); try {
     const outputs = await withTimeout(runGradioAll(FREE_SPACE_IDS.voiceSwap, "/convert_voice_v1_wrapper", { source_audio_path: freeFile(swapSource), target_audio_path: freeFile(referenceVoice), diffusion_steps: 25, length_adjust: 1, inference_cfg_rate: 0.7, f0_condition: true, auto_f0_adjust: true, pitch_shift: 0, stream_output: false }, setStatus), 720_000);
-    const url = resultUrl(outputs[1]) ?? resultUrl(outputs[0]); if (!url) throw new Error("The voice conversion service returned no audio file."); setSwapUrl(url); setStatus("Your voice-swap result is ready.");
+    const url = resultUrl(outputs[1], "Plachta/Seed-VC") ?? resultUrl(outputs[0], "Plachta/Seed-VC"); if (!url) throw new Error("The voice conversion service returned no audio file."); setSwapUrl(url); setStatus("Your voice-swap result is ready.");
   } catch (e) { setStatus(`Voice swap could not be completed: ${messageOf(e)}`); } finally { setBusy(null); } };
   const save = () => { localStorage.setItem("lrbgs-song-brief", brief); localStorage.setItem("lrbgs-lyrics", lyrics); setStatus("Saved on this device."); }; const disabled = busy !== null;
   return <Panel eyebrow="CREATE" title="Turn an idea into something real" icon={<WandSparkles className="size-5" />} defaultOpen>

@@ -1,3 +1,4 @@
+import "./buddy-life.css";
 import { cn } from "@/lib/utils";
 import buddyReference from "../../../file_0000000070e8824391d24367b5f22d59.png";
 import type { BuddyStatus } from "@/lib/buddy-presence";
@@ -11,7 +12,7 @@ export function BuddyAnimatedAssistant({ status = "idle", compact = false, class
       <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_48%_30%,oklch(1_0_0_/_18%),transparent_28%),linear-gradient(180deg,transparent_58%,oklch(0_0_0_/_24%))]" />
       <div className="buddy-blink pointer-events-none absolute left-[34%] top-[35%] h-[2%] w-[8%] rounded-full bg-white/70 blur-[1px]" />
       <div className="buddy-blink pointer-events-none absolute left-[58%] top-[35%] h-[2%] w-[8%] rounded-full bg-white/70 blur-[1px]" />
-      <div className="buddy-mouth pointer-events-none absolute bottom-[25%] left-1/2 h-[7%] w-[18%] -translate-x-1/2 rounded-full border border-primary/40 bg-primary/20 shadow-[0_0_22px_oklch(0.6_0.24_26_/_0.4)]" />
+      <div className="buddy-mouth pointer-events-none absolute bottom-[25%] left-1/2 h-[7%] w-[18%] rounded-full border border-primary/40 bg-primary/20 shadow-[0_0_22px_oklch(0.6_0.24_26_/_0.4)]" />
       <div className="absolute inset-x-[30%] bottom-[9%] flex h-[9%] items-end justify-center gap-1 opacity-80" aria-hidden>{[2,5,3,7,4,6,2].map((h, i) => <span key={i} className="buddy-bar w-[7%] rounded-full bg-primary" style={{ height: `${h * 10}%`, animationDelay: `${i * 70}ms` }} />)}</div>
     </div>
     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-primary/35 bg-black/80 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-primary shadow-lg backdrop-blur-md">{LABELS[status]}</span>

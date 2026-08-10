@@ -150,8 +150,9 @@ export function BuddyLiveChatLite() {
       r.onresult = (e) => {
         const last = e.results?.[e.results.length - 1];
         const text = last?.[0]?.transcript?.trim();
-        if (text && handsFreeRef.current && !busyRef.current && !speakingRef.current)
+        if (text && handsFreeRef.current && !busyRef.current && !speakingRef.current) {
           void send(text, true);
+        }
       };
       r.onend = () => {
         setListening(false);
@@ -298,7 +299,11 @@ export function BuddyLiveChatLite() {
           }}
           className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold"
         >
-          {muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}
+          {muted ? (
+            <VolumeX className="mr-2 inline size-4" />
+          ) : (
+            <Volume2 className="mr-2 inline size-4" />
+          )}
           {muted ? "Muted" : "Sound On"}
         </button>
       </div>

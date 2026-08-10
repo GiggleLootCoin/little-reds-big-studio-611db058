@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import { Compass, Film, Mic2, SlidersHorizontal, Users } from "lucide-react";
 import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
@@ -180,7 +180,7 @@ function Studio() {
                 <div className="flex flex-wrap gap-2">
                   <Chip>Android-first</Chip>
                   <Chip>No paid API</Chip>
-                  <Chip>No Lovable</Chip>
+                  <Chip>Live voice</Chip>
                 </div>
               </div>
             </section>

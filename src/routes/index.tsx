@@ -138,7 +138,10 @@ function Studio() {
             />
           </a>
         </div>
-        <nav aria-label="Studio sections" className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex">
+        <nav
+          aria-label="Studio sections"
+          className="mx-auto hidden w-full max-w-4xl gap-1 px-4 pb-2 sm:flex"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -166,9 +169,12 @@ function Studio() {
             <section className="rounded-2xl border border-border/60 bg-background/45 p-4 backdrop-blur-md sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">Your project</h2>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em]">
+                    Your project
+                  </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Start anywhere. Buddy keeps the workflow moving while the engine deck gives you direct free fallbacks.
+                    Start anywhere. Buddy keeps the workflow moving while the engine deck gives you
+                    direct free fallbacks.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -179,34 +185,76 @@ function Studio() {
               </div>
             </section>
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">Your next move</h2>
+              <h2 className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-foreground before:h-4 before:w-1 before:rounded-full before:bg-primary before:content-['']">
+                Your next move
+              </h2>
               <NextMoves onJump={jump} />
             </section>
             <section className="rounded-2xl border border-border/50 bg-background/35 p-4 text-xs text-muted-foreground backdrop-blur-md">
               <p>
                 <span className="font-semibold text-foreground">Buddy handles the machinery.</span>{" "}
-                When a heavyweight model cannot run locally, Buddy can point you to the best free/open runner instead of pretending it ran.
+                When a heavyweight model cannot run locally, Buddy can point you to the best
+                free/open runner instead of pretending it ran.
               </p>
             </section>
             <SupportPanel />
           </div>
         )}
-        {tab === "write" && <div className="space-y-3"><FreeCreatePanel /></div>}
-        {tab === "mix" && <div className="space-y-3"><UploadPanel /><QRangePanel /><LabPanel /></div>}
-        {tab === "video" && <div className="space-y-3"><StoryboardPanel /><VideoPanel /><SeoPanel /></div>}
-        {tab === "community" && <div className="space-y-3"><SpotlightPanel /><ProfilePanel /><AccessPanel /></div>}
+        {tab === "write" && (
+          <div className="space-y-3">
+            <FreeCreatePanel />
+          </div>
+        )}
+        {tab === "mix" && (
+          <div className="space-y-3">
+            <UploadPanel />
+            <QRangePanel />
+            <LabPanel />
+          </div>
+        )}
+        {tab === "video" && (
+          <div className="space-y-3">
+            <StoryboardPanel />
+            <VideoPanel />
+            <SeoPanel />
+          </div>
+        )}
+        {tab === "community" && (
+          <div className="space-y-3">
+            <SpotlightPanel />
+            <ProfilePanel />
+            <AccessPanel />
+          </div>
+        )}
         <footer className="mt-10 text-center text-xs text-muted-foreground">
-          <span>{VERSION}</span><span className="mx-2">•</span><span>Little Red's Big Studio — free/open edition</span>
+          <span>{VERSION}</span>
+          <span className="mx-2">•</span>
+          <span>Little Red's Big Studio — free/open edition</span>
         </footer>
       </main>
-      <nav aria-label="Studio sections" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden">
+      <nav
+        aria-label="Studio sections"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl sm:hidden"
+      >
         <div className="grid grid-cols-5">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
-              <button key={t.id} type="button" aria-current={active ? "page" : undefined} onClick={() => go(t.id)} className={cn("flex min-h-14 flex-col items-center justify-center gap-1 transition-colors", active ? "text-primary" : "text-muted-foreground")}>
-                <Icon aria-hidden className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")} />
+              <button
+                key={t.id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => go(t.id)}
+                className={cn(
+                  "flex min-h-14 flex-col items-center justify-center gap-1 transition-colors",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                <Icon
+                  aria-hidden
+                  className={cn("size-5", active && "drop-shadow-[0_0_6px_currentColor]")}
+                />
                 <span className="text-[0.6rem] font-semibold tracking-wide">{t.label}</span>
               </button>
             );

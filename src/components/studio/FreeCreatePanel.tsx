@@ -7,7 +7,26 @@ type Busy = "lyrics" | "song" | "image" | "video" | "clone" | "swap" | null;
 const TIMEOUT = 180_000;
 function messageOf(error: unknown) { return error instanceof Error ? error.message.replace(/https?:\/\/\S+/g, "").trim() : "The creation service did not return a result."; }
 async function withTimeout<T>(promise: Promise<T>, ms = TIMEOUT) { let timer: ReturnType<typeof setTimeout> | undefined; try { return await Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error("The creation service timed out.")), ms); })]); } finally { if (timer) clearTimeout(timer); } }
-function resultUrl(value: unknown) { return outputUrl(value) ?? outputUrl(firstOutput(value)); }
+function resultUrl(value: unknown) {
+  const direct = outputUrl(value) ?? outputUrl(firstOutput(value));
+  if (direct) return direct;
+  const find = (item: unknown): string | null => {
+    if (typeof item === "string") {
+      const text = item.trim();
+      if (/^(\/gradio_api\/file=|gradio_api\/file=|\/file=|file=)/.test(text)) return text;
+      try { if (text.startsWith("{") || text.startsWith("[")) return find(JSON.parse(text)); } catch { /* ignore malformed serialized output */ }
+      return null;
+    }
+    if (Array.isArray(item)) { for (const child of item) { const found = find(child); if (found) return found; } return null; }
+    if (item && typeof item === "object") {
+      for (const field of ["url", "path", "data", "value", "audio", "image", "video", "audio_url", "video_url", "image_url"]) {
+        const found = find((item as Record<string, unknown>)[field]); if (found) return found;
+      }
+    }
+    return null;
+  };
+  return find(value) ?? find(firstOutput(value));
+}
 
 export function FreeCreatePanel() {
   const [brief, setBrief] = useState(""); const [lyrics, setLyrics] = useState(""); const [busy, setBusy] = useState<Busy>(null); const [status, setStatus] = useState("Buddy is ready.");

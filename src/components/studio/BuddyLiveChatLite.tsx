@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Mic, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { runGradio, FREE_SPACE_IDS, outputUrl } from "@/lib/gradio-free";
+import { memoryContext, rememberConversation } from "@/lib/buddy-memory";
+import { liveWebSearch, shouldResearch } from "@/lib/buddy-web";
 import { loadStoredBuddyVoice } from "./VoiceLabPanel";
 import { Panel, StudioButton } from "./ui";
 
@@ -10,7 +12,7 @@ type RecognitionLike = { continuous: boolean; interimResults: boolean; lang: str
 type RecognitionConstructor = new () => RecognitionLike;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
-const KEY = "lrbgs-buddy-chat-v11";
+const KEY = "lrbgs-buddy-chat-v12";
 const RECORD_WINDOW_MS = 6000;
 
 function extract(value: unknown): string {
@@ -43,6 +45,7 @@ export function BuddyLiveChatLite() {
   const [listening, setListening] = useState(false);
   const [muted, setMuted] = useState(false);
   const [status, setStatus] = useState("Buddy is ready.");
+  const [researching, setResearching] = useState(false);
   const liveRef = useRef(false);
   const busyRef = useRef(false);
   const speakingRef = useRef(false);
@@ -101,19 +104,35 @@ export function BuddyLiveChatLite() {
     setStatus("Buddy is thinking…");
     let reply = "";
     try {
+      const memories = await memoryContext(text, 8);
+      let research = "";
+      if (shouldResearch(text)) {
+        setResearching(true);
+        setStatus("Buddy is checking the live web…");
+        const results = await liveWebSearch(text);
+        research = results.slice(0, 6).map((result, index) => `${index + 1}. ${result.title} — ${result.source}\n${result.snippet}\n${result.url}`).join("\n\n");
+        setResearching(false);
+      }
       if (!brainRef.current) {
         const load = new Function("url", "return import(url)") as (url: string) => Promise<{ pipeline: (task: string, model: string, options: Record<string, string>) => Promise<unknown> }>;
         const mod = await load("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm");
         brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: "wasm", dtype: "q4" });
       }
       const brain = brainRef.current as (messages: Message[], options: Record<string, unknown>) => Promise<unknown>;
-      const result = await brain(next, { max_new_tokens: 180, temperature: 0.7, do_sample: true, return_full_text: false });
+      const context: Message[] = [];
+      if (memories) context.push({ role: "assistant", content: `Long-term memory that may matter:\n${memories}` });
+      if (research) context.push({ role: "assistant", content: `Fresh web research. Treat these as research notes, not as guaranteed truth:\n${research}` });
+      context.push(...next);
+      const result = await brain(context, { max_new_tokens: 220, temperature: 0.7, do_sample: true, return_full_text: false });
       reply = extract(result).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-    } catch (error) { console.warn("Buddy local brain unavailable", error); }
+    } catch (error) { console.warn("Buddy local brain unavailable", error); setResearching(false); }
     if (!reply) reply = fallback(text);
-    setMessages([...next, { role: "assistant", content: reply }]);
+    const updated = [...next, { role: "assistant" as const, content: reply }];
+    setMessages(updated);
+    void rememberConversation(text, reply);
     busyRef.current = false;
     setBusy(false);
+    setResearching(false);
     if (voice || liveRef.current) void speakNaturally(reply); else setStatus("Buddy is ready.");
   };
 
@@ -180,9 +199,7 @@ export function BuddyLiveChatLite() {
         setListening(true);
         setStatus("Listening…");
         return;
-      } catch {
-        recognitionRef.current = null;
-      }
+      } catch { recognitionRef.current = null; }
     }
     await startRecorderFallback();
   };
@@ -231,7 +248,7 @@ export function BuddyLiveChatLite() {
 
   return (
     <Panel eyebrow="BUDDY • LIVE" title="Talk to Buddy" icon={<Sparkles className="size-5" />} defaultOpen>
-      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground" aria-live="polite">{status}</div>
+      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3 text-sm text-muted-foreground" aria-live="polite">{researching ? "Buddy is researching…" : status}</div>
       <div className="flex flex-wrap gap-2">
         <StudioButton onClick={toggle} aria-pressed={live}><Mic className="size-4" />{live ? "Live Conversation On" : "Start Live Conversation"}</StudioButton>
         <button type="button" onClick={() => { setMuted((current) => !current); if (!muted) { audioRef.current?.pause(); window.speechSynthesis?.cancel(); } }} className="rounded-xl border border-border bg-background/60 px-3 py-2 text-xs font-semibold">{muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}{muted ? "Muted" : "Sound On"}</button>

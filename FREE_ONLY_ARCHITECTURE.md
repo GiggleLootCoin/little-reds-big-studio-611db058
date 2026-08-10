@@ -1,40 +1,56 @@
-# Little Red's Big Studio — Free-Only Architecture
+# Little Red's Big Studio — Free/Open-First Architecture
 
 ## Non-negotiable rules
 
-- No paid APIs.
-- No API keys required for core Studio use.
+- No paid APIs required for core Studio use.
+- No API keys required for ordinary users.
 - No Lovable dependency.
-- No ElevenLabs.
-- No Replicate.
+- No ElevenLabs dependency.
+- No Replicate dependency.
 - No Supabase dependency for the core app.
 - No mandatory installation on Android.
-- Prefer local/browser inference and open-source/public free inference.
+- No Colab requirement for Studio use. Colab notebooks may remain as development/reference material only.
+- Prefer browser/device processing and legitimate free/public open-source inference routes.
 - Never expose a capability as available unless its route can actually run.
+- Provider/model changes remain invisible to ordinary users.
 
-## Runtime strategy
+## Android-first runtime strategy
 
-The Android web app is the control surface. Lightweight work runs in-browser. Heavy open models run through explicitly configured free/public runtimes such as Hugging Face Spaces or Colab-compatible workflows when browser inference is impractical.
+The Android web app is the control surface. Lightweight work runs in-browser. Heavy workloads use a provider-agnostic remote execution layer with ranked free/public/open routes. Buddy selects the best currently healthy route and automatically fails over when a route is unavailable or produces an invalid result. The user never needs to open another notebook, terminal, or browser tab.
+
+## Trial and membership
+
+Every legitimate new account receives one seven-day all-access trial beginning at authoritative account activation. During the trial, the user experiences the complete Studio without the export watermark. After expiry, the account falls back to the useful Free tier with the canonical Studio logo watermark on applicable exports. A verified $10/month Buddy Unlimited membership removes the watermark and unlocks unlimited membership usage, subject to genuine infrastructure/resource safeguards.
+
+Trial protection is layered and privacy-conscious: account entitlement, verification, short-lived network/security signals, device/session risk, and generation-abuse rate controls. An IP address is never treated as a unique human because households and mobile networks share addresses.
+
+## Support
+
+Optional creator support is available through Buy Me a Coffee and Cash App, with YouTube as the creator/music channel. Public supporter shout-outs are opt-in and automated; private supporters are never exposed publicly.
 
 ## Music
 
-Preferred open-source engines should be selected by capability and current availability, with ACE-Step 1.5 as the primary open music-generation target and other genuinely free/open engines as fallbacks. The router must report unavailable engines instead of fabricating success.
+Preferred open-source engines are selected by capability, quality, current health and availability, with genuinely free/open fallbacks. The router must report unavailable engines instead of fabricating success.
 
 ## Voice
 
-Use open RVC/Applio-compatible workflows for voice conversion. User-owned models and audio remain under the user's control.
+Use open voice-conversion and singing-conversion workflows where legitimately available. User-owned models and audio remain under the user's control. Voice cloning and swapping are explicit user-directed workflows and must preserve source/master artifacts.
 
 ## Buddy
 
-Buddy is a local-first companion. Text chat must not require a paid API. Where WebGPU-capable models are available, use them locally. If a model cannot run on the device, expose a clearly labelled free/open hosted fallback. Buddy maintains context/memory locally where practical and supports unlimited conversation subject only to the selected free runtime's actual limits.
+Buddy is the persistent creative companion. Text and voice conversation must not require a paid API for core operation. Where browser/device models are practical, use them locally. Otherwise use a free/public route. Buddy maintains long-term Creative DNA, project relationships, lessons and failures, and can use live web research when current information is useful.
 
-## Storage
+## Storage and continuity
 
-Core projects should use browser storage (IndexedDB/local files) rather than requiring Supabase. Export/import must provide portable project data.
+Core projects use browser storage where practical and portable export/import. Lifelong cross-device memory requires an authoritative account-backed memory service; browser storage alone must never be presented as permanent twenty-year storage.
 
-## Provider registry
+## Provider registry and self-healing
 
-Every engine reports capability, runtime, requirements, availability, and fallback. UI controls are generated from this registry so unavailable services cannot masquerade as working generators.
+Every engine reports capability, runtime, requirements, availability, quality and fallback routes. The orchestrator validates real outputs, resumes from the last successful stage, remembers failures, retires unhealthy routes, and promotes recovered/better routes. UI controls must never masquerade as working generators.
+
+## Watermarking
+
+The original/master artifact is never modified solely to enforce the Free tier. Applicable exported visual/media derivatives receive the canonical Little Red's Big Studio logo. Paid watermark removal requires a trusted server-side entitlement; client storage cannot unlock it.
 
 ## Deployment
 

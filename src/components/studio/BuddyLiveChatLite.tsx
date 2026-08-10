@@ -4,6 +4,7 @@ import { runGradio, FREE_SPACE_IDS } from "@/lib/gradio-free";
 import { freeArtifactUrl } from "@/lib/free-artifact";
 import { memoryContext, rememberConversation } from "@/lib/buddy-memory";
 import { liveWebSearch, shouldResearch } from "@/lib/buddy-web";
+import { runLocalChat, runLocalSpeechToText } from "@/lib/local-ai";
 import { loadStoredBuddyVoice } from "./VoiceLabPanel";
 import { Panel, StudioButton } from "./ui";
 
@@ -13,7 +14,7 @@ type RecognitionLike = { continuous: boolean; interimResults: boolean; lang: str
 type RecognitionConstructor = new () => RecognitionLike;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
-const KEY = "lrbgs-buddy-chat-v12";
+const KEY = "lrbgs-buddy-chat-v13";
 const RECORD_WINDOW_MS = 6000;
 const VOICE_SPACE = "Qwen/Qwen3-TTS";
 
@@ -37,7 +38,7 @@ function fallback(text: string) {
 
 export function BuddyLiveChatLite() {
   const [messages, setMessages] = useState<Message[]>([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false); const [live, setLive] = useState(false); const [listening, setListening] = useState(false); const [muted, setMuted] = useState(false); const [status, setStatus] = useState("Buddy is ready."); const [researching, setResearching] = useState(false);
-  const liveRef = useRef(false); const busyRef = useRef(false); const speakingRef = useRef(false); const recognitionRef = useRef<RecognitionLike | null>(null); const recorderRef = useRef<MediaRecorder | null>(null); const streamRef = useRef<MediaStream | null>(null); const timerRef = useRef<number | null>(null); const audioRef = useRef<HTMLAudioElement | null>(null); const brainRef = useRef<unknown>(null);
+  const liveRef = useRef(false); const busyRef = useRef(false); const speakingRef = useRef(false); const recognitionRef = useRef<RecognitionLike | null>(null); const recorderRef = useRef<MediaRecorder | null>(null); const streamRef = useRef<MediaStream | null>(null); const timerRef = useRef<number | null>(null); const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopRecognition = () => { try { recognitionRef.current?.abort(); } catch { /* already stopped */ } recognitionRef.current = null; };
 
   const speakNaturally = async (text: string) => {
@@ -69,21 +70,27 @@ export function BuddyLiveChatLite() {
     try {
       const memories = await memoryContext(text, 8); let research = "";
       if (shouldResearch(text)) { setResearching(true); setStatus("Buddy is checking the live web…"); const results = await liveWebSearch(text); research = results.slice(0, 6).map((result, index) => `${index + 1}. ${result.title} — ${result.source}\n${result.snippet}\n${result.url}`).join("\n\n"); setResearching(false); }
-      if (!brainRef.current) {
-        const load = new Function("url", "return import(url)") as (url: string) => Promise<{ pipeline: (task: string, model: string, options: Record<string, string>) => Promise<unknown> }>;
-        const mod = await load("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm"); brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: "wasm", dtype: "q4" });
-      }
-      const brain = brainRef.current as (messages: Message[], options: Record<string, unknown>) => Promise<unknown>; const context: Message[] = [];
-      if (memories) context.push({ role: "assistant", content: `Long-term memory that may matter:\n${memories}` }); if (research) context.push({ role: "assistant", content: `Fresh web research. Treat these as research notes, not as guaranteed truth:\n${research}` }); context.push(...next);
-      const result = await brain(context, { max_new_tokens: 220, temperature: 0.7, do_sample: true, return_full_text: false }); reply = extract(result).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      const context: Message[] = [];
+      if (memories) context.push({ role: "assistant", content: `Long-term memory that may matter:\n${memories}` });
+      if (research) context.push({ role: "assistant", content: `Fresh web research. Treat these as research notes, not as guaranteed truth:\n${research}` });
+      context.push(...next);
+      const result = await runLocalChat(context);
+      reply = extract(result).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
     } catch (error) { console.warn("Buddy local brain unavailable", error); setResearching(false); }
     if (!reply) reply = fallback(text); const updated = [...next, { role: "assistant" as const, content: reply }]; setMessages(updated); void rememberConversation(text, reply); busyRef.current = false; setBusy(false); setResearching(false); if (voice || liveRef.current) void speakNaturally(reply); else setStatus("Buddy is ready.");
   };
 
   const transcribeRecorded = async (blob: Blob) => {
-    setStatus("Buddy is understanding you…");
-    try { const result = await runGradio(FREE_SPACE_IDS.speechToText, "/predict", { audio: blob }, setStatus); const text = extract(result); if (text) await send(text, true); else if (liveRef.current) void startListening(); }
-    catch (error) { console.warn("Speech-to-text failed", error); setStatus("I didn't catch that. Listening again…"); if (liveRef.current) void startListening(); }
+    setStatus("Buddy is understanding you locally…");
+    try {
+      let text = "";
+      try { text = extract(await runLocalSpeechToText(blob)); } catch (localError) { console.warn("Local STT unavailable; trying free public STT", localError); }
+      if (!text) {
+        const result = await runGradio(FREE_SPACE_IDS.speechToText, "/predict", { audio: blob }, setStatus);
+        text = extract(result);
+      }
+      if (text) await send(text, true); else if (liveRef.current) void startListening();
+    } catch (error) { console.warn("Speech-to-text failed", error); setStatus("I didn't catch that. Listening again…"); if (liveRef.current) void startListening(); }
   };
 
   const startRecorderFallback = async () => {

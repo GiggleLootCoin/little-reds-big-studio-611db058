@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 type Plugin = Awaited<ReturnType<typeof listPlugins>>[number];
 
 const CAPABILITY_LABELS: Record<string, string> = {
-  text: "Writing & Council",
+  text: "Writing & Creative",
   voice: "Voice",
   music: "Music",
   stems: "Stem separation",

@@ -5,7 +5,8 @@ import { FREE_RUNNERS } from "./free-runners";
 const HOUSE_STYLE =
   "Little Red's Big Studio: crimson-lit, cinematic, direct, warm, radio-ready, creator-first.";
 const runnerHint = (capability: string) => {
-  const runner = FREE_RUNNERS.find((r) => r.capabilities.includes(capability)) || FREE_RUNNERS[0];
+  const runner =
+    FREE_RUNNERS.find((item) => item.capabilities.includes(capability)) || FREE_RUNNERS[0];
   return `\n\n### Free execution\nThis Studio does not call a paid AI API. Open **${runner.name}** and paste the prepared prompt: ${runner.url}`;
 };
 const prepared = (title: string, prompt: string, capability: string) =>
@@ -28,9 +29,10 @@ export const critiqueSong = createServerFn({ method: "POST" })
     critique: prepared(
       "Free AI Song Coach Job",
       `Critique this song idea. Honesty ${data.honesty}/100; depth ${data.depth}/100.\nTitle: ${data.title}\nGenre: ${data.genre}\nNotes: ${data.notes}\nLyrics:\n${data.lyrics}\nReturn: verdict/10, strengths, weaknesses, specific lyric/arrangement alternatives, mix targets, next 3 moves.`,
-      `text`,
+      "text",
     ),
   }));
+
 export const writeLyrics = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
@@ -47,27 +49,29 @@ export const writeLyrics = createServerFn({ method: "POST" })
     lyrics: prepared(
       "Free Lyrics Job",
       `Write a full song about ${data.theme}. Genre ${data.genre}; mood ${data.mood}; rhyme density ${data.rhyme}/100; explicit=${data.explicit}. Include Intro, Verse 1, Pre-Chorus, Chorus, Verse 2, Bridge, Final Chorus and Outro, followed by performance notes.`,
-      `text`,
+      "text",
     ),
   }));
-export const councilChat = createServerFn({ method: "POST" })
+
+export const studioChat = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
       .object({
         messages: z
           .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }))
           .min(1),
-        seats: z.array(z.string()).default([]),
+        focus: z.array(z.string()).default([]),
       })
       .parse(input),
   )
   .handler(async ({ data }) => ({
     reply: prepared(
-      "Free Council Job",
-      `Act as a council of specialists: ${data.seats.join(", ") || "songwriter, producer, director, vocal coach and growth strategist"}. Synthesize one decisive answer to:\n${data.messages.map((m) => `${m.role}: ${m.content}`).join("\n")}`,
-      `text`,
+      "Free Studio Chat Job",
+      `Act as one practical creative assistant for Little Red's Big Studio. Focus areas: ${data.focus.join(", ") || "songwriting, production, vocals, artwork, video and YouTube"}. Give one decisive answer to:\n${data.messages.map((message) => `${message.role}: ${message.content}`).join("\n")}`,
+      "text",
     ),
   }));
+
 export const buildStoryboard = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
@@ -84,9 +88,10 @@ export const buildStoryboard = createServerFn({ method: "POST" })
     storyboard: prepared(
       "Free Storyboard Job",
       `Create exactly ${data.scenes} shot-by-shot music-video scenes for ${data.title}. ${data.bpm} BPM, ${data.durationSec}s. Direction: ${data.direction}. For each scene provide time/bars, shot, action, lighting/palette and a dense video prompt.`,
-      `video`,
+      "video",
     ),
   }));
+
 export const generateSeo = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
@@ -102,9 +107,10 @@ export const generateSeo = createServerFn({ method: "POST" })
     seo: prepared(
       "Free YouTube SEO Job",
       `For ${data.title} by ${data.artist}, genre ${data.genre}, vibe ${data.vibe}: return 5 titles under 70 chars, a full description, 20 tags and 8 hashtags.`,
-      `text`,
+      "text",
     ),
   }));
+
 export const generateArtwork = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
@@ -116,6 +122,7 @@ export const generateArtwork = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => ({
-    url: `https://huggingface.co/spaces?category=image-generation&search=${encodeURIComponent(data.prompt)}`,
     prompt: `Create ${data.kind}: ${data.prompt}. Use Buddy reference when supplied: ${data.reference || "none"}.`,
+    runner:
+      FREE_RUNNERS.find((item) => item.capabilities.includes("image"))?.name || "Z Image Turbo",
   }));

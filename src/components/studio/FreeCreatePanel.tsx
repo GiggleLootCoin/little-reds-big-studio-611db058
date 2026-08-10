@@ -162,27 +162,28 @@ export function FreeCreatePanel() {
   };
 
   const generateVideo = async () => {
+    const videoAudio = sourceAudio ?? audioUrl;
+    if (!videoImage) {
+      setStatus("Video needs a reference image. Upload one of your images first.");
+      return;
+    }
+    if (!videoAudio) {
+      setStatus("Video needs audio. Generate a song first or upload a source audio file.");
+      return;
+    }
     setBusy("video");
     setVideoUrl(null);
-    setStatus("Generating a real video with Wan 2.2…");
+    setStatus("Generating a real Wan 2.2 S2V video from your image + audio…");
     try {
-      const result = await runGradio(FREE_SPACE_IDS.video, "/generate_video", {
-        image: videoImage ? freeFile(videoImage) : null,
-        prompt:
-          brief.trim() ||
-          "Cinematic music video scene with expressive movement and dramatic lighting",
-        height: 704,
-        width: 1280,
-        duration_seconds: 2,
-        sampling_steps: 25,
-        guide_scale: 5,
-        shift: 5,
-        seed: -1,
-      });
-      const url = outputUrl(result);
-      if (!url) throw new Error("Video engine returned no MP4.");
+      const result = await runGradio(FREE_SPACE_IDS.video, "/predict", [
+        freeFile(videoImage),
+        freeFile(videoAudio),
+        "480P",
+      ]);
+      const url = outputUrl(result) ?? outputUrl(firstOutput(result));
+      if (!url) throw new Error("Wan 2.2 returned no video file.");
       setVideoUrl(url);
-      setStatus("Video generated successfully.");
+      setStatus("Video generated successfully. The returned MP4 is ready below.");
     } catch (error) {
       setStatus(
         error instanceof Error
@@ -275,8 +276,8 @@ export function FreeCreatePanel() {
       defaultOpen
     >
       <p className="text-sm text-muted-foreground">
-        These buttons call actual public/open Gradio engines. Heavy models run remotely on their
-        free shared GPU; the Studio does not fake completion.
+        These buttons call actual public/open engines. Heavy models run remotely on free shared GPU;
+        the Studio does not fake completion.
       </p>
       <textarea
         value={brief}
@@ -353,12 +354,21 @@ export function FreeCreatePanel() {
         />
       </div>
       <label className="block rounded-xl border border-border/70 bg-background/45 p-3 text-xs text-muted-foreground">
-        Optional video reference image
+        Your video reference image — required by Wan 2.2 S2V
         <input
           className="mt-2 block w-full text-xs"
           type="file"
           accept="image/*"
           onChange={(e) => setVideoImage(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      <label className="block rounded-xl border border-border/70 bg-background/45 p-3 text-xs text-muted-foreground">
+        Video/source audio — leave empty to use the generated song
+        <input
+          className="mt-2 block w-full text-xs"
+          type="file"
+          accept="audio/*"
+          onChange={(e) => setSourceAudio(e.target.files?.[0] ?? null)}
         />
       </label>
       {imageUrl && <MediaResult kind="image" url={imageUrl} />}
@@ -399,15 +409,15 @@ export function FreeCreatePanel() {
         <Readout label="Song" value={ace.name} />
         <Readout label="Lyrics" value="Local Qwen3 browser model" />
         <Readout label="Image" value={image.name} />
-        <Readout label="Video" value={video.name} />
+        <Readout label="Video" value={video.name + " • image + audio"} />
         <Readout label="Voice clone" value={clone.name + " 1.7B"} />
         <Readout label="Voice swap" value={rvc.name + " + " + seed.name} />
         <Readout label="API key" value="None" />
       </Note>
       <p className="text-[0.68rem] leading-relaxed text-muted-foreground">{status}</p>
       <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
-        Public ZeroGPU services can queue, sleep or impose anonymous quotas. The Studio reports the
-        actual returned file or the actual error instead of pretending a job completed.
+        Public free GPU services can queue, sleep or impose anonymous quotas. The Studio reports the
+        returned file or the actual error instead of pretending a job completed.
       </p>
     </Panel>
   );

@@ -133,7 +133,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Free browser GPU workspace for heavier open-source models and training.",
     capabilities: ["voice-training", "music", "image", "video", "stems", "training"],
     url: "https://www.kaggle.com/code",
-    notes: "Fallback for heavy open models when public Spaces are unavailable; no computer required.",
+    notes:
+      "Fallback for heavy open models when public Spaces are unavailable; no computer required.",
     priority: 20,
   },
 ];

@@ -16,18 +16,13 @@ type Message = { role: "user" | "assistant"; content: string };
 type PromptMessage = Message | { role: "system"; content: string };
 type GeneratedText = string | Array<{ role?: string; content?: string }>;
 type GeneratorOutput =
-  | Array<{ generated_text?: GeneratedText }>
-  | { generated_text?: GeneratedText };
+  Array<{ generated_text?: GeneratedText }> | { generated_text?: GeneratedText };
 type Generator = (
   messages: PromptMessage[],
   options: Record<string, unknown>,
 ) => Promise<GeneratorOutput>;
 type TransformersModule = {
-  pipeline: (
-    task: string,
-    model: string,
-    options: Record<string, unknown>,
-  ) => Promise<unknown>;
+  pipeline: (task: string, model: string, options: Record<string, unknown>) => Promise<unknown>;
 };
 type SpeechRecognitionEventLike = Event & {
   results: ArrayLike<{
@@ -101,16 +96,13 @@ export function BuddyLiveChat() {
       const available = window.speechSynthesis?.getVoices() || [];
       setVoices(available);
       if (!voiceName) {
-        const preferred = available.find((voice) =>
-          /en[-_](GB|US)/i.test(voice.lang),
-        );
+        const preferred = available.find((voice) => /en[-_](GB|US)/i.test(voice.lang));
         if (preferred) setVoiceName(preferred.name);
       }
     };
     loadVoices();
     window.speechSynthesis?.addEventListener("voiceschanged", loadVoices);
-    return () =>
-      window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
+    return () => window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
   }, [voiceName]);
 
   useEffect(() => {
@@ -120,20 +112,16 @@ export function BuddyLiveChat() {
   const load = async () => {
     if (generatorRef.current) return generatorRef.current;
     setStatus("Loading Buddy's local brain… first load is the big one.");
-    const dynamicImport = new Function(
-      "url",
-      "return import(url)",
-    ) as (url: string) => Promise<TransformersModule>;
-    const lib = await dynamicImport(
-      "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0",
-    );
+    const dynamicImport = new Function("url", "return import(url)") as (
+      url: string,
+    ) => Promise<TransformersModule>;
+    const lib = await dynamicImport("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0");
     const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
     const device = hasGpu ? "webgpu" : "wasm";
-    const generator = await lib.pipeline(
-      "text-generation",
-      "onnx-community/Qwen3-0.6B-ONNX",
-      { dtype: hasGpu ? "q4f16" : "q4", device },
-    );
+    const generator = await lib.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", {
+      dtype: hasGpu ? "q4f16" : "q4",
+      device,
+    });
     generatorRef.current = generator as Generator;
     setStatus(
       device === "webgpu"
@@ -146,12 +134,9 @@ export function BuddyLiveChat() {
   const startListening = () => {
     if (speakingRef.current || busyRef.current || listeningRef.current) return;
     const speechWindow = window as SpeechWindow;
-    const Constructor =
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    const Constructor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     if (!Constructor) {
-      setStatus(
-        "Live Voice needs Chrome's speech recognition on Android. Text chat still works.",
-      );
+      setStatus("Live Voice needs Chrome's speech recognition on Android. Text chat still works.");
       return;
     }
     if (!recognitionRef.current) {
@@ -241,25 +226,16 @@ export function BuddyLiveChat() {
     setInput("");
     try {
       const generator = await load();
-      const prompt: PromptMessage[] = [
-        { role: "system", content: SYSTEM },
-        ...next,
-      ];
+      const prompt: PromptMessage[] = [{ role: "system", content: SYSTEM }, ...next];
       const output = await generator(prompt, {
         max_new_tokens: 320,
         temperature: 0.72,
         do_sample: true,
         return_full_text: false,
       });
-      const raw = Array.isArray(output)
-        ? output[0]?.generated_text
-        : output.generated_text;
+      const raw = Array.isArray(output) ? output[0]?.generated_text : output.generated_text;
       const reply =
-        typeof raw === "string"
-          ? raw
-          : raw?.length
-            ? raw[raw.length - 1]?.content
-            : undefined;
+        typeof raw === "string" ? raw : raw?.length ? raw[raw.length - 1]?.content : undefined;
       const clean = String(
         reply || "I appear to have temporarily misplaced my brain. Give me another go.",
       )
@@ -273,9 +249,7 @@ export function BuddyLiveChat() {
       else setStatus("Buddy is ready.");
     } catch (error) {
       setStatus(
-        error instanceof Error
-          ? error.message
-          : "Local model could not load on this device.",
+        error instanceof Error ? error.message : "Local model could not load on this device.",
       );
       setMessages([
         ...next,
@@ -373,9 +347,7 @@ export function BuddyLiveChat() {
 
       <div className="max-h-80 space-y-2 overflow-y-auto rounded-xl border border-border bg-background/35 p-3">
         {messages.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            “Alright, Red. What are we making?”
-          </p>
+          <p className="text-sm text-muted-foreground">“Alright, Red. What are we making?”</p>
         )}
         {messages.map((message, index) => (
           <div
@@ -423,8 +395,8 @@ export function BuddyLiveChat() {
       </div>
 
       <p className="text-[0.65rem] text-muted-foreground">
-        Live Voice uses the browser microphone and Android speech engine. Conversation
-        captions and history stay in this browser. No API key or paid voice service is required.
+        Live Voice uses the browser microphone and Android speech engine. Conversation captions and
+        history stay in this browser. No API key or paid voice service is required.
       </p>
     </Panel>
   );

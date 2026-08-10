@@ -5,7 +5,10 @@ type GradioClient = {
   submit: (apiName: string, inputs: unknown) => GradioJob;
   view_api?: () => Promise<unknown>;
 };
-type GradioModule = { Client: { connect: (space: string) => Promise<GradioClient> } };
+type GradioModule = {
+  Client: { connect: (space: string) => Promise<GradioClient> };
+  handle_file?: (file: File | Blob | string) => unknown;
+};
 type RouteCandidate = { space: string; endpoints: string[]; priority: number };
 
 const GRADIO_CDN = "https://esm.sh/@gradio/client@2.3.1";
@@ -17,93 +20,45 @@ const routeCache = new Map<string, { ok: boolean; expires: number }>();
 
 const ROUTES: Record<string, RouteCandidate[]> = {
   music: [
-    {
-      space: "victor/ace-step-jam",
-      endpoints: ["/create", "/predict", "/generate_music"],
-      priority: 140,
-    },
-    {
-      space: "ACE-Step/Ace-Step-v1.5",
-      endpoints: ["/generate_music", "/predict", "/create"],
-      priority: 130,
-    },
-    {
-      space: "R-Kentaren/ace-step-jam",
-      endpoints: ["/create", "/predict", "/generate_music"],
-      priority: 110,
-    },
+    { space: "victor/ace-step-jam", endpoints: ["/generate", "/create", "/predict", "/generate_music"], priority: 150 },
+    { space: "ASLP-lab/DiffRhythm2", endpoints: ["/infer_music", "/predict"], priority: 145 },
+    { space: "ACE-Step/Ace-Step-v1.5", endpoints: ["/generate_music", "/predict", "/create"], priority: 130 },
+    { space: "R-Kentaren/ace-step-jam", endpoints: ["/create", "/predict", "/generate_music"], priority: 110 },
   ],
   image: [
-    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 140 },
+    { space: "mrfakename/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 150 },
     { space: "hf-applications/Z-Image-Turbo", endpoints: ["/generate_image"], priority: 120 },
     { space: "xiaopeng/Awesome-Z-Image-Turbo", endpoints: ["/generate_image"], priority: 100 },
   ],
   video: [
-    { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/generate_video", "/predict"], priority: 145 },
-    {
-      space: "dream2589632147/Dream-wan2-2-faster-Pro",
-      endpoints: ["/generate_video", "/predict"],
-      priority: 140,
-    },
-    {
-      space: "r3gm/Wan2.2-14B-Fast-Preview",
-      endpoints: ["/generate_video", "/predict"],
-      priority: 105,
-    },
+    { space: "dream2589632147/Dream-wan2-2-faster-Pro", endpoints: ["/generate_video", "/predict"], priority: 150 },
+    { space: "Wan-AI/Wan2.2-S2V", endpoints: ["/predict", "/generate_video"], priority: 140 },
+    { space: "r3gm/Wan2.2-14B-Fast-Preview", endpoints: ["/generate_video", "/predict"], priority: 105 },
   ],
   voiceClone: [
-    {
-      space: "Qwen/Qwen3-TTS",
-      endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"],
-      priority: 150,
-    },
-    {
-      space: "chanikul/Qwen3-TTS",
-      endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"],
-      priority: 140,
-    },
-    {
-      space: "multimodalart/higgs-audio-v3-tts",
-      endpoints: ["/synthesize", "/generate"],
-      priority: 125,
-    },
+    { space: "Qwen/Qwen3-TTS", endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"], priority: 150 },
+    { space: "chanikul/Qwen3-TTS", endpoints: ["/generate_voice_clone", "/generate_custom_voice", "/generate_speech"], priority: 140 },
+    { space: "multimodalart/higgs-audio-v3-tts", endpoints: ["/synthesize", "/generate"], priority: 125 },
     { space: "mrfakename/F5-TTS", endpoints: ["/generate", "/synthesize"], priority: 115 },
   ],
   voicePreset: [
     { space: "hexgrad/Kokoro-TTS", endpoints: ["/generate", "/predict"], priority: 150 },
-    {
-      space: "Qwen/Qwen3-TTS",
-      endpoints: ["/generate_custom_voice", "/generate_speech", "/generate_voice_clone"],
-      priority: 140,
-    },
+    { space: "Qwen/Qwen3-TTS", endpoints: ["/generate_custom_voice", "/generate_speech", "/generate_voice_clone"], priority: 140 },
     { space: "mrfakename/F5-TTS", endpoints: ["/generate", "/synthesize"], priority: 120 },
   ],
   voiceSwap: [
-    {
-      space: "Plachta/Seed-VC",
-      endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper", "/convert"],
-      priority: 150,
-    },
+    { space: "Plachta/Seed-VC", endpoints: ["/convert_voice_v1_wrapper", "/convert_voice_v2_wrapper", "/convert"], priority: 150 },
     { space: "r3gm/RVC-Zero", endpoints: ["/convert", "/predict"], priority: 120 },
   ],
   vocalSeparation: [
     { space: "abidlabs/music-separation", endpoints: ["/predict"], priority: 170 },
-    {
-      space: "JacobLinCool/vocal-separation",
-      endpoints: ["/inference", "/separate"],
-      priority: 150,
-    },
-    {
-      space: "owiedotch/demucs-stem-separation",
-      endpoints: ["/inference", "/predict"],
-      priority: 140,
-    },
+    { space: "JacobLinCool/vocal-separation", endpoints: ["/inference", "/separate"], priority: 150 },
+    { space: "owiedotch/demucs-stem-separation", endpoints: ["/inference", "/predict"], priority: 140 },
   ],
 };
 
 async function loadGradio(): Promise<GradioModule> {
-  if (!modulePromise)
-    modulePromise = import(/* @vite-ignore */ GRADIO_CDN) as Promise<GradioModule>;
+  if (!modulePromise) modulePromise = import(/* @vite-ignore */ GRADIO_CDN) as Promise<GradioModule>;
   return modulePromise;
 }
 
@@ -142,7 +97,7 @@ export function outputUrl(value: unknown): string | null {
     return null;
   }
   const item = value as Record<string, unknown>;
-  for (const key of ["url", "path", "data", "value", "audio_url", "video_url", "image_url"]) {
+  for (const key of ["url", "path", "data", "value", "audio", "image", "video", "audio_url", "video_url", "image_url"]) {
     const found = outputUrl(item[key]);
     if (found) return found;
   }
@@ -185,14 +140,72 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
-async function resolveEndpoint(route: RouteCandidate) {
+async function resolveEndpoint(route: RouteCandidate, preferredEndpoint?: string) {
   const client = await withTimeout(connectFreeSpace(route.space), GRADIO_TIMEOUT);
-  if (!client.view_api) return { client, endpoint: route.endpoints[0] };
+  if (!client.view_api) return { client, endpoint: preferredEndpoint ?? route.endpoints[0] };
   const info = await withTimeout(client.view_api(), GRADIO_TIMEOUT);
   const available = endpointNames(info);
-  const endpoint = route.endpoints.find((candidate) => available.includes(candidate));
+  const candidates = preferredEndpoint
+    ? [preferredEndpoint, ...route.endpoints.filter((endpoint) => endpoint !== preferredEndpoint)]
+    : route.endpoints;
+  const endpoint = candidates.find((candidate) => available.includes(candidate));
   if (!endpoint) throw new Error(`No compatible public endpoint found for ${route.space}.`);
   return { client, endpoint };
+}
+
+async function normalizeInput(value: unknown, handleFile?: GradioModule["handle_file"]): Promise<unknown> {
+  if (handleFile && typeof Blob !== "undefined" && value instanceof Blob) return handleFile(value);
+  if (Array.isArray(value)) return Promise.all(value.map((item) => normalizeInput(item, handleFile)));
+  if (value && typeof value === "object" && !(value instanceof Blob)) {
+    const entries = await Promise.all(
+      Object.entries(value as Record<string, unknown>).map(async ([key, item]) => [key, await normalizeInput(item, handleFile)] as const),
+    );
+    return Object.fromEntries(entries);
+  }
+  return value;
+}
+
+async function normalizeInputs(inputs: Record<string, unknown> | unknown[]) {
+  const module = await loadGradio();
+  return normalizeInput(inputs, module.handle_file);
+}
+
+function adaptInputs(logicalId: string, space: string, endpoint: string, inputs: Record<string, unknown> | unknown[]) {
+  if (logicalId === "music" && space === "ASLP-lab/DiffRhythm2" && endpoint === "/infer_music" && !Array.isArray(inputs)) {
+    return {
+      lrc: String(inputs.lyrics ?? inputs.lrc ?? ""),
+      current_prompt_type: inputs.audio_prompt ? "audio" : "text",
+      audio_prompt: inputs.audio_prompt ?? null,
+      text_prompt: String(inputs.description ?? inputs.prompt ?? "pop song"),
+      seed: Number(inputs.seed ?? 42),
+      randomize_seed: true,
+      steps: 16,
+      cfg_strength: 1.3,
+      file_type: "wav",
+      odeint_method: "euler",
+    };
+  }
+  if (logicalId === "music" && space === "victor/ace-step-jam" && endpoint === "/generate" && !Array.isArray(inputs)) {
+    return {
+      prompt: String(inputs.description ?? inputs.prompt ?? "polished modern song"),
+      lyrics: String(inputs.lyrics ?? ""),
+      audio_duration: Number(inputs.audio_duration ?? 120),
+      infer_step: 8,
+      guidance_scale: 7,
+      seed: Number(inputs.seed ?? -1),
+      lora_name_or_path: "",
+      lora_weight: 0.8,
+    };
+  }
+  if (logicalId === "music" && space === "victor/ace-step-jam" && endpoint === "/create" && !Array.isArray(inputs)) {
+    return {
+      description: String(inputs.description ?? "polished modern song"),
+      audio_duration: Number(inputs.audio_duration ?? 120),
+      seed: Number(inputs.seed ?? -1),
+      community: false,
+    };
+  }
+  return inputs;
 }
 
 export async function probeFreeRoute(logicalId: string): Promise<boolean> {
@@ -214,11 +227,7 @@ export async function probeFreeRoute(logicalId: string): Promise<boolean> {
   return false;
 }
 
-async function collect(
-  logicalId: string,
-  inputs: Record<string, unknown> | unknown[],
-  onStatus?: (message: string) => void,
-) {
+async function collect(logicalId: string, inputs: Record<string, unknown> | unknown[], onStatus?: (message: string) => void, preferredEndpoint?: string) {
   const candidates = ROUTES[logicalId] ?? [];
   if (!candidates.length) throw new Error(`No free route is configured for ${logicalId}.`);
   let lastError: unknown = null;
@@ -228,11 +237,18 @@ async function collect(
     if (cached && cached.expires > Date.now() && !cached.ok) continue;
     try {
       onStatus?.("Finding the best available engine…");
-      const { client, endpoint } = await resolveEndpoint(route);
+      const { client, endpoint } = await resolveEndpoint(route, preferredEndpoint);
       routeCache.set(key, { ok: true, expires: Date.now() + ROUTE_TTL });
-      const job = client.submit(endpoint, inputs);
+      const normalized = await normalizeInputs(adaptInputs(logicalId, route.space, endpoint, inputs));
+      const job = client.submit(endpoint, normalized);
       let latest: unknown = null;
-      for await (const message of job) if (message.type === "data") latest = message.data ?? null;
+      for await (const message of job) {
+        if (message.type === "status") {
+          const status = message.status as Record<string, unknown> | undefined;
+          if (status?.message && typeof status.message === "string") onStatus?.(status.message);
+        }
+        if (message.type === "data") latest = message.data ?? null;
+      }
       if (latest == null) throw new Error("The selected engine returned no result.");
       return latest;
     } catch (error) {
@@ -241,54 +257,37 @@ async function collect(
       onStatus?.("The selected engine was unavailable; Buddy is continuing automatically…");
     }
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("No free public generation route is currently available.");
+  throw lastError instanceof Error ? lastError : new Error("No free public generation route is currently available.");
 }
 
-export async function runGradio(
-  space: string,
-  apiName: string,
-  inputs: Record<string, unknown> | unknown[],
-  onStatus?: (message: string) => void,
-) {
+export async function runGradio(space: string, apiName: string, inputs: Record<string, unknown> | unknown[], onStatus?: (message: string) => void) {
   const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
     ? space
     : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
-  if (logicalId) return firstOutput(await collect(logicalId, inputs, onStatus));
+  if (logicalId) return firstOutput(await collect(logicalId, inputs, onStatus, apiName));
   const client = await connectFreeSpace(space);
-  const job = client.submit(apiName, inputs);
+  const normalized = await normalizeInputs(inputs);
+  const job = client.submit(apiName, normalized);
   let latest: unknown = null;
   for await (const message of job) if (message.type === "data") latest = message.data ?? null;
   if (latest == null) throw new Error("The creation service returned no result.");
   return firstOutput(latest);
 }
 
-export async function runGradioAll(
-  space: string,
-  apiName: string,
-  inputs: Record<string, unknown> | unknown[],
-  onStatus?: (message: string) => void,
-) {
+export async function runGradioAll(space: string, apiName: string, inputs: Record<string, unknown> | unknown[], onStatus?: (message: string) => void) {
   const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
     ? space
     : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
-  const latest = logicalId
-    ? await collect(logicalId, inputs, onStatus)
-    : await collectDirect(space, apiName, inputs);
+  const latest = logicalId ? await collect(logicalId, inputs, onStatus, apiName) : await collectDirect(space, apiName, inputs);
   if (Array.isArray(latest)) return latest;
-  if (latest && typeof latest === "object" && Array.isArray((latest as { data?: unknown }).data))
-    return (latest as { data: unknown[] }).data;
+  if (latest && typeof latest === "object" && Array.isArray((latest as { data?: unknown }).data)) return (latest as { data: unknown[] }).data;
   return [firstOutput(latest)];
 }
 
-async function collectDirect(
-  space: string,
-  apiName: string,
-  inputs: Record<string, unknown> | unknown[],
-) {
+async function collectDirect(space: string, apiName: string, inputs: Record<string, unknown> | unknown[]) {
   const client = await connectFreeSpace(space);
-  const job = client.submit(apiName, inputs);
+  const normalized = await normalizeInputs(inputs);
+  const job = client.submit(apiName, normalized);
   let latest: unknown = null;
   for await (const message of job) if (message.type === "data") latest = message.data ?? null;
   if (latest == null) throw new Error("The creation service returned no result.");

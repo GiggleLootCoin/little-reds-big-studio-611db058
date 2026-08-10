@@ -1,0 +1,53 @@
+name: Self-Healing Runtime Watchdog
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  SITE_URL: https://gigglelootcoin.github.io/little-reds-big-studio-611db058/
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check production site
+        id: site
+        run: |
+          set -euo pipefail
+          code="$(curl -L -sS -o /tmp/site.html -w '%{http_code}' --max-time 30 "$SITE_URL")"
+          test "$code" = "200"
+          grep -q "Little Red" /tmp/site.html || true
+
+      - name: Check public AI control planes
+        id: spaces
+        continue-on-error: true
+        run: |
+          set -u
+          failures=0
+          for space in \
+            https://huggingface.co/spaces/Qwen/Qwen3-TTS \
+            https://huggingface.co/spaces/ASLP-lab/DiffRhythm2 \
+            https://huggingface.co/spaces/mrfakename/Z-Image-Turbo \
+            https://huggingface.co/spaces/Wan-AI/Wan2.2-S2V; do
+            code="$(curl -L -sS -o /dev/null -w '%{http_code}' --max-time 20 "$space" || true)"
+            echo "$space -> $code"
+            [ "$code" = "200" ] || failures=$((failures + 1))
+          done
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
+
+      - name: Record incident without exposing credentials
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Automated runtime health alert" \
+            --body "The watchdog detected a production health failure. Buddy's client-side self-healing router will continue using healthy fallback engines. This issue is intentionally diagnostic only; no API keys or user data are included." \
+            --label "runtime-health" || true

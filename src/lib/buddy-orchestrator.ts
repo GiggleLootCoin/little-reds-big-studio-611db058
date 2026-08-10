@@ -23,8 +23,8 @@ const CAPABILITY: Record<BuddyTask, string> = {
   video: "video",
 };
 
-function localCapability(_task: BuddyTask): boolean {
-  return false;
+function localCapability(task: BuddyTask): boolean {
+  return task === "writing";
 }
 
 function rankFreeRoutes(task: BuddyTask): FreeRunner[] {
@@ -32,8 +32,9 @@ function rankFreeRoutes(task: BuddyTask): FreeRunner[] {
 }
 
 /**
- * Users request outcomes, never model names. Buddy selects the first route
- * and keeps the rest as silent fallbacks for the orchestration layer.
+ * Buddy chooses outcomes, not provider names. Local browser work is preferred
+ * when the device can perform it; otherwise the strongest configured free/open
+ * route is selected and the remaining routes stay available as fallbacks.
  */
 export function buddyPlan(task: BuddyTask): BuddyPlan {
   const knowledgePolicy = BUDDY_KNOWLEDGE_POLICY;
@@ -46,8 +47,8 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       mode: "local",
       label: "Ready on this device",
       runner: null,
-      fallbacks: [],
-      reason: "Buddy can complete this part of the workflow locally.",
+      fallbacks: routes,
+      reason: "Buddy can handle this task locally and will use public free routes only when heavier generation is needed.",
       knowledgePolicy,
     };
   }
@@ -56,10 +57,10 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
     return {
       task,
       mode: "free-open",
-      label: "Buddy will handle it",
+      label: "Buddy will choose the best available free engine",
       runner,
       fallbacks: routes.slice(1),
-      reason: "Buddy selected the strongest configured free/open route and keeps fallbacks ready.",
+      reason: "Buddy ranks free/open routes and keeps alternatives ready when a public engine is sleeping, busy, or unavailable.",
       knowledgePolicy,
     };
   }
@@ -79,18 +80,13 @@ export function buddyKnowledge(mode: "reference" | "fact-check" | "creative" = "
   return buddyKnowledgeContext(mode);
 }
 
-/**
- * A browser cannot submit or monitor a third-party Space as if it were our
- * own backend. Buddy therefore opens only the selected route and never claims
- * the Studio completed an external generation it did not perform.
- */
 export function openBuddyRoute(task: BuddyTask) {
   const plan = buddyPlan(task);
 
   if (plan.mode === "unavailable") {
     setBuddyStatus("error", {
       task,
-      message: "That route isn't configured yet. I won't pretend otherwise.",
+      message: "That route isn't available right now. Buddy won't pretend otherwise.",
     });
     return plan;
   }
@@ -103,7 +99,7 @@ export function openBuddyRoute(task: BuddyTask) {
   if (plan.runner && typeof window !== "undefined") {
     setBuddyStatus("working", {
       task,
-      message: `Opening ${plan.runner.name}. The actual generation happens there; Buddy won't fake a completion here.`,
+      message: `Checking ${plan.runner.name} and its free fallbacks. Buddy will only report a completed result after the Studio receives the artifact.`,
     });
     window.open(plan.runner.url, "_blank", "noopener,noreferrer");
   }

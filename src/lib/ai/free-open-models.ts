@@ -6,8 +6,8 @@ export type AiModelOption = {
   provider: string;
   model: string;
   capabilities: AiCapability[];
-  local: boolean;
-  openWeights: boolean;
+  local: true;
+  openWeights: true;
   apiRequired: false;
   license: string;
   androidFit: "excellent" | "good" | "runner";
@@ -15,8 +15,9 @@ export type AiModelOption = {
 };
 
 /**
- * Local/open model registry. Hosted providers are deliberately excluded from
- * this runtime registry so the Studio cannot silently introduce paid APIs.
+ * Core AI registry. Only genuinely local/open-weight models belong here.
+ * Hosted providers are intentionally excluded so the Studio cannot expose
+ * a paid/API-dependent path as if it were part of the free-local core.
  * Model weights are fetched on demand by a local runner and never committed.
  */
 export const FREE_OPEN_AI_MODELS: AiModelOption[] = [
@@ -78,7 +79,7 @@ export const FREE_OPEN_AI_MODELS: AiModelOption[] = [
     apiRequired: false,
     license: "Varies by checkpoint",
     androidFit: "good",
-    notes: "Excellent efficient local family; exact model license must be checked.",
+    notes: "Efficient local family; exact model license must be checked.",
   },
   {
     id: "gemma",
@@ -116,47 +117,11 @@ export const FREE_OPEN_AI_MODELS: AiModelOption[] = [
     androidFit: "good",
     notes: "Strong local image/document understanding.",
   },
-  {
-    id: "openai-gpt",
-    provider: "OpenAI",
-    model: "GPT",
-    capabilities: ["chat", "reasoning", "coding", "vision", "image", "audio", "video", "agents"],
-    local: false,
-    openWeights: false,
-    apiRequired: false,
-    license: "Hosted service; not part of the free-local runtime",
-    androidFit: "runner",
-    notes: "Cataloged for future optional integration only; never required for core functionality.",
-  },
-  {
-    id: "claude",
-    provider: "Anthropic",
-    model: "Claude",
-    capabilities: ["chat", "reasoning", "coding", "vision", "agents"],
-    local: false,
-    openWeights: false,
-    apiRequired: false,
-    license: "Hosted service; not part of the free-local runtime",
-    androidFit: "runner",
-    notes: "Optional comparison/provider adapter only; core Studio remains independent.",
-  },
-  {
-    id: "gemini",
-    provider: "Google",
-    model: "Gemini",
-    capabilities: ["chat", "reasoning", "coding", "vision", "image", "audio", "video", "agents"],
-    local: false,
-    openWeights: false,
-    apiRequired: false,
-    license: "Hosted service; not part of the free-local runtime",
-    androidFit: "runner",
-    notes: "Optional provider adapter only; Gemma supplies the account-free local Google path.",
-  },
 ];
 
 export function getLocalAiModels(capability?: AiCapability): AiModelOption[] {
   return FREE_OPEN_AI_MODELS.filter(
-    (model) => model.local && (!capability || model.capabilities.includes(capability)),
+    (model) => !capability || model.capabilities.includes(capability),
   );
 }
 

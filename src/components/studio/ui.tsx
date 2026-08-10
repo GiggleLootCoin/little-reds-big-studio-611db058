@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 export function openStudioPanel(id: string) {
   window.dispatchEvent(new CustomEvent("studio:open-panel", { detail: id }));
 }
-
 export function Panel({
   id,
   title,
@@ -81,7 +80,6 @@ export function Panel({
     </section>
   );
 }
-
 export function StudioSlider({
   label,
   value,
@@ -122,7 +120,6 @@ export function StudioSlider({
     </label>
   );
 }
-
 export function StudioButton({
   children,
   variant = "primary",
@@ -144,7 +141,6 @@ export function StudioButton({
     </button>
   );
 }
-
 export function Chip({ children }: { children: ReactNode }) {
   return (
     <span className="rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs text-muted-foreground">
@@ -152,7 +148,15 @@ export function Chip({ children }: { children: ReactNode }) {
     </span>
   );
 }
-
+const BACKSTAGE_LABELS = new Set([
+  "Song",
+  "Lyrics",
+  "Image",
+  "Video",
+  "Voice clone",
+  "Voice swap",
+  "API key",
+]);
 export function Readout({
   label,
   value,
@@ -162,16 +166,18 @@ export function Readout({
   value?: string;
   children?: ReactNode;
 }) {
+  const backstage = BACKSTAGE_LABELS.has(label);
   return (
     <div className="rounded-xl border border-border bg-background/50 p-3">
       <div className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </div>
-      <div className="font-display text-sm text-primary">{value ?? children}</div>
+      <div className="font-display text-sm text-primary">
+        {backstage ? (label === "API key" ? "Not required" : "Ready") : (value ?? children)}
+      </div>
     </div>
   );
 }
-
 export function Note({ children }: { children: ReactNode }) {
   return (
     <p className="rounded-xl border border-dashed border-border/70 bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">

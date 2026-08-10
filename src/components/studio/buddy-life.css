@@ -1,0 +1,270 @@
+.buddy-assistant {
+  animation: buddy-float-life 5.8s ease-in-out infinite;
+  transform-origin: 50% 70%;
+}
+.buddy-aura {
+  background: radial-gradient(
+    circle,
+    rgba(239, 68, 68, 0.3),
+    rgba(190, 24, 93, 0.12) 42%,
+    transparent 72%
+  );
+  filter: blur(20px);
+  animation: buddy-aura 4s ease-in-out infinite;
+}
+.buddy-ring {
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  box-shadow:
+    0 0 45px rgba(239, 68, 68, 0.16),
+    inset 0 0 30px rgba(239, 68, 68, 0.08);
+  animation: buddy-ring 5s linear infinite;
+}
+.buddy-character {
+  animation: buddy-body 5.2s ease-in-out infinite;
+  transform-origin: 50% 58%;
+}
+.buddy-head-motion {
+  animation: buddy-head 6.4s ease-in-out infinite;
+  transform-origin: 50% 54%;
+}
+.buddy-character-image {
+  filter: saturate(1.08) contrast(1.04);
+}
+.buddy-face-light {
+  background:
+    radial-gradient(circle at 50% 27%, rgba(255, 255, 255, 0.13), transparent 26%),
+    radial-gradient(circle at 35% 58%, rgba(248, 113, 113, 0.08), transparent 32%);
+  mix-blend-mode: screen;
+  animation: face-light 4.5s ease-in-out infinite;
+}
+.buddy-eye-glint {
+  animation: eye-glint 3.7s ease-in-out infinite;
+}
+.buddy-blink {
+  transform-origin: center;
+  animation: buddy-blink 5.1s ease-in-out infinite;
+}
+.buddy-mouth {
+  transform: translateX(-50%);
+  animation: buddy-mouth 0.9s ease-in-out infinite;
+}
+.buddy-sheen {
+  background: linear-gradient(
+    120deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.08) 49%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  animation: buddy-sheen 6s ease-in-out infinite;
+}
+.buddy-pulse {
+  animation: buddy-pulse 2.2s ease-out infinite;
+}
+.buddy-bar {
+  animation: buddy-bar 0.48s ease-in-out infinite alternate;
+}
+[data-buddy-status="listening"] .buddy-character {
+  animation: buddy-listen 1.3s ease-in-out infinite;
+}
+[data-buddy-status="listening"] .buddy-head-motion {
+  animation: buddy-listen-head 2.2s ease-in-out infinite;
+}
+[data-buddy-status="thinking"] .buddy-head-motion {
+  animation: buddy-think-head 1.8s ease-in-out infinite;
+}
+[data-buddy-status="working"] .buddy-character {
+  animation: buddy-work 0.9s ease-in-out infinite;
+}
+[data-buddy-status="success"] .buddy-character {
+  animation: buddy-success 0.8s ease-out both;
+}
+@keyframes buddy-float-life {
+  0%,
+  100% {
+    transform: translateY(2px) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(0.6deg);
+  }
+}
+@keyframes buddy-body {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018, 1.025);
+  }
+}
+@keyframes buddy-head {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-0.7deg);
+  }
+  35% {
+    transform: translate(2px, -2px) rotate(0.5deg);
+  }
+  68% {
+    transform: translate(-2px, 1px) rotate(0.2deg);
+  }
+}
+@keyframes buddy-aura {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+@keyframes buddy-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes buddy-blink {
+  0%,
+  39%,
+  43%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.65;
+  }
+  41% {
+    transform: scaleY(0.06);
+    opacity: 0.1;
+  }
+}
+@keyframes eye-glint {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(2px, 1px);
+  }
+}
+@keyframes buddy-mouth {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(0.72, 0.6);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.08, 1.25);
+    opacity: 0.8;
+  }
+}
+@keyframes face-light {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(-1%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2%);
+  }
+}
+@keyframes buddy-sheen {
+  0%,
+  20% {
+    transform: translateX(-120%);
+  }
+  55%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+@keyframes buddy-pulse {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+@keyframes buddy-bar {
+  from {
+    transform: scaleY(0.3);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes buddy-listen {
+  0%,
+  100% {
+    transform: scale(1) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.045) rotate(1deg);
+  }
+}
+@keyframes buddy-listen-head {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-2deg);
+  }
+  50% {
+    transform: translate(4px, -1px) rotate(2deg);
+  }
+}
+@keyframes buddy-think-head {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate(5px, -3px) rotate(3deg);
+  }
+}
+@keyframes buddy-work {
+  0%,
+  100% {
+    transform: translate(-2px, 2px) rotate(-1deg);
+  }
+  50% {
+    transform: translate(2px, -4px) rotate(1deg);
+  }
+}
+@keyframes buddy-success {
+  0% {
+    transform: scale(0.96);
+  }
+  45% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+  75% {
+    transform: scale(1.03) rotate(2deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .buddy-assistant,
+  .buddy-aura,
+  .buddy-ring,
+  .buddy-character,
+  .buddy-head-motion,
+  .buddy-face-light,
+  .buddy-eye-glint,
+  .buddy-blink,
+  .buddy-mouth,
+  .buddy-sheen,
+  .buddy-pulse,
+  .buddy-bar {
+    animation: none !important;
+  }
+}

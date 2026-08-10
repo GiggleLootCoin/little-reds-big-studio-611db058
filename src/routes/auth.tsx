@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import logo from "@/assets/littlered-logo.png.asset.json";
 import { AnimatedBackground } from "@/components/studio/AnimatedBackground";
 import { StudioButton } from "@/components/studio/ui";
 import { Field } from "@/components/studio/AiOutput";
 import { createLocalUser } from "@/hooks/use-auth";
+
+const LOGO_URL =
+  "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 function AuthPage() {
@@ -13,13 +15,13 @@ function AuthPage() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     createLocalUser(name || "Little Red", email || "local@studio");
-    window.location.replace("/");
+    window.location.replace(import.meta.env.BASE_URL);
   };
   return (
     <>
       <AnimatedBackground />
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-5">
-        <img src={logo.url} alt="Little Red's Big Studio" className="mx-auto w-56" />
+        <img src={LOGO_URL} alt="Little Red's Big Studio" className="mx-auto w-56" />
         <section className="glass-panel rounded-2xl p-5">
           <h1 className="text-center font-display text-xl font-black text-glow">
             Enter the Studio
@@ -47,7 +49,7 @@ function AuthPage() {
             </StudioButton>
           </form>
         </section>
-        <a href="/" className="text-center text-xs text-muted-foreground underline">
+        <a href="./" className="text-center text-xs text-muted-foreground underline">
           Back to the studio
         </a>
       </main>

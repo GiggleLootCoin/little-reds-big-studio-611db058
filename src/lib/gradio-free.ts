@@ -13,7 +13,6 @@ const clients = new Map<string, Promise<GradioClient>>();
 async function loadGradio(): Promise<GradioModule> {
   if (!modulePromise) {
     // Keep the browser runtime dependency free: no npm package or API key is required.
-    // @ts-expect-error TypeScript does not resolve browser-native remote ESM URLs.
     modulePromise = import(/* @vite-ignore */ GRADIO_CDN) as Promise<GradioModule>;
   }
   return modulePromise;

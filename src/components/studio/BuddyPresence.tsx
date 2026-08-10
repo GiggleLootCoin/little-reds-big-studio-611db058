@@ -6,7 +6,8 @@ import type { BuddyStatus } from "@/lib/buddy-presence";
 import { BuddyAnimatedAssistant } from "@/components/studio/BuddyAnimatedAssistant";
 import { cn } from "@/lib/utils";
 
-const LOGO_URL = "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
+const LOGO_URL =
+  "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
 const STATUS_LABELS: Record<BuddyStatus, string> = {
   idle: "Ready",
   listening: "Listening",

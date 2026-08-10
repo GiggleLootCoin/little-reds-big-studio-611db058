@@ -5,7 +5,8 @@ import { StudioButton } from "@/components/studio/ui";
 import { Field } from "@/components/studio/AiOutput";
 import { createLocalUser } from "@/hooks/use-auth";
 
-const LOGO_URL = "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
+const LOGO_URL =
+  "https://raw.githubusercontent.com/GiggleLootCoin/little-reds-big-studio-611db058/main/1784996969001.png";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 function AuthPage() {

@@ -76,7 +76,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Little Red's Big Studio" },
-      { name: "description", content: "Free/open Android-first creative studio for music and creators." },
+      {
+        name: "description",
+        content: "Free/open Android-first creative studio for music and creators.",
+      },
       { name: "author", content: "LittleRedBigSmile" },
       { name: "theme-color", content: "#0d0405" },
       { property: "og:type", content: "website" },
@@ -84,7 +87,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: `${import.meta.env.BASE_URL}favicon.ico`, type: "image/x-icon" },
+      {
+        rel: "icon",
+        href: `${import.meta.env.BASE_URL}favicon.ico`,
+        type: "image/x-icon",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -106,6 +113,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (

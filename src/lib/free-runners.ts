@@ -22,7 +22,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Local browser reasoning and writing on capable WebGPU devices.",
     capabilities: ["text", "writing"],
     url: "https://huggingface.co/spaces/webml-community/qwen3-webgpu",
-    notes: "Verified public WebGPU Space; runs locally in the browser and depends on device capability.",
+    notes:
+      "Verified public WebGPU Space; runs locally in the browser and depends on device capability.",
     priority: 110,
   },
   {

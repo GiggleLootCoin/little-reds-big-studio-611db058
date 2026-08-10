@@ -19,7 +19,8 @@ export function QRangePanel() {
       defaultOpen
     >
       <p className="text-sm text-muted-foreground">
-        Local session controls. They are saved as project settings; they do not process audio until a native/browser DSP engine is connected.
+        Local session controls. They are saved as project settings; they do not process audio until
+        a native/browser DSP engine is connected.
       </p>
       <StudioSlider label="Q range" value={q.range} onChange={(v) => update({ range: v })} />
       <StudioSlider
@@ -88,7 +89,8 @@ export function UploadPanel() {
         <UploadCloud className="mx-auto mb-2 size-8 text-primary" />
         <p className="font-display text-sm">Choose audio or reference imagery</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Files are available for this browser session. The project remembers filenames, not temporary object URLs.
+          Files are available for this browser session. The project remembers filenames, not
+          temporary object URLs.
         </p>
         <input
           ref={inputRef}

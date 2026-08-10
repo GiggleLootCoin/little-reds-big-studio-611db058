@@ -5,9 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  // The Studio is deployed at the origin root. Keep the asset base provider-neutral
-  // so the app works on the documented production host and other static hosts.
-  base: "/",
+  // Keep the default provider-neutral root deployment while allowing GitHub Pages
+  // to supply its project sub-path through VITE_BASE_PATH during its build.
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [
     tanstackStart({
       spa: {

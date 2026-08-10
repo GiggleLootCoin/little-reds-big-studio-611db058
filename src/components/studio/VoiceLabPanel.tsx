@@ -17,6 +17,37 @@ const VOICES = [
 ] as const;
 
 type VoiceId = (typeof VOICES)[number][0];
+const VOICE_DB = "lrbgs-buddy-voice";
+const VOICE_STORE = "references";
+
+async function storeReference(file: File) {
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open(VOICE_DB, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(VOICE_STORE);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const tx = request.result.transaction(VOICE_STORE, "readwrite");
+      tx.objectStore(VOICE_STORE).put(file, "buddy-reference");
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+
+export async function loadStoredBuddyVoice(): Promise<Blob | null> {
+  if (typeof indexedDB === "undefined") return null;
+  return new Promise((resolve) => {
+    const request = indexedDB.open(VOICE_DB, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(VOICE_STORE);
+    request.onerror = () => resolve(null);
+    request.onsuccess = () => {
+      const tx = request.result.transaction(VOICE_STORE, "readonly");
+      const get = tx.objectStore(VOICE_STORE).get("buddy-reference");
+      get.onsuccess = () => resolve(get.result instanceof Blob ? get.result : null);
+      get.onerror = () => resolve(null);
+    };
+  });
+}
 
 export function VoiceLabPanel() {
   const [voice, setVoice] = useState<VoiceId>(VOICES[0][0]);
@@ -31,19 +62,12 @@ export function VoiceLabPanel() {
     setAudioUrl(null);
     setStatus("Finding the best free voice engine…");
     try {
-      const result = await runGradio(FREE_SPACE_IDS.voicePreset, "/generate", [
-        text,
-        voice,
-        1,
-        true,
-      ]);
+      const result = await runGradio(FREE_SPACE_IDS.voicePreset, "/generate", [text, voice, 1, true]);
       const url = outputUrl(result);
       if (!url) throw new Error("The voice engine returned no audio.");
       setAudioUrl(url);
       localStorage.setItem("lrbgs-buddy-voice-preset", voice);
-      setStatus(
-        "Voice preview ready. This voice is saved as Buddy's preferred preset on this device.",
-      );
+      setStatus("Voice preview ready. This voice is saved as Buddy's preferred preset on this device.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Voice generation failed.");
     } finally {
@@ -60,17 +84,21 @@ export function VoiceLabPanel() {
     setAudioUrl(null);
     setStatus("Finding the best free cloning engine…");
     try {
+      await storeReference(reference);
+      localStorage.setItem("lrbgs-buddy-voice-language", "English");
       const result = await runGradio(FREE_SPACE_IDS.voiceClone, "/generate_voice_clone", [
         freeFile(reference),
         "",
         text,
         "English",
+        true,
+        "1.7B",
       ]);
       const url = outputUrl(result);
       if (!url) throw new Error("The cloning engine returned no audio.");
       setAudioUrl(url);
       localStorage.setItem("lrbgs-buddy-voice-mode", "clone");
-      setStatus("Voice clone ready. Buddy will remember that clone preference on this device.");
+      setStatus("Voice clone ready. Buddy can now use this sample for live replies on this device.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Voice cloning failed.");
     } finally {
@@ -108,14 +136,16 @@ export function VoiceLabPanel() {
         placeholder="What should Buddy say?"
       />
       <label className="block rounded-xl border border-dashed border-border bg-background/30 p-3 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">
-          Clone a voice you own or have permission to use
-        </span>
+        <span className="font-semibold text-foreground">Clone a voice you own or have permission to use</span>
         <input
           className="mt-2 block w-full text-xs"
           type="file"
           accept="audio/*"
-          onChange={(e) => setReference(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setReference(file);
+            if (file) void storeReference(file).catch(() => undefined);
+          }}
         />
       </label>
       <StudioButton variant="ghost" onClick={() => void clone()} disabled={busy || !reference}>
@@ -134,8 +164,7 @@ export function VoiceLabPanel() {
         {status}
       </p>
       <Note>
-        Voice selection is stored locally. Cloning is intended only for voices you own or have
-        permission to use.
+        Voice samples stay on this device. Cloning is intended only for voices you own or have permission to use.
       </Note>
     </Panel>
   );

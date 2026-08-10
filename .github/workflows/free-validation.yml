@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   autoformat-main:
-    if: github.event_name == 'push'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -20,6 +19,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Node.js
         uses: actions/setup-node@v5
         with:
@@ -36,10 +36,11 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add .
             git commit -m "chore: format source"
-            git push origin HEAD:format/prettier-output --force
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
   validate:
+    needs: autoformat-main
     permissions:
       contents: read
     runs-on: ubuntu-latest

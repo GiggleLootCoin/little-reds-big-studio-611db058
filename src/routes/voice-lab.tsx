@@ -19,3 +19,4 @@ function VoiceLab() {
 }
 
 // Mobile-first Buddy voice workspace.
+// Free/open engine routing stays behind this screen.

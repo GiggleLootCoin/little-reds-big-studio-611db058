@@ -20,16 +20,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx prettier src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts --write
+      - run: npx prettier src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts src/lib/gradio-free.ts --write
       - name: Commit formatting if needed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts; then
+          if git diff --quiet -- src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts src/lib/gradio-free.ts; then
             echo "Already formatted"
           else
-            git add src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts
-            git commit -m "style: format creator voice layer"
+            git add src/components/studio/VoiceLabPanel.tsx src/routes/voice-lab.tsx src/routeTree.gen.ts src/lib/gradio-free.ts
+            git commit -m "style: format creator routing layer"
             git push
           fi
       - run: npx tsc --noEmit

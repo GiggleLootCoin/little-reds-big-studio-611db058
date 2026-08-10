@@ -19,20 +19,24 @@ export const FREE_RUNNERS: FreeRunner[] = [
     id: "qwen3-webgpu",
     name: "Qwen3 WebGPU",
     kind: "android",
-    description: "Local browser reasoning and writing on capable WebGPU devices.",
+    description:
+      "Local browser reasoning and writing on capable WebGPU devices.",
     capabilities: ["text", "writing"],
     url: "https://huggingface.co/spaces/webml-community/qwen3-webgpu",
-    notes: "Verified public WebGPU Space; runs locally in the browser and depends on device capability.",
+    notes:
+      "Verified public WebGPU Space; runs locally in the browser and depends on device capability.",
     priority: 110,
   },
   {
     id: "bonsai-webgpu",
     name: "Bonsai WebGPU",
     kind: "android",
-    description: "Local browser reasoning and writing on capable WebGPU devices.",
+    description:
+      "Local browser reasoning and writing on capable WebGPU devices.",
     capabilities: ["text", "writing"],
     url: "https://huggingface.co/spaces/webml-community/bonsai-webgpu-kernels",
-    notes: "Runs the model in the browser; first load can be large and phone performance varies.",
+    notes:
+      "Runs the model in the browser; first load can be large and phone performance varies.",
     priority: 100,
   },
   {
@@ -52,17 +56,20 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Lightweight browser speech synthesis.",
     capabilities: ["voice", "text"],
     url: "https://huggingface.co/spaces/webml-community/kokoro-webgpu",
-    notes: "Designed for browser/WebGPU use; a good lightweight phone route.",
+    notes:
+      "Designed for browser/WebGPU use; a good lightweight phone route.",
     priority: 90,
   },
   {
     id: "hf-qwen3-tts",
     name: "Qwen3-TTS",
     kind: "public",
-    description: "Modern speech generation, voice design and cloning demo.",
+    description:
+      "Modern speech generation, voice design and cloning demo.",
     capabilities: ["voice", "text"],
     url: "https://huggingface.co/spaces/Qwen/Qwen3-TTS",
-    notes: "Use as a quality fallback when the lightweight local voice route is not suitable.",
+    notes:
+      "Use as a quality fallback when the lightweight local voice route is not suitable.",
     priority: 85,
   },
   {
@@ -72,7 +79,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Open music generation and music-editing workflows.",
     capabilities: ["music"],
     url: "https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5",
-    notes: "Official public ZeroGPU Space; shared free capacity can be busy.",
+    notes:
+      "Official public ZeroGPU Space; shared free capacity can be busy.",
     priority: 100,
   },
   {
@@ -82,7 +90,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Smaller browser-based music generation.",
     capabilities: ["music", "small-audio"],
     url: "https://huggingface.co/spaces/Xenova/musicgen-web",
-    notes: "Runs locally in the browser and is useful for lighter jobs.",
+    notes:
+      "Runs locally in the browser and is useful for lighter jobs.",
     priority: 80,
   },
   {
@@ -102,7 +111,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Modern open audio separation fallback.",
     capabilities: ["stems"],
     url: "https://huggingface.co/spaces/huggingapps/BS-Roformer-Leap-Audio-Separator",
-    notes: "Useful fallback when Demucs is queued or unavailable.",
+    notes:
+      "Useful fallback when Demucs is queued or unavailable.",
     priority: 80,
   },
   {
@@ -112,7 +122,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Image + audio conditioned video generation.",
     capabilities: ["video", "image-to-video", "audio-to-video"],
     url: "https://huggingface.co/spaces/Wan-AI/Wan2.2-S2V",
-    notes: "Official Wan Space; heavy jobs can encounter long queues.",
+    notes:
+      "Official Wan Space; heavy jobs can encounter long queues.",
     priority: 100,
   },
   {
@@ -122,7 +133,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Video generation from text, images and audio.",
     capabilities: ["video", "image-to-video", "audio-to-video"],
     url: "https://huggingface.co/spaces/techfreakworm/LTX2.3-Studio",
-    notes: "Free ZeroGPU public Space; excellent fallback for audio-conditioned video.",
+    notes:
+      "Free ZeroGPU public Space; excellent fallback for audio-conditioned video.",
     priority: 95,
   },
   {
@@ -132,7 +144,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Fast open image-to-video generation.",
     capabilities: ["video", "image-to-video"],
     url: "https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster",
-    notes: "Fast public ZeroGPU route; shared availability varies.",
+    notes:
+      "Fast public ZeroGPU route; shared availability varies.",
     priority: 90,
   },
   {
@@ -149,7 +162,8 @@ export const FREE_RUNNERS: FreeRunner[] = [
     id: "hf-sdxl",
     name: "SDXL Turbo",
     kind: "public",
-    description: "Fast open text-to-image and image-editing fallback.",
+    description:
+      "Fast open text-to-image and image-editing fallback.",
     capabilities: ["image"],
     url: "https://huggingface.co/spaces/diffusers/unofficial-SDXL-Turbo-i2i-t2i",
     notes: "Use when the preferred image route is unavailable.",
@@ -159,10 +173,21 @@ export const FREE_RUNNERS: FreeRunner[] = [
     id: "kaggle",
     name: "Kaggle Notebooks",
     kind: "gpu",
-    description: "Free browser GPU workspace for heavier open-source models.",
-    capabilities: ["voice", "stems", "video", "image", "music", "training", "text", "writing"],
+    description:
+      "Free browser GPU workspace for heavier open-source models.",
+    capabilities: [
+      "voice",
+      "stems",
+      "video",
+      "image",
+      "music",
+      "training",
+      "text",
+      "writing",
+    ],
     url: "https://www.kaggle.com/code",
-    notes: "Last-resort heavy-compute fallback; still requires the user to run the notebook.",
+    notes:
+      "Last-resort heavy-compute fallback; still requires the user to run the notebook.",
     priority: 20,
   },
 ];

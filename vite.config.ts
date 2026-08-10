@@ -5,7 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  base: "/little-reds-big-studio-611db058/",
+  // The Studio is deployed at the origin root. Keep the asset base provider-neutral
+  // so the app works on the documented production host and other static hosts.
+  base: "/",
   plugins: [
     tanstackStart({
       spa: {

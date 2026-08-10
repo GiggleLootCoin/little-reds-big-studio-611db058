@@ -77,9 +77,9 @@ export function BuddyLiveChatLite() {
             .filter((m): m is Message =>
               Boolean(
                 m &&
-                typeof m === "object" &&
-                (m as Record<string, unknown>).role &&
-                typeof (m as Record<string, unknown>).content === "string",
+                  typeof m === "object" &&
+                  (m as Record<string, unknown>).role &&
+                  typeof (m as Record<string, unknown>).content === "string",
               ),
             )
             .slice(-30),
@@ -123,7 +123,10 @@ export function BuddyLiveChatLite() {
       }
       throw lastError instanceof Error ? lastError : new Error("No local model loaded.");
     } catch (error) {
-      console.warn("Buddy local brain could not load; deterministic fallback remains available", error);
+      console.warn(
+        "Buddy local brain could not load; deterministic fallback remains available",
+        error,
+      );
       throw error;
     }
   };
@@ -152,7 +155,12 @@ export function BuddyLiveChatLite() {
       };
       r.onend = () => {
         setListening(false);
-        if (handsFreeRef.current && !speakingRef.current && !busyRef.current && !restartingRef.current) {
+        if (
+          handsFreeRef.current &&
+          !speakingRef.current &&
+          !busyRef.current &&
+          !restartingRef.current
+        ) {
           restartingRef.current = true;
           window.setTimeout(() => {
             restartingRef.current = false;

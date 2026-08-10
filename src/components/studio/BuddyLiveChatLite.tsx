@@ -20,9 +20,10 @@ type Recognition = {
   onerror: ((event: RecognitionError) => void) | null;
 };
 type RecognitionConstructor = new () => Recognition;
-const KEY = "lrbgs-buddy-chat-v2";
+const KEY = "lrbgs-buddy-chat-v3";
 const SYSTEM =
   "You are Buddy, the warm, practical creative assistant inside Little Red's Big Studio. Help with music, lyrics, artwork, video, vocals and YouTube. Be concise, useful and honest. Never claim a file was created unless the Studio actually returned one.";
+const LOCAL_MODELS = ["onnx-community/Qwen3-0.6B-ONNX", "onnx-community/Qwen2.5-0.5B"];
 
 function fallbackReply(text: string) {
   const q = text.toLowerCase();
@@ -95,19 +96,28 @@ export function BuddyLiveChatLite() {
 
   const loadBrain = async () => {
     if (generatorRef.current) return generatorRef.current;
-    setStatus("Buddy is waking up…");
+    setStatus("Buddy is waking his local brain…");
     const dynamicImport = new Function("url", "return import(url)") as (
       url: string,
     ) => Promise<GeneratorModule>;
     const mod = await dynamicImport(
       "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm",
     );
-    const pipe = await mod.pipeline("text-generation", "onnx-community/Qwen2.5-0.5B", {
-      device: "webgpu",
-      dtype: "q4f16",
-    });
-    generatorRef.current = pipe;
-    return pipe;
+    const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
+    let lastError: unknown = null;
+    for (const model of LOCAL_MODELS) {
+      try {
+        const pipe = await mod.pipeline("text-generation", model, {
+          device: hasGpu ? "webgpu" : "wasm",
+          dtype: hasGpu ? "q4f16" : "q4",
+        });
+        generatorRef.current = pipe;
+        return pipe;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("No local model loaded.");
   };
   const speak = (text: string) => {
     if (muted || !window.speechSynthesis) return;
@@ -136,7 +146,7 @@ export function BuddyLiveChatLite() {
     setMessages(next);
     setInput("");
     setBusy(true);
-    setStatus("Buddy is thinking…");
+    setStatus("Buddy is thinking locally…");
     try {
       let reply = "";
       try {

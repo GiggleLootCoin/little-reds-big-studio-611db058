@@ -1,3 +1,5 @@
+import { Client, handle_file } from "@gradio/client";
+
 type FileLike = File | Blob | string;
 type GradioMessage = { type: string; data?: unknown; status?: unknown };
 type GradioJob = AsyncIterable<GradioMessage>;
@@ -5,16 +7,10 @@ type GradioClient = {
   submit: (apiName: string, inputs: unknown) => GradioJob;
   view_api?: () => Promise<unknown>;
 };
-type GradioModule = {
-  Client: { connect: (space: string) => Promise<GradioClient> };
-  handle_file?: (file: File | Blob | string) => unknown;
-};
 type RouteCandidate = { space: string; endpoints: string[]; priority: number };
 
-const GRADIO_CDN = "https://esm.sh/@gradio/client@2.3.1";
 const ROUTE_TTL = 5 * 60_000;
-const GRADIO_TIMEOUT = 15_000;
-let modulePromise: Promise<GradioModule> | null = null;
+const GRADIO_TIMEOUT = 30_000;
 const clients = new Map<string, Promise<GradioClient>>();
 const routeCache = new Map<string, { ok: boolean; expires: number }>();
 
@@ -105,16 +101,10 @@ const ROUTES: Record<string, RouteCandidate[]> = {
   ],
 };
 
-async function loadGradio(): Promise<GradioModule> {
-  if (!modulePromise)
-    modulePromise = import(/* @vite-ignore */ GRADIO_CDN) as Promise<GradioModule>;
-  return modulePromise;
-}
-
 export function connectFreeSpace(space: string) {
   let client = clients.get(space);
   if (!client) {
-    client = loadGradio().then(({ Client }) => Client.connect(space));
+    client = Client.connect(space) as unknown as Promise<GradioClient>;
     clients.set(space, client);
   }
   return client;
@@ -213,17 +203,13 @@ async function resolveEndpoint(route: RouteCandidate, preferredEndpoint?: string
   return { client, endpoint };
 }
 
-async function normalizeInput(
-  value: unknown,
-  handleFile?: GradioModule["handle_file"],
-): Promise<unknown> {
-  if (handleFile && typeof Blob !== "undefined" && value instanceof Blob) return handleFile(value);
-  if (Array.isArray(value))
-    return Promise.all(value.map((item) => normalizeInput(item, handleFile)));
+async function normalizeInput(value: unknown): Promise<unknown> {
+  if (typeof Blob !== "undefined" && value instanceof Blob) return handle_file(value);
+  if (Array.isArray(value)) return Promise.all(value.map((item) => normalizeInput(item)));
   if (value && typeof value === "object" && !(value instanceof Blob)) {
     const entries = await Promise.all(
       Object.entries(value as Record<string, unknown>).map(
-        async ([key, item]) => [key, await normalizeInput(item, handleFile)] as const,
+        async ([key, item]) => [key, await normalizeInput(item)] as const,
       ),
     );
     return Object.fromEntries(entries);
@@ -232,8 +218,7 @@ async function normalizeInput(
 }
 
 async function normalizeInputs(inputs: Record<string, unknown> | unknown[]) {
-  const module = await loadGradio();
-  return normalizeInput(inputs, module.handle_file);
+  return normalizeInput(inputs);
 }
 
 function adaptInputs(
@@ -252,7 +237,7 @@ function adaptInputs(
       lrc: String(inputs.lyrics ?? inputs.lrc ?? ""),
       current_prompt_type: inputs.audio_prompt ? "audio" : "text",
       audio_prompt: inputs.audio_prompt ?? null,
-      text_prompt: String(inputs.description ?? inputs.prompt ?? "pop song"),
+      text_prompt: String(inputs.description ?? inputs.prompt ?? "polished original song"),
       seed: Number(inputs.seed ?? 42),
       randomize_seed: true,
       steps: 16,
@@ -338,7 +323,7 @@ async function collect(
       for await (const message of job) {
         if (message.type === "status") {
           const status = message.status as Record<string, unknown> | undefined;
-          if (status?.message && typeof status.message === "string") onStatus?.(status.message);
+          if (typeof status?.message === "string") onStatus?.(status.message);
         }
         if (message.type === "data") latest = message.data ?? null;
       }
@@ -355,6 +340,20 @@ async function collect(
     : new Error("No free public generation route is currently available.");
 }
 
+async function collectDirect(
+  space: string,
+  apiName: string,
+  inputs: Record<string, unknown> | unknown[],
+) {
+  const client = await connectFreeSpace(space);
+  const normalized = await normalizeInputs(inputs);
+  const job = client.submit(apiName, normalized);
+  let latest: unknown = null;
+  for await (const message of job) if (message.type === "data") latest = message.data ?? null;
+  if (latest == null) throw new Error("The creation service returned no result.");
+  return latest;
+}
+
 export async function runGradio(
   space: string,
   apiName: string,
@@ -364,14 +363,11 @@ export async function runGradio(
   const logicalId = Object.prototype.hasOwnProperty.call(ROUTES, space)
     ? space
     : (Object.entries(FREE_SPACE_IDS).find(([, value]) => value === space)?.[0] ?? "");
-  if (logicalId) return firstOutput(await collect(logicalId, inputs, onStatus, apiName));
-  const client = await connectFreeSpace(space);
-  const normalized = await normalizeInputs(inputs);
-  const job = client.submit(apiName, normalized);
-  let latest: unknown = null;
-  for await (const message of job) if (message.type === "data") latest = message.data ?? null;
-  if (latest == null) throw new Error("The creation service returned no result.");
-  return firstOutput(latest);
+  return firstOutput(
+    logicalId
+      ? await collect(logicalId, inputs, onStatus, apiName)
+      : await collectDirect(space, apiName, inputs),
+  );
 }
 
 export async function runGradioAll(
@@ -390,20 +386,6 @@ export async function runGradioAll(
   if (latest && typeof latest === "object" && Array.isArray((latest as { data?: unknown }).data))
     return (latest as { data: unknown[] }).data;
   return [firstOutput(latest)];
-}
-
-async function collectDirect(
-  space: string,
-  apiName: string,
-  inputs: Record<string, unknown> | unknown[],
-) {
-  const client = await connectFreeSpace(space);
-  const normalized = await normalizeInputs(inputs);
-  const job = client.submit(apiName, normalized);
-  let latest: unknown = null;
-  for await (const message of job) if (message.type === "data") latest = message.data ?? null;
-  if (latest == null) throw new Error("The creation service returned no result.");
-  return latest;
 }
 
 export const FREE_SPACE_IDS = {

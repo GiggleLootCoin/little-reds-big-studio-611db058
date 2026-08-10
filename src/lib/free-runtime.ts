@@ -43,7 +43,8 @@ export const FREE_CAPABILITIES: FreeCapability[] = [
     requiresApiKey: false,
     capabilities: ["music", "lyrics-to-music", "audio-editing", "remix", "cover", "full-song"],
     fallbackIds: ["music-diffrhythm2", "music-open-fallback"],
-    notes: "Primary open music-generation target; availability and endpoint schema are live-checked.",
+    notes:
+      "Primary open music-generation target; availability and endpoint schema are live-checked.",
   },
   {
     id: "music-diffrhythm2",
@@ -52,7 +53,8 @@ export const FREE_CAPABILITIES: FreeCapability[] = [
     requiresApiKey: false,
     capabilities: ["music", "lyrics-to-music", "full-song", "audio-style-reference"],
     fallbackIds: ["music-ace-step", "music-open-fallback"],
-    notes: "Open full-song model with strong lyric alignment; public Space availability is checked at runtime.",
+    notes:
+      "Open full-song model with strong lyric alignment; public Space availability is checked at runtime.",
   },
   {
     id: "music-open-fallback",
@@ -88,7 +90,8 @@ export const FREE_CAPABILITIES: FreeCapability[] = [
     requiresApiKey: false,
     capabilities: ["video", "image-to-video", "audio-to-video", "music-video"],
     fallbackIds: ["video-open-fallback"],
-    notes: "Use only when the public Space exposes a usable no-key endpoint; otherwise fall through silently.",
+    notes:
+      "Use only when the public Space exposes a usable no-key endpoint; otherwise fall through silently.",
   },
   {
     id: "video-open-fallback",
@@ -142,7 +145,8 @@ export const FREE_CAPABILITIES: FreeCapability[] = [
     requiresApiKey: false,
     capabilities: ["vocal-separation", "stems", "vocal-isolation"],
     fallbackIds: [],
-    notes: "Required before replacing vocals in a mixed song; route is live-checked before execution.",
+    notes:
+      "Required before replacing vocals in a mixed song; route is live-checked before execution.",
   },
   {
     id: "browser-audio",

@@ -77,9 +77,9 @@ export function BuddyLiveChatLite() {
             .filter((m): m is Message =>
               Boolean(
                 m &&
-                  typeof m === "object" &&
-                  (m as Record<string, unknown>).role &&
-                  typeof (m as Record<string, unknown>).content === "string",
+                typeof m === "object" &&
+                (m as Record<string, unknown>).role &&
+                typeof (m as Record<string, unknown>).content === "string",
               ),
             )
             .slice(-30),

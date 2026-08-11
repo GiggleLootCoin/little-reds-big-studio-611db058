@@ -149,6 +149,16 @@ export const FREE_RUNNERS: FreeRunner[] = [
     priority: 150,
   },
   {
+    id: "hf-wan-22",
+    name: "Wan 2.2",
+    kind: "public",
+    description: "Open text-to-video and image-to-video generation for cinematic shots, character motion and controllable visual sequences.",
+    capabilities: ["video", "image-to-video", "text-to-video", "animation", "music-video"],
+    url: "https://huggingface.co/spaces/wan-ai/Wan2.2-T2V-A14B",
+    notes: "Second production video route. The runtime must inspect the live Gradio API and use it only when the Space exposes a compatible endpoint; it is an alternate engine rather than a mandatory dependency.",
+    priority: 145,
+  },
+  {
     id: "hf-ltx-video-distilled",
     name: "LTX Video Fast",
     kind: "public",

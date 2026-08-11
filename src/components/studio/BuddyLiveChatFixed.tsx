@@ -24,9 +24,10 @@ type Recognition = {
 };
 type RecognitionCtor = new () => Recognition;
 
-const KEY = "lrbgs-buddy-chat-v19";
+const KEY = "lrbgs-buddy-chat-v20";
 const STT_TIMEOUT = 60000;
-const CHAT_TIMEOUT = 15000;
+const LOCAL_CHAT_TIMEOUT = 20000;
+const REMOTE_CHAT_TIMEOUT = 120000;
 const TTS_TIMEOUT = 45000;
 
 function timeout<T>(promise: Promise<T>, ms: number, message: string) {
@@ -111,11 +112,7 @@ export function BuddyLiveChatFixed() {
       window.speechSynthesis.speak(utterance);
     }
     try {
-      const reference = await timeout(
-        loadStoredBuddyVoice(),
-        2000,
-        "voice preference timeout",
-      );
+      const reference = await timeout(loadStoredBuddyVoice(), 2000, "voice preference timeout");
       const clone = localStorage.getItem("lrbgs-buddy-voice-mode") === "clone" && reference;
       const logical = clone ? FREE_SPACE_IDS.voiceClone : FREE_SPACE_IDS.voicePreset;
       const result = await timeout(
@@ -142,10 +139,7 @@ export function BuddyLiveChatFixed() {
         TTS_TIMEOUT,
         "Buddy voice engine timed out",
       );
-      const url = freeArtifactUrl(
-        result,
-        lastSuccessfulFreeSpace(logical, "Qwen/Qwen3-TTS"),
-      );
+      const url = freeArtifactUrl(result, lastSuccessfulFreeSpace(logical, "Qwen/Qwen3-TTS"));
       if (url) {
         if (!audioRef.current) audioRef.current = new Audio();
         audioRef.current.src = url;
@@ -154,6 +148,45 @@ export function BuddyLiveChatFixed() {
     } catch {
       // Device speech is the no-key fallback.
     }
+  };
+
+  const getReply = async (text: string, context: Message[]) => {
+    try {
+      const local = textOf(
+        await timeout(
+          runLocalChat(context),
+          LOCAL_CHAT_TIMEOUT,
+          "local Buddy brain timed out",
+        ),
+      )
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+      if (local) return local;
+    } catch {
+      // Continue to the public free model.
+    }
+
+    try {
+      setStatus("Buddy is switching to a free cloud brain…");
+      const remote = textOf(
+        await timeout(
+          runGradio("chat", "", {
+            prompt: text,
+            message: text,
+            history: context.slice(-12),
+          }, setStatus),
+          REMOTE_CHAT_TIMEOUT,
+          "free Buddy cloud brain timed out",
+        ),
+      )
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+      if (remote) return remote;
+    } catch {
+      // Deterministic no-network fallback below.
+    }
+
+    return fallback(text);
   };
 
   const send = async (forced?: string, speakReply = false) => {
@@ -165,10 +198,9 @@ export function BuddyLiveChatFixed() {
     const next = [...messages, { role: "user" as const, content: text }].slice(-16);
     setMessages(next);
     setInput("");
-    let reply = "";
     try {
       const memory = await timeout(memoryContext(text, 6), 2000, "memory timeout").catch(() => "");
-      const context = memory
+      const context: Message[] = memory
         ? [
             {
               role: "assistant" as const,
@@ -177,19 +209,22 @@ export function BuddyLiveChatFixed() {
             ...next,
           ]
         : next;
-      reply = textOf(await timeout(runLocalChat(context), CHAT_TIMEOUT, "local Buddy brain timeout"))
-        .replace(/<think>[\s\S]*?<\/think>/gi, "")
-        .trim();
-    } catch {
-      reply = fallback(text);
+      const reply = await getReply(text, context);
+      setMessages([...next, { role: "assistant", content: reply }]);
+      void rememberConversation(text, reply).catch(() => undefined);
+      setStatus("Buddy is ready.");
+      if (speakReply || liveRef.current) void speak(reply);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+      setStatus("Buddy is ready.");
+      if (liveRef.current) {
+        window.setTimeout(() => {
+          if (!liveRef.current || busyRef.current || recognitionRef.current || recorderRef.current) return;
+          if (!startBrowserRecognition()) void startRecorder();
+        }, 700);
+      }
     }
-    if (!reply) reply = fallback(text);
-    setMessages([...next, { role: "assistant", content: reply }]);
-    void rememberConversation(text, reply).catch(() => undefined);
-    busyRef.current = false;
-    setBusy(false);
-    setStatus("Buddy is ready.");
-    if (speakReply || liveRef.current) void speak(reply);
   };
 
   const stopRecorder = () => {
@@ -255,11 +290,7 @@ export function BuddyLiveChatFixed() {
             let text = "";
             try {
               text = textOf(
-                await timeout(
-                  runLocalSpeechToText(blob),
-                  STT_TIMEOUT,
-                  "local Whisper timed out",
-                ),
+                await timeout(runLocalSpeechToText(blob), STT_TIMEOUT, "local Whisper timed out"),
               );
             } catch {
               // Remote fallback below.
@@ -271,13 +302,14 @@ export function BuddyLiveChatFixed() {
             await send(text, true);
           } catch (error) {
             setStatus(
-              error instanceof Error
-                ? error.message
-                : "I couldn't understand that. Try again.",
+              error instanceof Error ? error.message : "I couldn't understand that. Try again.",
             );
           }
           if (liveRef.current && !busyRef.current) {
-            window.setTimeout(() => void startRecorder(), 350);
+            window.setTimeout(() => {
+              if (!liveRef.current || busyRef.current || recorderRef.current || recognitionRef.current) return;
+              void startRecorder();
+            }, 350);
           }
         })();
       };
@@ -320,11 +352,10 @@ export function BuddyLiveChatFixed() {
       recognition.onend = () => {
         recognitionRef.current = null;
         setListening(false);
-        if (liveRef.current && !busyRef.current) {
-          window.setTimeout(() => {
-            if (!startBrowserRecognition()) void startRecorder();
-          }, 250);
-        }
+        // A successful recognition result is handed to send(), which owns the
+        // restart after the reply. If recognition ends without a result, use
+        // the MediaRecorder fallback immediately.
+        if (liveRef.current && !busyRef.current) void startRecorder();
       };
       recognitionRef.current = recognition;
       recognition.start();
@@ -383,19 +414,11 @@ export function BuddyLiveChatFixed() {
       icon={<Sparkles className="size-5" />}
       defaultOpen
     >
-      <div
-        className="buddy-live-stage"
-        data-live={live}
-        data-listening={listening}
-      >
+      <div className="buddy-live-stage" data-live={live} data-listening={listening}>
         <div className="buddy-live-pulse" />
         <div>
           <strong>
-            {live
-              ? listening
-                ? "Buddy is listening"
-                : "Buddy is with you"
-              : "Buddy is ready"}
+            {live ? (listening ? "Buddy is listening" : "Buddy is with you") : "Buddy is ready"}
           </strong>
           <span>{status}</span>
         </div>
@@ -413,18 +436,11 @@ export function BuddyLiveChatFixed() {
           }}
           className="rounded-xl border border-white/10 bg-white/[.04] px-3 py-2 text-xs font-semibold text-white/75"
         >
-          {muted ? (
-            <VolumeX className="mr-2 inline size-4" />
-          ) : (
-            <Volume2 className="mr-2 inline size-4" />
-          )}
+          {muted ? <VolumeX className="mr-2 inline size-4" /> : <Volume2 className="mr-2 inline size-4" />}
           {muted ? "Muted" : "Sound On"}
         </button>
       </div>
-      <div
-        className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-3"
-        aria-live="polite"
-      >
+      <div className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-3" aria-live="polite">
         {messages.length === 0 ? (
           <p className="text-sm text-white/45">
             Say hello or type a message. Buddy listens, transcribes, thinks and answers.
@@ -461,21 +477,12 @@ export function BuddyLiveChatFixed() {
           placeholder="Talk or type to Buddy…"
           className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 focus:border-red-400/50"
         />
-        <StudioButton
-          type="submit"
-          disabled={busy || !input.trim()}
-          aria-label="Send message"
-        >
-          {busy ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Send className="size-4" />
-          )}
+        <StudioButton type="submit" disabled={busy || !input.trim()} aria-label="Send message">
+          {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
         </StudioButton>
       </form>
       <p className="mt-2 text-[11px] text-white/30">
-        Hands-free uses browser speech recognition first, then local Whisper, then a free public
-        Whisper route. Buddy always has the device voice as a no-key speech fallback.
+        Hands-free uses browser speech recognition first, then local Whisper, then a free public Whisper route. Buddy uses device speech immediately and can also use the free public Qwen3-TTS route.
       </p>
     </Panel>
   );

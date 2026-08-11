@@ -19,6 +19,17 @@ export type FreeRunner = {
  */
 export const FREE_RUNNERS: FreeRunner[] = [
   {
+    id: "hf-llama-32-chat",
+    name: "Llama 3.2 3B Instruct",
+    kind: "public",
+    description: "Free public Hugging Face conversational model for Buddy's cloud fallback.",
+    capabilities: ["chat", "conversation", "text-generation", "text"],
+    url: "https://huggingface.co/spaces/huggingface-projects/llama-3.2-3B-Instruct",
+    notes:
+      "Official Hugging Face public Space running on free Zero hardware. The Studio discovers its live Gradio API and uses it only when a compatible chat endpoint is available.",
+    priority: 150,
+  },
+  {
     id: "hf-ace-step-15",
     name: "ACE-Step 1.5",
     kind: "public",

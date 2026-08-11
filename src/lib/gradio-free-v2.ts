@@ -13,6 +13,7 @@ import {
 } from "./free-provider-policy";
 
 type LogicalId =
+  | "chat"
   | "speechToText"
   | "music"
   | "image"
@@ -42,6 +43,7 @@ type ClientLike = {
 };
 
 export const FREE_SPACE_IDS = {
+  chat: "chat",
   speechToText: "speechToText",
   music: "music",
   image: "image",
@@ -52,6 +54,7 @@ export const FREE_SPACE_IDS = {
   vocalSeparation: "vocalSeparation",
 } as const;
 const wanted: Record<LogicalId, string[]> = {
+  chat: ["chat", "conversation", "text-generation", "question-answering", "text"],
   speechToText: ["speech-to-text", "transcription", "realtime-asr"],
   music: ["music", "song", "lyrics-to-music", "audio-to-audio"],
   image: ["image", "artwork", "cover", "image-edit"],
@@ -108,8 +111,10 @@ export function getFreeRuntimeHealth() {
 function aliases(name: string) {
   const n = clean(name);
   const groups: Record<string, string[]> = {
-    prompt: ["prompt", "description", "text", "lyrics", "captions", "caption"],
-    text: ["text", "prompt", "targettext", "lyrics", "caption", "captions"],
+    prompt: ["prompt", "description", "text", "message", "query", "question", "lyrics", "captions", "caption"],
+    text: ["text", "prompt", "message", "query", "question", "targettext", "lyrics", "caption", "captions"],
+    message: ["message", "prompt", "text", "query", "question"],
+    history: ["history", "chat_history", "conversation", "messages"],
     lyrics: ["lyrics", "lyric", "lrc", "text", "prompt"],
     audio: [
       "audio",
@@ -139,6 +144,8 @@ function valueFor(logical: LogicalId, name: string, input: InputMap) {
   for (const alias of aliases(n))
     for (const [key, value] of Object.entries(input))
       if (clean(key) === clean(alias) && value !== undefined && value !== null) return value;
+  if (n === "history" || n.includes("history") || n.includes("conversation") || n === "messages")
+    return input.history ?? input.messages ?? [];
   if (n.includes("image")) return input.image ?? input.input_image;
   if (n.includes("audio") || n.includes("refaudio"))
     return (
@@ -179,6 +186,7 @@ function scalarDefault(p: Param) {
   const n = clean(p.parameter_name ?? p.label ?? "");
   const t = clean(`${p.component ?? ""} ${p.type ?? ""}`);
   if (p.default !== undefined && p.default !== null) return p.default;
+  if (n === "history" || n.includes("history") || n.includes("conversation") || n === "messages") return [];
   if (
     /number|float|int|slider/.test(t) ||
     /(duration|seconds|steps|guidance|cfg|temperature|strength|scale|pitch|seed|batch|width|height|fps|rate|overlap|threshold)/.test(
@@ -235,6 +243,7 @@ function score(spec: Endpoint, endpoint: string, logical: LogicalId, input: Inpu
         ? 5
         : -40;
   const returns = clean(JSON.stringify(spec.returns ?? []));
+  if (logical === "chat" && (returns.includes("text") || returns.includes("string"))) value += 35;
   if (logical === "image" && returns.includes("image")) value += 30;
   if (logical === "video" && returns.includes("video")) value += 30;
   if (
@@ -312,17 +321,17 @@ async function runOne(
       ? { endpoint: preferred, spec: map[preferred] }
       : candidates[0];
   if (!selected) throw new Error(`${space}: no compatible endpoint for ${logical}.`);
-  onStatus?.(`Running a private generation route…`);
+  onStatus?.(`Running a free generation route…`);
   const args = await normalize(build(selected.spec, logical, input));
   const response = await wait(
     client.predict(selected.endpoint, args as unknown[]),
-    12 * 60 * 1000,
-    `${space} generation timed out.`,
+    logical === "chat" ? 120000 : 12 * 60 * 1000,
+    `${space} ${logical} timed out.`,
   );
   const data = Array.isArray(response)
     ? response
     : ((response as { data?: unknown[] }).data ?? response);
-  if (!output(data)) throw new Error(`${space}: generation completed without an output.`);
+  if (!output(data)) throw new Error(`${space}: operation completed without a usable output.`);
   recordRuntimeSuccess(space);
   recordRuntimeSuccess(`${logical}:${space}`);
   markProviderSuccess(`${logical}:${space}`);
@@ -344,7 +353,7 @@ export async function runGradio(
     const space = spaceName(runner.url);
     const key = `${logical}:${space}`;
     if (!providerAvailable(key) || !isRuntimeAvailable(space)) {
-      onStatus?.(`Trying the next available generation route…`);
+      onStatus?.(`Trying the next available route…`);
       continue;
     }
     try {
@@ -359,7 +368,7 @@ export async function runGradio(
       last = error;
       recordRuntimeFailure(space, error);
       markProviderFailure(key, error);
-      onStatus?.(`That generation route was unavailable; Buddy is switching automatically…`);
+      onStatus?.(`That route was unavailable; Buddy is switching automatically…`);
     }
   }
   throw last instanceof Error

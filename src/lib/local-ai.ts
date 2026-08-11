@@ -1,6 +1,9 @@
 import { pipeline } from "@huggingface/transformers";
 
-const CHAT_MODEL = "onnx-community/Qwen3-0.6B-ONNX";
+// Android-first: the previous Qwen3 0.6B browser model is hundreds of MB and
+// can exhaust memory before inference begins. SmolLM2-135M-Instruct has a
+// much smaller quantized ONNX footprint and is explicitly Transformers.js-ready.
+const CHAT_MODEL = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const STT_MODEL = "onnx-community/whisper-tiny.en";
 
 type ChatMessage = { role: string; content: string };
@@ -38,9 +41,8 @@ async function loadChat(): Promise<TextGenerator> {
     const attempts: PipelineAttempt[] = [];
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q4f16" });
     if (hasWasm()) {
-      attempts.push({ device: "wasm", dtype: "q8" });
       attempts.push({ device: "wasm", dtype: "q4" });
-      attempts.push({ device: "wasm", dtype: "q2" });
+      attempts.push({ device: "wasm", dtype: "q8" });
     }
     chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => {
       chatPromise = null;
@@ -55,9 +57,8 @@ async function loadSpeechToText(): Promise<Transcriber> {
     const attempts: PipelineAttempt[] = [];
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q8" });
     if (hasWasm()) {
-      attempts.push({ device: "wasm", dtype: "q8" });
       attempts.push({ device: "wasm", dtype: "q4" });
-      attempts.push({ device: "wasm", dtype: "q2" });
+      attempts.push({ device: "wasm", dtype: "q8" });
     }
     sttPromise = loadPipeline<Transcriber>("automatic-speech-recognition", STT_MODEL, attempts).catch((error) => {
       sttPromise = null;
@@ -82,7 +83,7 @@ export async function runLocalChat(messages: ChatMessage[]) {
   const generator = await loadChat();
   try {
     return await generator(messages, {
-      max_new_tokens: 220,
+      max_new_tokens: 160,
       temperature: 0.7,
       do_sample: true,
       return_full_text: false,

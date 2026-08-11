@@ -91,12 +91,6 @@ export function BuddyLiveChatReliable() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speak = async (text: string) => {
     if (muted) return;
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.96;
-      window.speechSynthesis.speak(u);
-    }
     try {
       const reference = await timeout(loadStoredBuddyVoice(), 2500, "voice load timeout");
       const clone = localStorage.getItem("lrbgs-buddy-voice-mode") === "clone" && reference;
@@ -129,10 +123,19 @@ export function BuddyLiveChatReliable() {
       if (url) {
         if (!audioRef.current) audioRef.current = new Audio();
         audioRef.current.src = url;
-        await audioRef.current.play().catch(() => undefined);
+        await audioRef.current.play().catch((error) => {
+          throw error instanceof Error ? error : new Error('voice playback failed');
+        });
+        return;
       }
+      throw new Error('voice provider returned no playable artifact');
     } catch {
-      /* device speech already provides an immediate response */
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.96;
+        window.speechSynthesis.speak(u);
+      }
     }
   };
   const send = async (forced?: string, speakReply = false) => {
@@ -387,8 +390,8 @@ export function BuddyLiveChatReliable() {
       </form>
       <p className="mt-2 text-[11px] text-white/30">
         Hands-free uses browser speech recognition when available, with real audio-recording and
-        local Whisper fallback. Buddy speaks immediately with the device voice and can layer the
-        selected free voice afterward.
+        local Whisper fallback. Buddy uses the selected free voice first and only falls back to the
+        device voice when a real playable voice artifact cannot be produced.
       </p>
     </Panel>
   );

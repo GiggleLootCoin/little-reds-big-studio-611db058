@@ -23,7 +23,7 @@ jobs:
           node-version: 24
           cache: npm
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Normalize formatting
         run: npx prettier --write src/components/studio/BuddyLiveChatLite.tsx src/components/studio/FreeCreatePanel.tsx src/lib/gradio-free.ts
       - name: Type-check

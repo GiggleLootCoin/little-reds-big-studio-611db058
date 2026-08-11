@@ -4,7 +4,7 @@ import { Chip, Note, Panel, Readout, StudioButton, StudioSlider } from "./ui";
 import { setStudio, useStudio } from "@/lib/studio-store";
 import { FREE_RUNNERS } from "@/lib/free-runners";
 
-const runner = (id: string) => FREE_RUNNERS.find((r) => r.id === id)!;
+const runner = (id: string) => FREE_RUNNERS.find((r) => r.id === id);
 
 export function QRangePanel() {
   const studio = useStudio();
@@ -12,56 +12,21 @@ export function QRangePanel() {
   const [saved, setSaved] = useState(false);
   const update = (patch: Partial<typeof q>) => setStudio({ qrange: { ...q, ...patch } });
   return (
-    <Panel
-      eyebrow="Mix core"
-      title="Red's QRange"
-      icon={<SlidersHorizontal className="size-5" />}
-      defaultOpen
-    >
-      <p className="text-sm text-muted-foreground">
-        Local session controls. They are saved as project settings; they do not process audio until
-        a native/browser DSP engine is connected.
-      </p>
+    <Panel eyebrow="Mix core" title="Red's QRange" icon={<SlidersHorizontal className="size-5" />} defaultOpen>
+      <p className="text-sm text-muted-foreground">Local session controls. They are saved as project settings; they do not process audio until a native/browser DSP engine is connected.</p>
       <StudioSlider label="Q range" value={q.range} onChange={(v) => update({ range: v })} />
-      <StudioSlider
-        label="Harmonic warmth"
-        value={q.warmth}
-        onChange={(v) => update({ warmth: v })}
-      />
+      <StudioSlider label="Harmonic warmth" value={q.warmth} onChange={(v) => update({ warmth: v })} />
       <StudioSlider label="Bus glue" value={q.glue} onChange={(v) => update({ glue: v })} />
-      <StudioSlider
-        label="True-peak ceiling"
-        value={q.ceiling}
-        min={-3}
-        max={0}
-        step={0.1}
-        unit=" dB"
-        onChange={(v) => update({ ceiling: v })}
-      />
-      <div className="flex flex-wrap gap-2">
-        <Chip>Local settings</Chip>
-        <Chip>Session-safe</Chip>
-        <Chip>No API</Chip>
-      </div>
-      <StudioButton
-        className="w-full"
-        onClick={() => {
-          setStudio({ qrange: { ...q } });
-          setSaved(true);
-          window.setTimeout(() => setSaved(false), 1600);
-        }}
-      >
-        {saved ? "Saved locally ✔" : "Save QRange settings"}
-      </StudioButton>
+      <StudioSlider label="True-peak ceiling" value={q.ceiling} min={-3} max={0} step={0.1} unit=" dB" onChange={(v) => update({ ceiling: v })} />
+      <div className="flex flex-wrap gap-2"><Chip>Local settings</Chip><Chip>Session-safe</Chip><Chip>No API</Chip></div>
+      <StudioButton className="w-full" onClick={() => { setStudio({ qrange: { ...q } }); setSaved(true); window.setTimeout(() => setSaved(false), 1600); }}>{saved ? "Saved locally ✔" : "Save QRange settings"}</StudioButton>
     </Panel>
   );
 }
 
 export function UploadPanel() {
   const studio = useStudio();
-  const [files, setFiles] = useState<Array<{ name: string; url: string; kind: "audio" | "image" }>>(
-    [],
-  );
+  const [files, setFiles] = useState<Array<{ name: string; url: string; kind: "audio" | "image" }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const add = (list: FileList | null) => {
     if (!list) return;
@@ -69,64 +34,21 @@ export function UploadPanel() {
       const kind = file.type.startsWith("audio") ? "audio" : "image";
       const url = URL.createObjectURL(file);
       setFiles((current) => [...current, { name: file.name, url, kind }]);
-      if (kind === "audio")
-        setStudio({ audioUrl: url, audioName: file.name, audioPath: `local:${file.name}` });
+      if (kind === "audio") setStudio({ audioUrl: url, audioName: file.name, audioPath: `local:${file.name}` });
       else setStudio({ referenceUrl: url, referencePath: `local:${file.name}` });
     }
   };
   useEffect(() => () => files.forEach((f) => URL.revokeObjectURL(f.url)), [files]);
   return (
-    <Panel
-      eyebrow="Local files"
-      title="Audio, Voice & File Uploads"
-      icon={<UploadCloud className="size-5" />}
-    >
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="w-full rounded-2xl border-2 border-dashed border-border bg-background/40 p-7 text-center transition-colors hover:border-primary hover:bg-primary/5"
-      >
+    <Panel eyebrow="Local files" title="Audio, Voice & File Uploads" icon={<UploadCloud className="size-5" />}>
+      <button type="button" onClick={() => inputRef.current?.click()} className="w-full rounded-2xl border-2 border-dashed border-border bg-background/40 p-7 text-center transition-colors hover:border-primary hover:bg-primary/5">
         <UploadCloud className="mx-auto mb-2 size-8 text-primary" />
         <p className="font-display text-sm">Choose audio or reference imagery</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Files are available for this browser session. The project remembers filenames, not
-          temporary object URLs.
-        </p>
-        <input
-          ref={inputRef}
-          hidden
-          type="file"
-          multiple
-          accept="audio/*,image/*"
-          onChange={(e) => add(e.target.files)}
-        />
+        <p className="mt-1 text-xs text-muted-foreground">Files are available for this browser session. The project remembers filenames, not temporary object URLs.</p>
+        <input ref={inputRef} hidden type="file" multiple accept="audio/*,image/*" onChange={(e) => add(e.target.files)} />
       </button>
-      {files.length > 0 && (
-        <div className="space-y-2">
-          {files.map((file) => (
-            <div
-              key={`${file.name}-${file.url}`}
-              className="rounded-xl border border-border bg-background/50 p-3"
-            >
-              {file.kind === "audio" ? (
-                <audio controls src={file.url} className="w-full" />
-              ) : (
-                <img
-                  src={file.url}
-                  alt={file.name}
-                  className="max-h-48 w-full rounded-lg object-contain"
-                />
-              )}
-              <p className="mt-2 text-xs text-muted-foreground">{file.name}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="grid grid-cols-3 gap-2">
-        <Readout label="Storage" value="Browser" />
-        <Readout label="API key" value="None" />
-        <Readout label="Account" value="None" />
-      </div>
+      {files.length > 0 && <div className="space-y-2">{files.map((file) => <div key={`${file.name}-${file.url}`} className="rounded-xl border border-border bg-background/50 p-3">{file.kind === "audio" ? <audio controls src={file.url} className="w-full" /> : <img src={file.url} alt={file.name} className="max-h-48 w-full rounded-lg object-contain" />}<p className="mt-2 text-xs text-muted-foreground">{file.name}</p></div>)}</div>}
+      <div className="grid grid-cols-3 gap-2"><Readout label="Storage" value="Browser" /><Readout label="API key" value="None" /><Readout label="Account" value="None" /></div>
     </Panel>
   );
 }
@@ -138,45 +60,10 @@ export function LabPanel() {
   const names = ["Vocals", "Drums", "Bass", "Other"];
   return (
     <Panel eyebrow="Audio lab" title="Red'sLab Stem Studio" icon={<Scissors className="size-5" />}>
-      <p className="text-sm text-muted-foreground">
-        Local mixer controls plus the best free/open stem separator.
-      </p>
-      {studio.audioUrl ? (
-        <audio controls src={studio.audioUrl} className="w-full" />
-      ) : (
-        <Note>Upload a track above first.</Note>
-      )}
-      <div className="space-y-2">
-        {names.map((name, i) => (
-          <div key={name} className="rounded-xl border border-border bg-background/40 p-3">
-            <div className="mb-2 flex justify-between">
-              <span className="font-display text-sm">{name}</span>
-              <span className="text-xs text-muted-foreground">{levels[i]}%</span>
-            </div>
-            <div className="h-8 overflow-hidden rounded-lg bg-primary/10">
-              {Array.from({ length: 24 }, (_, n) => (
-                <span
-                  key={n}
-                  className="mr-[2px] inline-block w-[3%] rounded-sm bg-primary/60"
-                  style={{ height: `${20 + ((n * 17 + i * 23) % 70)}%` }}
-                />
-              ))}
-            </div>
-            <StudioSlider
-              label="Level"
-              value={levels[i]}
-              onChange={(v) => setLevels((old) => old.map((x, n) => (n === i ? v : x)))}
-              unit="%"
-            />
-          </div>
-        ))}
-      </div>
-      <StudioButton
-        className="w-full"
-        onClick={() => window.open(demucs.url, "_blank", "noopener,noreferrer")}
-      >
-        Open Demucs free stem separator
-      </StudioButton>
+      <p className="text-sm text-muted-foreground">Local mixer controls plus the best free/open stem separator.</p>
+      {studio.audioUrl ? <audio controls src={studio.audioUrl} className="w-full" /> : <Note>Upload a track above first.</Note>}
+      <div className="space-y-2">{names.map((name, i) => <div key={name} className="rounded-xl border border-border bg-background/40 p-3"><div className="mb-2 flex justify-between"><span className="font-display text-sm">{name}</span><span className="text-xs text-muted-foreground">{levels[i]}%</span></div><div className="h-8 overflow-hidden rounded-lg bg-primary/10">{Array.from({ length: 24 }, (_, n) => <span key={n} className="mr-[2px] inline-block w-[3%] rounded-sm bg-primary/60" style={{ height: `${20 + ((n * 17 + i * 23) % 70)}%` }} />)}</div><StudioSlider label="Level" value={levels[i]} onChange={(v) => setLevels((old) => old.map((x, n) => (n === i ? v : x)))} unit="%" /></div>)}</div>
+      <StudioButton className="w-full" onClick={() => demucs && window.open(demucs.url, "_blank", "noopener,noreferrer")} disabled={!demucs}>Open Demucs free stem separator</StudioButton>
     </Panel>
   );
 }
@@ -187,86 +74,37 @@ export function StoryboardPanel() {
   const [scenes, setScenes] = useState(10);
   const [result, setResult] = useState("");
   const build = () => {
-    const base = (
-      direction ||
-      studio.direction ||
-      "cinematic performance with evolving visual motifs"
-    ).trim();
-    const text = Array.from(
-      { length: scenes },
-      (_, i) =>
-        `### Scene ${i + 1}\n**Time:** ${i * 10}s\n**Shot:** ${i % 2 ? "moving medium shot" : "wide establishing shot"}\n**Action:** ${base}\n**Lighting:** cinematic crimson highlights\n**Video prompt:** ${base}; coherent continuity; polished music-video cinematography.`,
-    ).join("\n\n");
+    const base = (direction || studio.direction || "cinematic performance with evolving visual motifs").trim();
+    const text = Array.from({ length: scenes }, (_, i) => `### Scene ${i + 1}\n**Time:** ${i * 10}s\n**Shot:** ${i % 2 ? "moving medium shot" : "wide establishing shot"}\n**Action:** ${base}\n**Lighting:** cinematic crimson highlights\n**Video prompt:** ${base}; coherent continuity; polished music-video cinematography.`).join("\n\n");
     setResult(text);
     setStudio({ storyboard: text, direction: base });
   };
   return (
-    <Panel
-      eyebrow="Video prep"
-      title="Automated Storyboarding"
-      icon={<Clapperboard className="size-5" />}
-    >
-      <p className="text-sm text-muted-foreground">
-        Build a complete shot list locally, then use it with a free/open video engine.
-      </p>
-      <input
-        value={studio.title}
-        onChange={(e) => setStudio({ title: e.target.value })}
-        placeholder="Track title"
-        className="w-full rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm"
-      />
-      <textarea
-        value={direction || studio.direction}
-        onChange={(e) => setDirection(e.target.value)}
-        rows={4}
-        placeholder="Visual direction..."
-        className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm"
-      />
+    <Panel eyebrow="Video prep" title="Automated Storyboarding" icon={<Clapperboard className="size-5" />}>
+      <p className="text-sm text-muted-foreground">Build a complete shot list locally, then use it with a free/open video engine.</p>
+      <input value={studio.title} onChange={(e) => setStudio({ title: e.target.value })} placeholder="Track title" className="w-full rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm" />
+      <textarea value={direction || studio.direction} onChange={(e) => setDirection(e.target.value)} rows={4} placeholder="Visual direction..." className="w-full rounded-xl border border-border bg-background/60 p-3 text-sm" />
       <StudioSlider label="Scenes" value={scenes} min={3} max={24} onChange={setScenes} />
-      <StudioButton className="w-full" onClick={build}>
-        Build storyboard locally
-      </StudioButton>
-      {result && (
-        <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-background/50 p-3 text-xs">
-          {result}
-        </pre>
-      )}
+      <StudioButton className="w-full" onClick={build}>Build storyboard locally</StudioButton>
+      {result && <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-background/50 p-3 text-xs">{result}</pre>}
     </Panel>
   );
 }
 
 export function VideoPanel() {
   const studio = useStudio();
-  const wan = runner("hf-wan-s2v");
+  const ltx = runner("hf-ltx-23");
   const prompt = studio.storyboard || studio.direction || "Create a cinematic music-video sequence";
   const open = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt);
-    } catch {
-      /* optional */
-    }
-    window.open(wan.url, "_blank", "noopener,noreferrer");
+    try { await navigator.clipboard.writeText(prompt); } catch { /* optional */ }
+    if (ltx) window.open(ltx.url, "_blank", "noopener,noreferrer");
   };
   return (
     <Panel eyebrow="Video" title="Free Video Generation" icon={<Film className="size-5" />}>
-      <p className="text-sm text-muted-foreground">
-        Your phone prepares the prompt; Wan 2.2 S2V performs heavy generation on its free public
-        interface.
-      </p>
-      <Note>
-        <Readout label="Engine" value={wan.name} />
-        <Readout label="Cost" value="Free public route" />
-        <Readout label="API key" value="None" />
-      </Note>
-      <textarea
-        value={prompt}
-        readOnly
-        rows={8}
-        className="w-full rounded-xl border border-border bg-background/60 p-3 text-xs"
-      />
-      <StudioButton className="w-full" onClick={() => void open()}>
-        Copy prompt & open free video engine
-      </StudioButton>
+      <p className="text-sm text-muted-foreground">Your phone prepares the prompt; LTX 2.3 performs the heavy generation on free public GPU capacity. The Studio's main Create panel can run the live endpoint directly.</p>
+      <Note><Readout label="Engine" value={ltx?.name ?? "LTX 2.3"} /><Readout label="Cost" value="Free public route" /><Readout label="API key" value="None" /></Note>
+      <textarea value={prompt} readOnly rows={8} className="w-full rounded-xl border border-border bg-background/60 p-3 text-xs" />
+      <StudioButton className="w-full" onClick={() => void open()} disabled={!ltx}>Copy prompt & open free video engine</StudioButton>
     </Panel>
   );
 }

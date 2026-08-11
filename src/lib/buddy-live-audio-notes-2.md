@@ -1,0 +1,1 @@
+The hands-free conversation path intentionally uses MediaRecorder so the selected microphone is honored.

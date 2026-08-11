@@ -5,9 +5,8 @@ export function freeSpaceOrigin(space: string) {
 }
 
 function normalizeArtifactSpace(space: string) {
-  // The former Wan S2V Space delegates generation to DashScope and therefore
-  // is not a valid no-cost/no-key foundation. Keep old callers compatible by
-  // resolving their relative Gradio artifacts against the free LTX worker.
+  // Keep compatibility with any legacy caller while ensuring the retired
+  // Wan route can only resolve to the current free LTX artifact host.
   if (space === "Wan-AI/Wan2.2-S2V") return "Lightricks/LTX-2-3";
   return space;
 }

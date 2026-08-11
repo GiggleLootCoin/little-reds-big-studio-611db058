@@ -1,4 +1,5 @@
-export const onRequestGet: PagesFunction = async ({ request }) => {
+export const onRequestGet = async ({ request }: { request: Request }) => {
+  void request;
   return Response.json({
     ok: true,
     service: "little-reds-big-studio",

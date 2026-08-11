@@ -7,6 +7,8 @@ type ChatMessage = { role: string; content: string };
 type TextGenerator = (messages: ChatMessage[], options?: Record<string, unknown>) => Promise<unknown>;
 type Transcriber = (audio: Blob | ArrayBuffer | string, options?: Record<string, unknown>) => Promise<unknown>;
 
+type Device = "webgpu" | "wasm";
+
 let chatPromise: Promise<TextGenerator> | null = null;
 let sttPromise: Promise<Transcriber> | null = null;
 
@@ -18,19 +20,35 @@ function hasWasm() {
   return typeof WebAssembly !== "undefined";
 }
 
+async function loadPipeline<T>(task: "text-generation" | "automatic-speech-recognition", model: string, attempts: Array<{ device: Device; dtype: string }>): Promise<T> {
+  let lastError: unknown;
+  for (const attempt of attempts) {
+    try {
+      return (await pipeline(task, model, {
+        device: attempt.device,
+        dtype: attempt.dtype,
+      })) as unknown as T;
+    } catch (error) {
+      lastError = error;
+      // A phone can advertise WebGPU while the adapter/model initialization fails.
+      // Move immediately to the next real local backend instead of leaving Buddy stuck.
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("No working local AI backend could be initialized.");
+}
+
 async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
-    const promise = (async () => {
-      try {
-        return (await pipeline("text-generation", CHAT_MODEL, {
-          device: hasWebGPU() ? "webgpu" : "wasm",
-          dtype: hasWebGPU() ? "q4f16" : "q4",
-        })) as unknown as TextGenerator;
-      } catch (error) {
-        chatPromise = null;
-        throw error;
-      }
-    })();
+    const attempts: Array<{ device: Device; dtype: string }> = [];
+    if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q4f16" });
+    if (hasWasm()) {
+      attempts.push({ device: "wasm", dtype: "q8" });
+      attempts.push({ device: "wasm", dtype: "q4" });
+    }
+    const promise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => {
+      chatPromise = null;
+      throw error;
+    });
     chatPromise = promise;
   }
   return chatPromise;
@@ -38,17 +56,16 @@ async function loadChat(): Promise<TextGenerator> {
 
 async function loadSpeechToText(): Promise<Transcriber> {
   if (!sttPromise) {
-    const promise = (async () => {
-      try {
-        return (await pipeline("automatic-speech-recognition", STT_MODEL, {
-          device: hasWebGPU() ? "webgpu" : "wasm",
-          dtype: "q8",
-        })) as unknown as Transcriber;
-      } catch (error) {
-        sttPromise = null;
-        throw error;
-      }
-    })();
+    const attempts: Array<{ device: Device; dtype: string }> = [];
+    if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q8" });
+    if (hasWasm()) {
+      attempts.push({ device: "wasm", dtype: "q8" });
+      attempts.push({ device: "wasm", dtype: "q4" });
+    }
+    const promise = loadPipeline<Transcriber>("automatic-speech-recognition", STT_MODEL, attempts).catch((error) => {
+      sttPromise = null;
+      throw error;
+    });
     sttPromise = promise;
   }
   return sttPromise;
@@ -59,8 +76,8 @@ export function localAiCapabilities() {
     browser: typeof window !== "undefined",
     webgpu: hasWebGPU(),
     wasm: hasWasm(),
-    localChat: hasWasm(),
-    localSpeechToText: hasWasm(),
+    localChat: hasWasm() || hasWebGPU(),
+    localSpeechToText: hasWasm() || hasWebGPU(),
     localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window,
   };
 }

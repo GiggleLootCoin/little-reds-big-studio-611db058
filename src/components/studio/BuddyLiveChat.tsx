@@ -1,1 +1,1 @@
-export { BuddyLiveChatReliable as BuddyLiveChat } from "./BuddyLiveChatReliable";
+export { BuddyLiveChatFixed as BuddyLiveChat } from "./BuddyLiveChatFixed";

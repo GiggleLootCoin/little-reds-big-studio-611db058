@@ -65,7 +65,8 @@ export async function watermarkImageBlob(
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("The watermarked image could not be exported."))),
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("The watermarked image could not be exported.")),
       source.type === "image/png" ? "image/png" : "image/jpeg",
       0.94,
     );

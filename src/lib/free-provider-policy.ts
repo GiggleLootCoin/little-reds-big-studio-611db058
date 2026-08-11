@@ -17,7 +17,11 @@ function read(): Record<string, FreeProviderState> {
 }
 
 function write(value: Record<string, FreeProviderState>) {
-  try { localStorage.setItem(KEY, JSON.stringify(value)); } catch { /* storage is optional */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(value));
+  } catch {
+    /* storage is optional */
+  }
 }
 
 export function providerAvailable(id: string) {
@@ -38,8 +42,13 @@ export function markProviderFailure(id: string, error: unknown) {
   const all = read();
   const previous = all[id]?.failures ?? 0;
   const failures = previous + 1;
-  const cooldownUntil = Date.now() + Math.min(MAX_COOLDOWN_MS, BASE_COOLDOWN_MS * 2 ** Math.min(failures - 1, 5));
-  all[id] = { failures, cooldownUntil, lastError: error instanceof Error ? error.message : String(error) };
+  const cooldownUntil =
+    Date.now() + Math.min(MAX_COOLDOWN_MS, BASE_COOLDOWN_MS * 2 ** Math.min(failures - 1, 5));
+  all[id] = {
+    failures,
+    cooldownUntil,
+    lastError: error instanceof Error ? error.message : String(error),
+  };
   write(all);
 }
 

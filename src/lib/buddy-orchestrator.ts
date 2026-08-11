@@ -44,7 +44,8 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Ready on this device",
       runner: null,
       fallbacks: routes,
-      reason: "Buddy can handle this task locally and will use an internal free route only when heavier generation is needed.",
+      reason:
+        "Buddy can handle this task locally and will use an internal free route only when heavier generation is needed.",
       knowledgePolicy,
     };
   }
@@ -56,7 +57,8 @@ export function buddyPlan(task: BuddyTask): BuddyPlan {
       label: "Buddy is choosing the best available route",
       runner,
       fallbacks: routes.slice(1),
-      reason: "Buddy checks available execution routes and silently fails over when one is sleeping, busy, or unavailable.",
+      reason:
+        "Buddy checks available execution routes and silently fails over when one is sleeping, busy, or unavailable.",
       knowledgePolicy,
     };
   }
@@ -81,7 +83,10 @@ export function openBuddyRoute(task: BuddyTask) {
   const plan = buddyPlan(task);
 
   if (plan.mode === "unavailable") {
-    setBuddyStatus("error", { task, message: "Buddy could not find a working internal route for that task." });
+    setBuddyStatus("error", {
+      task,
+      message: "Buddy could not find a working internal route for that task.",
+    });
     return plan;
   }
 

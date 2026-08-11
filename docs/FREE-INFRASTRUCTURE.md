@@ -1,6 +1,7 @@
 # Little Red's Big Studio — Free Infrastructure
 
 ## Goal
+
 Keep the Studio itself $0 for its owner. No paid API is required for the core application.
 
 ## Architecture

@@ -12,7 +12,8 @@ export type LocalSpeechRecognition = {
 };
 
 export function browserTts(text: string, lang = "en-US") {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) throw new Error("Browser speech synthesis is unavailable on this device.");
+  if (typeof window === "undefined" || !("speechSynthesis" in window))
+    throw new Error("Browser speech synthesis is unavailable on this device.");
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
@@ -20,11 +21,21 @@ export function browserTts(text: string, lang = "en-US") {
   return utterance;
 }
 
-export function browserSpeechRecognition(onText: (text: string) => void, onEnd?: () => void, lang = "en-US") {
+export function browserSpeechRecognition(
+  onText: (text: string) => void,
+  onEnd?: () => void,
+  lang = "en-US",
+) {
   if (typeof window === "undefined") throw new Error("Speech recognition requires a browser.");
-  const browser = window as unknown as { SpeechRecognition?: new () => LocalSpeechRecognition; webkitSpeechRecognition?: new () => LocalSpeechRecognition };
+  const browser = window as unknown as {
+    SpeechRecognition?: new () => LocalSpeechRecognition;
+    webkitSpeechRecognition?: new () => LocalSpeechRecognition;
+  };
   const Ctor = browser.SpeechRecognition ?? browser.webkitSpeechRecognition;
-  if (!Ctor) throw new Error("This browser does not provide speech recognition. Use Chrome on Android or type your message instead.");
+  if (!Ctor)
+    throw new Error(
+      "This browser does not provide speech recognition. Use Chrome on Android or type your message instead.",
+    );
   const recognition = new Ctor();
   recognition.lang = lang;
   recognition.interimResults = false;
@@ -34,7 +45,10 @@ export function browserSpeechRecognition(onText: (text: string) => void, onEnd?:
     if (first?.transcript) onText(first.transcript);
   };
   recognition.onend = () => onEnd?.();
-  recognition.onerror = (event) => { onEnd?.(); console.warn("Speech recognition error", event.error); };
+  recognition.onerror = (event) => {
+    onEnd?.();
+    console.warn("Speech recognition error", event.error);
+  };
   recognition.start();
   return recognition;
 }

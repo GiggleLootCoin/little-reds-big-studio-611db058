@@ -2,36 +2,170 @@ import { useEffect, useState } from "react";
 import { Download, FileText, Film, Image as ImageIcon, LoaderCircle, Mic2, Music2, Save, WandSparkles } from "lucide-react";
 import { FREE_SPACE_IDS, freeFile, runGradio, runGradioAll } from "@/lib/gradio-free";
 import { freeArtifactUrl } from "@/lib/free-artifact";
+import { lastSuccessfulFreeSpace } from "@/lib/free-artifact-route";
 import { runLocalChat } from "@/lib/local-ai";
-import { Note, Panel, StudioButton } from "./ui";
+import { Note, Panel, StudioButton, StudioSlider } from "./ui";
 
 type Busy = "lyrics" | "song" | "image" | "video" | "clone" | "swap" | null;
-const wait = <T,>(p: Promise<T>, ms: number) => { let t: ReturnType<typeof setTimeout>; return Promise.race([p, new Promise<T>((_, reject) => { t = setTimeout(() => reject(new Error("The creation service timed out.")), ms); })]).finally(() => clearTimeout(t)); };
-const err = (e: unknown) => e instanceof Error ? e.message.replace(/https?:\/\/\S+/g, "").trim() : "The creation service did not return a result.";
-const urlOf = (v: unknown, space: string) => freeArtifactUrl(v, space);
-const textOf = (v: unknown): string => typeof v === "string" ? v.trim() : Array.isArray(v) ? v.reduceRight((a, x) => a || textOf(x), "") : v && typeof v === "object" ? ["generated_text", "text", "content", "value", "data"].reduce((a, k) => a || textOf((v as Record<string, unknown>)[k]), "") : "";
+const wait = <T,>(promise: Promise<T>, ms: number) => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error("The free generation service took too long to respond.")), ms); })]).finally(() => { if (timer) clearTimeout(timer); });
+};
+const messageOf = (error: unknown) => error instanceof Error ? error.message.replace(/https?:\/\/\S+/g, "").trim() : "The free generation service did not return a usable result.";
 
 export function FreeCreatePanel() {
-  const [brief, setBrief] = useState(""); const [lyrics, setLyrics] = useState(""); const [busy, setBusy] = useState<Busy>(null); const [status, setStatus] = useState("Buddy is ready.");
-  const [audioUrl, setAudioUrl] = useState<string | null>(null); const [imageUrl, setImageUrl] = useState<string | null>(null); const [videoUrl, setVideoUrl] = useState<string | null>(null); const [cloneUrl, setCloneUrl] = useState<string | null>(null); const [swapUrl, setSwapUrl] = useState<string | null>(null);
-  const [videoImage, setVideoImage] = useState<File | null>(null); const [videoAudio, setVideoAudio] = useState<File | null>(null); const [referenceVoice, setReferenceVoice] = useState<File | null>(null); const [swapSource, setSwapSource] = useState<File | null>(null);
-  useEffect(() => { setBrief(localStorage.getItem("lrbgs-song-brief") || ""); setLyrics(localStorage.getItem("lrbgs-lyrics") || ""); }, []);
+  const [brief, setBrief] = useState("");
+  const [lyrics, setLyrics] = useState("");
+  const [seconds, setSeconds] = useState(90);
+  const [busy, setBusy] = useState<Busy>(null);
+  const [status, setStatus] = useState("Buddy is ready. Real outputs only.");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [cloneUrl, setCloneUrl] = useState<string | null>(null);
+  const [swapUrl, setSwapUrl] = useState<string | null>(null);
+  const [videoImage, setVideoImage] = useState<File | null>(null);
+  const [referenceVoice, setReferenceVoice] = useState<File | null>(null);
+  const [swapSource, setSwapSource] = useState<File | null>(null);
 
-  const generateLyrics = async () => { setBusy("lyrics"); setStatus("Buddy is writing your lyrics locally…"); try { const r = await wait(runLocalChat([{ role: "system", content: "Write original, singable lyrics. Do not quote existing lyrics or imitate living artists." }, { role: "user", content: `Write original lyrics for ${brief.trim() || "a song about feeling loved"}. Include Verse 1, Pre-Chorus, Chorus, Verse 2, Bridge and Final Chorus.` }]), 120000); const x = textOf(r).replace(/<think>[\s\S]*?<\/think>/gi, "").trim(); if (!x) throw new Error("No lyrics were returned."); setLyrics(x); localStorage.setItem("lrbgs-lyrics", x); setStatus("Your lyrics are ready."); } catch (e) { setStatus(`Lyrics could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  useEffect(() => {
+    setBrief(localStorage.getItem("lrbgs-song-brief") || "");
+    setLyrics(localStorage.getItem("lrbgs-lyrics") || "");
+  }, []);
 
-  const generateSong = async () => { setBusy("song"); setAudioUrl(null); setStatus("Buddy is finding the best available free music engine…"); const input = { lrc: lyrics.trim() || "[start]\n[verse]\nA brand new song begins tonight\n[chorus]\nWe are alive, we are alright\n[outro]", current_prompt_type: "text", text_prompt: brief.trim() || "polished contemporary pop, warm vocals, piano, bass, drums, uplifting", audio_prompt: null, seed: 42, randomize_seed: true, steps: 16, cfg_strength: 1, file_type: "wav", odeint_method: "euler" }; try { const result = await wait(runGradio(FREE_SPACE_IDS.music, "", input, setStatus), 720000); const url = urlOf(result, "ASLP-lab/DiffRhythm2") || urlOf(result, "ACE-Step/Ace-Step-v1.5"); if (!url) throw new Error("The music engine returned no playable audio file."); setAudioUrl(url); setStatus("Your real generated song is ready."); } catch (e) { setStatus(`Song could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  const generateLyrics = async () => {
+    setBusy("lyrics"); setStatus("Buddy is writing original lyrics…");
+    try {
+      const result = await wait(runLocalChat([
+        { role: "system", content: "Write original, singable lyrics. Do not quote existing lyrics or imitate living artists." },
+        { role: "user", content: `Write original lyrics for ${brief.trim() || "a song about feeling loved"}. Include Verse 1, Pre-Chorus, Chorus, Verse 2, Bridge and Final Chorus.` },
+      ]), 120000);
+      const text = typeof result === "string" ? result : JSON.stringify(result);
+      const clean = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      if (!clean) throw new Error("No lyrics were returned.");
+      setLyrics(clean); localStorage.setItem("lrbgs-lyrics", clean); setStatus("Lyrics are genuinely generated and ready.");
+    } catch (error) { setStatus(`Lyrics failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
 
-  const generateImage = async () => { setBusy("image"); setImageUrl(null); setStatus("Buddy is finding the best available free image engine…"); const input = { prompt: brief.trim() || "A cinematic premium album cover for an original song", height: 1024, width: 1024, num_inference_steps: 9, seed: 42, randomize_seed: true }; try { const result = await wait(runGradio(FREE_SPACE_IDS.image, "", input, setStatus), 300000); const url = urlOf(result, "mrfakename/Z-Image-Turbo"); if (!url) throw new Error("The image engine returned no usable image file."); setImageUrl(url); setStatus("Your real generated artwork is ready."); } catch (e) { setStatus(`Artwork could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  const generateSong = async () => {
+    setBusy("song"); setAudioUrl(null); setStatus("Finding the best free music engine and generating a real song…");
+    const input = {
+      lrc: lyrics.trim() || "[verse]\nA brand new song begins tonight\n[chorus]\nWe are alive, we are alright\n[outro]",
+      current_prompt_type: "text",
+      text_prompt: brief.trim() || "polished contemporary pop, warm vocals, piano, bass, drums, uplifting",
+      audio_prompt: null,
+      audio_duration: seconds,
+      seed: 42,
+      randomize_seed: true,
+      steps: 16,
+      cfg_strength: 1,
+      file_type: "wav",
+      odeint_method: "euler",
+    };
+    try {
+      const result = await wait(runGradio(FREE_SPACE_IDS.music, "", input, setStatus), 720000);
+      const space = lastSuccessfulFreeSpace("music", "ASLP-lab/DiffRhythm2");
+      const url = freeArtifactUrl(result, space);
+      if (!url) throw new Error("The music engine returned no playable audio artifact.");
+      setAudioUrl(url); setStatus(`Real song generated by ${space}.`);
+    } catch (error) { setStatus(`Song failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
 
-  const generateVideo = async () => { if (!videoImage) { setStatus("Add an image for your video first."); return; } setBusy("video"); setVideoUrl(null); setStatus("Buddy is choosing between the best available free video engines…"); const input = { input_image: videoImage, prompt: brief.trim() || "Cinematic natural motion with smooth camera movement and coherent subject motion.", duration: 3, enhance_prompt: true, seed: 42, randomize_seed: true, height: 1024, width: 1536 }; try { const result = await wait(runGradio(FREE_SPACE_IDS.video, "", input, setStatus), 720000); const url = urlOf(result, "Lightricks/LTX-2-3") || urlOf(result, "wan-ai/Wan2.2-T2V-A14B"); if (!url) throw new Error("The video engine returned no playable video file."); setVideoUrl(url); setStatus(videoAudio ? "Your real video is ready; soundtrack/mux remains available for the supplied audio." : "Your real video is ready with generated synchronized audio."); } catch (e) { setStatus(`Video could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  const generateImage = async () => {
+    setBusy("image"); setImageUrl(null); setStatus("Finding the best free image engine and generating real artwork…");
+    try {
+      const result = await wait(runGradio(FREE_SPACE_IDS.image, "", { prompt: brief.trim() || "cinematic premium album cover, professional recording studio atmosphere, deep black, warm brass, crimson accents", height: 1024, width: 1024, num_inference_steps: 9, seed: 42, randomize_seed: true }, setStatus), 300000);
+      const space = lastSuccessfulFreeSpace("image", "mrfakename/Z-Image-Turbo");
+      const url = freeArtifactUrl(result, space);
+      if (!url) throw new Error("The image engine returned no usable image artifact.");
+      setImageUrl(url); setStatus(`Real artwork generated by ${space}.`);
+    } catch (error) { setStatus(`Artwork failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
 
-  const cloneVoice = async () => { if (!referenceVoice) { setStatus("Choose a reference voice first."); return; } setBusy("clone"); setCloneUrl(null); setStatus("Buddy is finding the best available free voice-cloning engine…"); const input = { ref_audio: referenceVoice, ref_text: "", target_text: brief.trim() || "Hello from Little Red's Big Studio.", language: "English", use_xvector_only: true, model_size: "1.7B" }; try { const result = await wait(runGradio(FREE_SPACE_IDS.voiceClone, "", input, setStatus), 240000); const url = urlOf(result, "Qwen/Qwen3-TTS"); if (!url) throw new Error("The voice engine returned no playable audio file."); setCloneUrl(url); setStatus("Your real cloned-voice result is ready."); } catch (e) { setStatus(`Voice creation could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  const generateVideo = async () => {
+    if (!videoImage) { setStatus("Add an image first. Buddy uses it as the visual anchor for the shot."); return; }
+    setBusy("video"); setVideoUrl(null); setStatus("Choosing between LTX 2.3 and Wan 2.2, then generating a real video…");
+    try {
+      const result = await wait(runGradio(FREE_SPACE_IDS.video, "", { input_image: videoImage, prompt: brief.trim() || "cinematic natural motion, smooth camera movement, coherent subject motion, premium music-video cinematography", duration: 3, enhance_prompt: true, seed: 42, randomize_seed: true, height: 768, width: 1280 }, setStatus), 720000);
+      const space = lastSuccessfulFreeSpace("video", "Lightricks/LTX-2-3");
+      const url = freeArtifactUrl(result, space);
+      if (!url) throw new Error("The video engine returned no playable video artifact.");
+      setVideoUrl(url); setStatus(`Real video generated by ${space}.`);
+    } catch (error) { setStatus(`Video failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
 
-  const swapVoice = async () => { if (!swapSource || !referenceVoice) { setStatus("Choose both voice files first."); return; } setBusy("swap"); setSwapUrl(null); setStatus("Buddy is finding the best available free voice-conversion engine…"); const input = { source_audio_path: freeFile(swapSource), target_audio_path: freeFile(referenceVoice), diffusion_steps: 25, length_adjust: 1, inference_cfg_rate: 0.7, f0_condition: true, auto_f0_adjust: true, pitch_shift: 0, stream_output: false }; try { const result = await wait(runGradioAll(FREE_SPACE_IDS.voiceSwap, "", input, setStatus), 720000); const url = urlOf(result, "Plachta/Seed-VC"); if (!url) throw new Error("The voice conversion engine returned no playable audio file."); setSwapUrl(url); setStatus("Your real voice-swap result is ready."); } catch (e) { setStatus(`Voice swap could not be completed: ${err(e)}`); } finally { setBusy(null); } };
+  const cloneVoice = async () => {
+    if (!referenceVoice) { setStatus("Choose a reference voice first."); return; }
+    setBusy("clone"); setCloneUrl(null); setStatus("Generating real speech with the reference voice…");
+    try {
+      const result = await wait(runGradio(FREE_SPACE_IDS.voiceClone, "", { ref_audio: referenceVoice, ref_text: "", target_text: brief.trim() || "Hello from Little Red's Big Studio.", language: "English", use_xvector_only: true, model_size: "1.7B" }, setStatus), 240000);
+      const space = lastSuccessfulFreeSpace("voiceClone", "Qwen/Qwen3-TTS");
+      const url = freeArtifactUrl(result, space);
+      if (!url) throw new Error("The voice engine returned no playable audio artifact.");
+      setCloneUrl(url); setStatus(`Real cloned-voice speech generated by ${space}.`);
+    } catch (error) { setStatus(`Voice clone failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
 
-  const save = () => { localStorage.setItem("lrbgs-song-brief", brief); localStorage.setItem("lrbgs-lyrics", lyrics); setStatus("Saved on this device."); }; const disabled = busy !== null;
-  return <Panel eyebrow="CREATE" title="Turn an idea into something real" icon={<WandSparkles className="size-5" />} defaultOpen><div className="rounded-2xl border border-primary/20 bg-primary/5 p-4"><p className="font-display text-sm font-semibold">What are we making?</p><textarea value={brief} onChange={e => setBrief(e.target.value)} rows={4} placeholder="Tell Buddy what you want to create…" className="mt-3 w-full rounded-xl border border-border bg-background/70 p-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></div><section className="rounded-2xl border border-border/70 bg-background/40 p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><FileText className="size-4 text-primary" /><h3 className="font-display font-semibold">Lyrics</h3></div><StudioButton variant="ghost" onClick={() => void generateLyrics()} disabled={disabled}><WandSparkles className="size-4" />{busy === "lyrics" ? "Writing…" : "Generate lyrics"}</StudioButton></div><textarea value={lyrics} onChange={e => setLyrics(e.target.value)} rows={8} placeholder="Your lyrics will appear here…" className="mt-3 w-full rounded-xl border border-border bg-background/70 p-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></section><section className="rounded-2xl border border-border/70 bg-background/40 p-4"><div className="flex items-center gap-2"><Music2 className="size-4 text-primary" /><h3 className="font-display font-semibold">Music</h3></div><p className="my-3 text-xs text-muted-foreground">Buddy only marks music ready after a real playable file is returned.</p><StudioButton className="w-full" onClick={() => void generateSong()} disabled={disabled}>{busy === "song" ? <LoaderCircle className="size-4 animate-spin" /> : <Music2 className="size-4" />}{busy === "song" ? "Creating…" : "Generate song"}</StudioButton></section>{audioUrl && <MediaResult kind="audio" url={audioUrl} />}<section className="grid gap-3 sm:grid-cols-2"><ActionCard title="Artwork" icon={<ImageIcon className="size-5" />} busy={busy === "image"} disabled={disabled} onClick={() => void generateImage()} /><ActionCard title="Video" icon={<Film className="size-5" />} busy={busy === "video"} disabled={disabled} onClick={() => void generateVideo()} /></section><div className="grid gap-3 sm:grid-cols-2"><FilePick label="Video image" accept="image/*" onFile={setVideoImage} /><FilePick label="Video audio (optional)" accept="audio/*" onFile={setVideoAudio} /></div>{imageUrl && <MediaResult kind="image" url={imageUrl} />}{videoUrl && <MediaResult kind="video" url={videoUrl} />}<section className="rounded-2xl border border-border/70 bg-background/40 p-4"><div className="flex items-center gap-2"><Mic2 className="size-4 text-primary" /><h3 className="font-display font-semibold">Voice</h3></div><div className="mt-3 grid gap-3 sm:grid-cols-2"><FilePick label="Reference voice" accept="audio/*" onFile={setReferenceVoice} /><FilePick label="Source voice for swap" accept="audio/*" onFile={setSwapSource} /></div><div className="mt-3 grid grid-cols-2 gap-2"><StudioButton variant="ghost" onClick={() => void cloneVoice()} disabled={disabled}>{busy === "clone" ? <LoaderCircle className="size-4 animate-spin" /> : <Mic2 className="size-4" />}{busy === "clone" ? "Creating…" : "Clone voice"}</StudioButton><StudioButton variant="ghost" onClick={() => void swapVoice()} disabled={disabled}>{busy === "swap" ? <LoaderCircle className="size-4 animate-spin" /> : <Mic2 className="size-4" />}{busy === "swap" ? "Creating…" : "Swap voice"}</StudioButton></div></section>{cloneUrl && <MediaResult kind="audio" url={cloneUrl} />}{swapUrl && <MediaResult kind="audio" url={swapUrl} />}<div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/30 p-3"><p className="text-xs text-muted-foreground" aria-live="polite">{status}</p><StudioButton variant="ghost" onClick={save}><Save className="size-4" />Save</StudioButton></div><Note>Buddy reports a result only after a real media file is returned. Voice samples are sent to the selected free public engine when cloning or conversion is requested.</Note></Panel>;
+  const swapVoice = async () => {
+    if (!swapSource || !referenceVoice) { setStatus("Choose both the source voice and reference voice first."); return; }
+    setBusy("swap"); setSwapUrl(null); setStatus("Converting the source voice with the best free voice-conversion route…");
+    try {
+      const result = await wait(runGradioAll(FREE_SPACE_IDS.voiceSwap, "", { source_audio_path: freeFile(swapSource), target_audio_path: freeFile(referenceVoice), diffusion_steps: 50, length_adjust: 1, inference_cfg_rate: 0.7, f0_condition: true, auto_f0_adjust: true, pitch_shift: 0, stream_output: false }, setStatus), 720000);
+      const space = lastSuccessfulFreeSpace("voiceSwap", "Plachta/Seed-VC");
+      const url = freeArtifactUrl(result, space);
+      if (!url) throw new Error("The voice-conversion engine returned no playable audio artifact.");
+      setSwapUrl(url); setStatus(`Real voice conversion generated by ${space}.`);
+    } catch (error) { setStatus(`Voice conversion failed: ${messageOf(error)}`); }
+    finally { setBusy(null); }
+  };
+
+  const save = () => { localStorage.setItem("lrbgs-song-brief", brief); localStorage.setItem("lrbgs-lyrics", lyrics); setStatus("Project notes saved on this device."); };
+  const disabled = busy !== null;
+
+  return (
+    <Panel eyebrow="CREATE" title="Make something real" icon={<WandSparkles className="size-5" />} defaultOpen>
+      <div className="create-command-surface">
+        <div className="create-command-copy"><span className="create-command-kicker">THE CREATIVE DESK</span><h3>Tell Buddy what you hear in your head.</h3><p>One brief can drive lyrics, a full song, artwork, video and voices. The Studio only calls something finished when a real media artifact comes back.</p></div>
+        <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={5} placeholder="A smoky late-night soul track… a cinematic chorus… Buddy in a neon recording room…" className="create-brief-input" />
+      </div>
+
+      <section className="create-workbench">
+        <WorkbenchHeader icon={<FileText className="size-4" />} title="Lyrics" detail="Original words, structured for a song" />
+        <textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={9} placeholder="Your generated lyrics will appear here…" className="create-editor" />
+        <StudioButton variant="ghost" onClick={() => void generateLyrics()} disabled={disabled}><WandSparkles className="size-4" />{busy === "lyrics" ? "Writing…" : "Generate lyrics"}</StudioButton>
+      </section>
+
+      <section className="create-workbench create-workbench-featured">
+        <WorkbenchHeader icon={<Music2 className="size-4" />} title="Music" detail="Full-song generation with vocals and backing" />
+        <StudioSlider label="Song length" value={seconds} min={30} max={180} step={5} unit="s" onChange={setSeconds} />
+        <StudioButton className="w-full" onClick={() => void generateSong()} disabled={disabled}>{busy === "song" ? <LoaderCircle className="size-4 animate-spin" /> : <Music2 className="size-4" />}{busy === "song" ? "Generating real music…" : "Generate song"}</StudioButton>
+      </section>
+      {audioUrl && <MediaResult kind="audio" url={audioUrl} />}
+
+      <div className="create-duo-grid">
+        <section className="create-workbench"><WorkbenchHeader icon={<ImageIcon className="size-4" />} title="Artwork" detail="Premium cover and visual generation" /><StudioButton className="w-full" onClick={() => void generateImage()} disabled={disabled}>{busy === "image" ? <LoaderCircle className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}{busy === "image" ? "Generating…" : "Generate artwork"}</StudioButton></section>
+        <section className="create-workbench"><WorkbenchHeader icon={<Film className="size-4" />} title="Video" detail="Cinematic image-to-video with generated audio" /><FilePick label="Visual anchor" accept="image/*" onFile={setVideoImage} /><StudioButton className="mt-3 w-full" onClick={() => void generateVideo()} disabled={disabled}>{busy === "video" ? <LoaderCircle className="size-4 animate-spin" /> : <Film className="size-4" />}{busy === "video" ? "Generating…" : "Generate video"}</StudioButton></section>
+      </div>
+      {imageUrl && <MediaResult kind="image" url={imageUrl} />}{videoUrl && <MediaResult kind="video" url={videoUrl} />}
+
+      <section className="create-workbench">
+        <WorkbenchHeader icon={<Mic2 className="size-4" />} title="Voice Lab" detail="Clone a voice you own, or convert a source performance with permission" />
+        <div className="grid gap-3 sm:grid-cols-2"><FilePick label="Buddy/reference voice" accept="audio/*" onFile={setReferenceVoice} /><FilePick label="Source performance for conversion" accept="audio/*" onFile={setSwapSource} /></div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2"><StudioButton variant="ghost" onClick={() => void cloneVoice()} disabled={disabled}>{busy === "clone" ? <LoaderCircle className="size-4 animate-spin" /> : <Mic2 className="size-4" />}{busy === "clone" ? "Generating…" : "Clone voice"}</StudioButton><StudioButton variant="ghost" onClick={() => void swapVoice()} disabled={disabled}>{busy === "swap" ? <LoaderCircle className="size-4 animate-spin" /> : <Mic2 className="size-4" />}{busy === "swap" ? "Converting…" : "Convert voice"}</StudioButton></div>
+      </section>
+      {cloneUrl && <MediaResult kind="audio" url={cloneUrl} />}{swapUrl && <MediaResult kind="audio" url={swapUrl} />}
+
+      <div className="create-status-bar"><span className="create-status-dot" data-busy={Boolean(busy)} /><p aria-live="polite">{status}</p><StudioButton variant="ghost" onClick={save}><Save className="size-4" />Save</StudioButton></div>
+      <Note>Everything here is routed through free/public engines or local browser processing. No paid API key is required. Public engines can queue or become unavailable; Buddy automatically tries the next suitable route.</Note>
+    </Panel>
+  );
 }
-function ActionCard({ title, icon, busy, disabled, onClick }: { title: string; icon: React.ReactNode; busy: boolean; disabled: boolean; onClick: () => void }) { return <button type="button" onClick={onClick} disabled={disabled} className="group rounded-2xl border border-border/70 bg-background/40 p-5 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 disabled:opacity-60"><span className="flex items-center justify-between"><span className="flex items-center gap-2 font-display font-semibold">{busy ? <LoaderCircle className="size-5 animate-spin text-primary" /> : icon}{busy ? "Creating…" : `Generate ${title}`}</span><span className="text-primary">→</span></span><span className="mt-2 block text-xs text-muted-foreground">Your finished {title.toLowerCase()} will appear here.</span></button>; }
-function FilePick({ label, accept, onFile }: { label: string; accept: string; onFile: (file: File | null) => void }) { return <label className="rounded-xl border border-dashed border-border bg-background/30 p-3 text-xs text-muted-foreground"><span className="font-medium text-foreground">{label}</span><input className="mt-2 block w-full text-xs" type="file" accept={accept} onChange={e => onFile(e.target.files?.[0] ?? null)} /></label>; }
-function MediaResult({ kind, url }: { kind: "audio" | "image" | "video"; url: string }) { return <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3"><div className="mb-2 flex items-center justify-between"><span className="font-display text-xs font-bold uppercase tracking-wider text-primary">Ready — real output</span><a href={url} target="_blank" rel="noreferrer" download className="inline-flex items-center gap-1 text-xs text-primary"><Download className="size-3.5" />Save</a></div>{kind === "audio" && <audio className="w-full" controls src={url} />}{kind === "image" && <img className="max-h-[28rem] w-full rounded-xl object-contain" src={url} alt="Your generated artwork" />}{kind === "video" && <video className="w-full rounded-xl" controls playsInline src={url} />}</div>; }
+
+function WorkbenchHeader({ icon, title, detail }: { icon: React.ReactNode; title: string; detail: string }) { return <div className="mb-3 flex items-start gap-3"><span className="create-section-icon">{icon}</span><div><h3 className="font-display font-semibold text-white">{title}</h3><p className="text-xs text-white/45">{detail}</p></div></div>; }
+function FilePick({ label, accept, onFile }: { label: string; accept: string; onFile: (file: File | null) => void }) { return <label className="create-file-pick"><span>{label}</span><input type="file" accept={accept} onChange={(e) => onFile(e.target.files?.[0] ?? null)} /></label>; }
+function MediaResult({ kind, url }: { kind: "audio" | "image" | "video"; url: string }) { return <div className="create-result"><div className="create-result-head"><span><i /> REAL OUTPUT</span><a href={url} target="_blank" rel="noreferrer" download><Download className="size-3.5" />Save</a></div>{kind === "audio" && <audio className="w-full" controls src={url} />}{kind === "image" && <img className="max-h-[34rem] w-full rounded-xl object-contain" src={url} alt="Generated artwork" />}{kind === "video" && <video className="w-full rounded-xl" controls playsInline src={url} />}</div>; }

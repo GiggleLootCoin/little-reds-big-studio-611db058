@@ -11,45 +11,49 @@ let chatPromise: Promise<TextGenerator> | null = null;
 let sttPromise: Promise<Transcriber> | null = null;
 
 function hasWebGPU() {
-  return typeof navigator !== "undefined" && "gpu" in navigator;
-}
-
-function hasWasm() {
-  return typeof WebAssembly !== "undefined";
+  return typeof navigator !== "undefined" && Boolean((navigator as Navigator & { gpu?: unknown }).gpu);
 }
 
 async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
-    const promise = (async () => {
-      try {
-        return (await pipeline("text-generation", CHAT_MODEL, {
-          device: hasWebGPU() ? "webgpu" : "wasm",
-          dtype: hasWebGPU() ? "q4f16" : "q4",
-        })) as unknown as TextGenerator;
-      } catch (error) {
-        chatPromise = null;
-        throw error;
+    chatPromise = (async () => {
+      if (hasWebGPU()) {
+        try {
+          return (await pipeline("text-generation", CHAT_MODEL, { device: "webgpu", dtype: "q4f16" })) as unknown as TextGenerator;
+        } catch (webgpuError) {
+          console.warn("Buddy WebGPU model unavailable; falling back to WASM", webgpuError);
+        }
       }
-    })();
-    chatPromise = promise;
+      if (typeof WebAssembly !== "undefined") {
+        return (await pipeline("text-generation", CHAT_MODEL, { device: "wasm", dtype: "q4" })) as unknown as TextGenerator;
+      }
+      throw new Error("No supported local inference runtime is available.");
+    })().catch((error) => {
+      chatPromise = null;
+      throw error;
+    });
   }
   return chatPromise;
 }
 
 async function loadSpeechToText(): Promise<Transcriber> {
   if (!sttPromise) {
-    const promise = (async () => {
-      try {
-        return (await pipeline("automatic-speech-recognition", STT_MODEL, {
-          device: hasWebGPU() ? "webgpu" : "wasm",
-          dtype: "q8",
-        })) as unknown as Transcriber;
-      } catch (error) {
-        sttPromise = null;
-        throw error;
+    sttPromise = (async () => {
+      if (hasWebGPU()) {
+        try {
+          return (await pipeline("automatic-speech-recognition", STT_MODEL, { device: "webgpu", dtype: "q8" })) as unknown as Transcriber;
+        } catch (webgpuError) {
+          console.warn("Buddy WebGPU speech model unavailable; falling back to WASM", webgpuError);
+        }
       }
-    })();
-    sttPromise = promise;
+      if (typeof WebAssembly !== "undefined") {
+        return (await pipeline("automatic-speech-recognition", STT_MODEL, { device: "wasm", dtype: "q8" })) as unknown as Transcriber;
+      }
+      throw new Error("No supported local speech runtime is available.");
+    })().catch((error) => {
+      sttPromise = null;
+      throw error;
+    });
   }
   return sttPromise;
 }
@@ -58,9 +62,9 @@ export function localAiCapabilities() {
   return {
     browser: typeof window !== "undefined",
     webgpu: hasWebGPU(),
-    wasm: hasWasm(),
-    localChat: hasWasm(),
-    localSpeechToText: hasWasm(),
+    wasm: typeof WebAssembly !== "undefined",
+    localChat: typeof WebAssembly !== "undefined",
+    localSpeechToText: typeof WebAssembly !== "undefined",
     localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window,
   };
 }
@@ -68,12 +72,7 @@ export function localAiCapabilities() {
 export async function runLocalChat(messages: ChatMessage[]) {
   const generator = await loadChat();
   try {
-    return await generator(messages, {
-      max_new_tokens: 220,
-      temperature: 0.7,
-      do_sample: true,
-      return_full_text: false,
-    });
+    return await generator(messages, { max_new_tokens: 220, temperature: 0.7, do_sample: true, return_full_text: false });
   } catch (error) {
     chatPromise = null;
     throw error;

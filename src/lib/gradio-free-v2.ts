@@ -1,6 +1,7 @@
 import { Client, handle_file } from "@gradio/client";
 import { FREE_RUNNERS } from "./free-runners";
 import { allRuntimeHealth, isRuntimeAvailable, recordRuntimeFailure, recordRuntimeSuccess } from "./free-runtime-health";
+import { markProviderFailure, markProviderSuccess, providerAvailable } from "./free-provider-policy";
 
 type LogicalId = "speechToText" | "music" | "image" | "video" | "voiceClone" | "voicePreset" | "voiceSwap" | "vocalSeparation";
 type InputMap = Record<string, unknown>;
@@ -65,7 +66,7 @@ function valueFor(logical: LogicalId, name: string, input: InputMap) {
   if (n.includes("speaker") || n.includes("voiceid")) return input.speaker;
   if (n.includes("instruct")) return input.instruct;
   if (n.includes("random") && n.includes("seed")) return input.randomize_seed ?? input.use_random_seed ?? input.random_seed_checkbox ?? true;
-  if (n.includes("seed")) return input.seed ?? 42;
+  if (n.includes("seed")) return input.seed ?? Math.floor(Math.random() * 2147483647);
   if (n.includes("height")) return input.height ?? 576;
   if (n.includes("width")) return input.width ?? 1024;
   if (n.includes("steps")) return input.steps ?? input.inference_steps ?? 8;
@@ -115,7 +116,7 @@ async function runOne(logical: LogicalId, space: string, preferred: string | und
   const response = await wait(client.predict(selected.endpoint, args as unknown[]), 12 * 60 * 1000, `${space} generation timed out.`);
   const data = Array.isArray(response) ? response : (response as { data?: unknown[] }).data ?? response;
   if (!output(data)) throw new Error(`${space}: generation completed without an output.`);
-  recordRuntimeSuccess(space); recordRuntimeSuccess(`${logical}:${space}`);
+  recordRuntimeSuccess(space); recordRuntimeSuccess(`${logical}:${space}`); markProviderSuccess(`${logical}:${space}`);
   onStatus?.(`Finished with ${space}.`); return data;
 }
 
@@ -123,12 +124,12 @@ export async function runGradio(logical: LogicalId, preferred: string | undefine
   const input = Array.isArray(inputs) ? {} : inputs; let last: unknown = null;
   const runners = FREE_RUNNERS.filter((r) => r.kind === "public" && r.capabilities.some((c) => wanted[logical].includes(c))).sort((a, b) => b.priority - a.priority);
   for (const runner of runners) {
-    const space = spaceName(runner.url);
-    if (!isRuntimeAvailable(space)) { onStatus?.(`${space} is temporarily unavailable; trying the next free engine…`); continue; }
+    const space = spaceName(runner.url); const key = `${logical}:${space}`;
+    if (!providerAvailable(key) || !isRuntimeAvailable(space)) { onStatus?.(`${space} is temporarily unavailable; trying the next free engine…`); continue; }
     try { return await runOne(logical, space, typeof preferred === "string" && preferred ? preferred : undefined, input, onStatus); }
-    catch (error) { last = error; recordRuntimeFailure(space, error); onStatus?.(`${space} failed; trying the next free engine…`); }
+    catch (error) { last = error; recordRuntimeFailure(space, error); markProviderFailure(key, error); onStatus?.(`${space} failed; trying the next free engine…`); }
   }
-  throw last instanceof Error ? last : new Error(`No free ${logical} engine is available.`);
+  throw last instanceof Error ? last : new Error(`No free ${logical} engine is available. All compatible free engines are currently unavailable.`);
 }
 
 export async function runGradioAll(logical: LogicalId, preferred: string | undefined, inputs: Record<string, unknown> | unknown[], onStatus?: (message: string) => void) { const value = await runGradio(logical, preferred, inputs, onStatus); return Array.isArray(value) ? value : [value]; }

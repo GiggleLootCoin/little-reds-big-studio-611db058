@@ -2,9 +2,10 @@ import { pipeline } from "@huggingface/transformers";
 import { runGradio } from "@/lib/gradio-free";
 
 // Android-first local fallbacks. Remote free inference is preferred for Buddy
-// conversation because tiny on-device models are useful as a fallback, not as
-// a convincing conversational brain.
-const CHAT_MODEL = "onnx-community/SmolLM2-135M-Instruct-ONNX";
+// conversation because heavyweight public models can provide much stronger
+// answers. The local model exists as an emergency no-network path and should
+// still be a real instruction-following model rather than a tiny demo model.
+const CHAT_MODEL = "onnx-community/Qwen3-0.6B-Instruct-ONNX";
 const STT_MODEL = "onnx-community/whisper-tiny.en";
 
 type ChatMessage = { role: string; content: string };
@@ -33,8 +34,13 @@ async function loadPipeline<T>(task: "text-generation" | "automatic-speech-recog
 async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
     const attempts: PipelineAttempt[] = [];
+    // Qwen3 0.6B has an official ONNX/Transformers.js build and q4f16 is the
+    // best practical Android/WebGPU balance for an emergency local brain.
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q4f16" });
-    if (hasWasm()) { attempts.push({ device: "wasm", dtype: "q4" }); attempts.push({ device: "wasm", dtype: "q8" }); }
+    if (hasWasm()) {
+      attempts.push({ device: "wasm", dtype: "q4" });
+      attempts.push({ device: "wasm", dtype: "q8" });
+    }
     chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => { chatPromise = null; throw error; });
   }
   return chatPromise;
@@ -76,8 +82,8 @@ export function localAiCapabilities() {
 
 /**
  * Buddy's conversational brain. Use a real public model first; only fall back
- * to the tiny on-device model when every free cloud route is unavailable.
- * This prevents the 135M demo model from being mistaken for Buddy's real brain.
+ * to the Qwen3 local model when every free cloud route is unavailable.
+ * The local model is an emergency offline path, not the primary experience.
  */
 export async function runLocalChat(messages: ChatMessage[]) {
   const lastUser = [...messages].reverse().find((message) => message.role === "user")?.content?.trim() || "";

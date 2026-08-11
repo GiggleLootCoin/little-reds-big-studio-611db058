@@ -37,8 +37,15 @@ async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
     const attempts: PipelineAttempt[] = [];
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q4f16" });
-    if (hasWasm()) { attempts.push({ device: "wasm", dtype: "q8" }); attempts.push({ device: "wasm", dtype: "q4" }); }
-    chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => { chatPromise = null; throw error; });
+    if (hasWasm()) {
+      attempts.push({ device: "wasm", dtype: "q8" });
+      attempts.push({ device: "wasm", dtype: "q4" });
+      attempts.push({ device: "wasm", dtype: "q2" });
+    }
+    chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => {
+      chatPromise = null;
+      throw error;
+    });
   }
   return chatPromise;
 }
@@ -47,26 +54,56 @@ async function loadSpeechToText(): Promise<Transcriber> {
   if (!sttPromise) {
     const attempts: PipelineAttempt[] = [];
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q8" });
-    if (hasWasm()) { attempts.push({ device: "wasm", dtype: "q8" }); attempts.push({ device: "wasm", dtype: "q4" }); }
-    sttPromise = loadPipeline<Transcriber>("automatic-speech-recognition", STT_MODEL, attempts).catch((error) => { sttPromise = null; throw error; });
+    if (hasWasm()) {
+      attempts.push({ device: "wasm", dtype: "q8" });
+      attempts.push({ device: "wasm", dtype: "q4" });
+      attempts.push({ device: "wasm", dtype: "q2" });
+    }
+    sttPromise = loadPipeline<Transcriber>("automatic-speech-recognition", STT_MODEL, attempts).catch((error) => {
+      sttPromise = null;
+      throw error;
+    });
   }
   return sttPromise;
 }
 
 export function localAiCapabilities() {
-  return { browser: typeof window !== "undefined", webgpu: hasWebGPU(), wasm: hasWasm(), localChat: hasWasm() || hasWebGPU(), localSpeechToText: hasWasm() || hasWebGPU(), localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window };
+  return {
+    browser: typeof window !== "undefined",
+    webgpu: hasWebGPU(),
+    wasm: hasWasm(),
+    localChat: hasWasm() || hasWebGPU(),
+    localSpeechToText: hasWasm() || hasWebGPU(),
+    localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window,
+  };
 }
 
 export async function runLocalChat(messages: ChatMessage[]) {
   const generator = await loadChat();
-  try { return await generator(messages, { max_new_tokens: 220, temperature: 0.7, do_sample: true, return_full_text: false }); }
-  catch (error) { chatPromise = null; throw error; }
+  try {
+    return await generator(messages, {
+      max_new_tokens: 220,
+      temperature: 0.7,
+      do_sample: true,
+      return_full_text: false,
+    });
+  } catch (error) {
+    chatPromise = null;
+    throw error;
+  }
 }
 
 export async function runLocalSpeechToText(audio: Blob) {
   const transcriber = await loadSpeechToText();
-  try { return await transcriber(audio, { return_timestamps: false }); }
-  catch (error) { sttPromise = null; throw error; }
+  try {
+    return await transcriber(audio, { return_timestamps: false });
+  } catch (error) {
+    sttPromise = null;
+    throw error;
+  }
 }
 
-export function resetLocalAi() { chatPromise = null; sttPromise = null; }
+export function resetLocalAi() {
+  chatPromise = null;
+  sttPromise = null;
+}

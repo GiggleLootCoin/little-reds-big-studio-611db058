@@ -1,0 +1,34 @@
+name: One-off Buddy TTS fix
+on:
+  push:
+    branches: [fix/buddy-single-tts-fallback]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Buddy TTS path
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/components/studio/BuddyLiveChatReliable.tsx')
+          s=p.read_text()
+          old='''  const speak = async (text: string) => {\n    if (muted) return;\n    if (window.speechSynthesis) {\n      window.speechSynthesis.cancel();\n      const u = new SpeechSynthesisUtterance(text);\n      u.rate = 0.96;\n      window.speechSynthesis.speak(u);\n    }\n    try {'''
+          new='''  const speak = async (text: string) => {\n    if (muted) return;\n    try {'''
+          if old not in s: raise SystemExit('expected TTS block not found')
+          s=s.replace(old,new,1)
+          old2='''      if (url) {\n        if (!audioRef.current) audioRef.current = new Audio();\n        audioRef.current.src = url;\n        await audioRef.current.play().catch(() => undefined);\n      }\n    } catch {\n      /* device speech already provides an immediate response */\n    }\n  };'''
+          new2='''      if (url) {\n        if (!audioRef.current) audioRef.current = new Audio();\n        audioRef.current.src = url;\n        await audioRef.current.play().catch((error) => {\n          throw error instanceof Error ? error : new Error('voice playback failed');\n        });\n        return;\n      }\n      throw new Error('voice provider returned no playable artifact');\n    } catch {\n      if (window.speechSynthesis) {\n        window.speechSynthesis.cancel();\n        const u = new SpeechSynthesisUtterance(text);\n        u.rate = 0.96;\n        window.speechSynthesis.speak(u);\n      }\n    }\n  };'''
+          if old2 not in s: raise SystemExit('expected artifact block not found')
+          s=s.replace(old2,new2,1)
+          s=s.replace('''        Hands-free uses browser speech recognition when available, with real audio-recording and\n        local Whisper fallback. Buddy speaks immediately with the device voice and can layer the\n        selected free voice afterward.''','''        Hands-free uses browser speech recognition when available, with real audio-recording and\n        local Whisper fallback. Buddy uses the selected free voice first and only falls back to the\n        device voice when a real playable voice artifact cannot be produced.''',1)
+          p.write_text(s)
+          Path('.github/workflows/oneoff-buddy-tts-fix.yml').unlink()
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/studio/BuddyLiveChatReliable.tsx .github/workflows/oneoff-buddy-tts-fix.yml
+          git commit -m 'fix: use a single Buddy TTS path with real fallback'
+          git push origin HEAD:fix/buddy-single-tts-fallback

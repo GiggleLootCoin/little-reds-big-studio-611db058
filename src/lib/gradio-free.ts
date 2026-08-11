@@ -24,7 +24,7 @@ function hasOutput(value: unknown): boolean {
 export function outputUrl(value: unknown): string | null {
   if (
     typeof value === "string" &&
-    /^(https?:\\/\\/|blob:|data:|\\/gradio_api\\/file=|\\/file=|file=)/i.test(value)
+    /^(https?:\/\/|blob:|data:|\/gradio_api\/file=|\/file=|file=)/i.test(value)
   )
     return value;
   if (typeof Blob !== "undefined" && value instanceof Blob) return URL.createObjectURL(value);

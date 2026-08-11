@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, FileText, Film, Image as ImageIcon, LoaderCircle, Mic2, Music2, Save, WandSparkles } from "lucide-react";
-import { FREE_SPACE_IDS, freeFile, runGradioAll } from "@/lib/gradio-free";
+import { freeFile } from "@/lib/gradio-free";
 import { runFreeMedia } from "@/lib/free-generation";
 import { runLocalChat } from "@/lib/local-ai";
 import { premiumImagePrompt, IMAGE_NEGATIVE_PROMPT } from "@/lib/generation-inputs";

@@ -7,10 +7,29 @@ const CHAT_MODEL = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const STT_MODEL = "onnx-community/whisper-tiny.en";
 
 type ChatMessage = { role: string; content: string };
-type TextGenerator = (messages: ChatMessage[], options?: Record<string, unknown>) => Promise<unknown>;
-type Transcriber = (audio: Blob | ArrayBuffer | string, options?: Record<string, unknown>) => Promise<unknown>;
+type TextGenerator = (
+  messages: ChatMessage[],
+  options?: Record<string, unknown>,
+) => Promise<unknown>;
+type Transcriber = (
+  audio: Blob | ArrayBuffer | string,
+  options?: Record<string, unknown>,
+) => Promise<unknown>;
 type Device = "webgpu" | "wasm";
-type DType = "auto" | "fp32" | "fp16" | "q8" | "int8" | "uint8" | "q4" | "bnb4" | "q4f16" | "q2" | "q2f16" | "q1" | "q1f16";
+type DType =
+  | "auto"
+  | "fp32"
+  | "fp16"
+  | "q8"
+  | "int8"
+  | "uint8"
+  | "q4"
+  | "bnb4"
+  | "q4f16"
+  | "q2"
+  | "q2f16"
+  | "q1"
+  | "q1f16";
 type PipelineAttempt = { device: Device; dtype: DType };
 
 let chatPromise: Promise<TextGenerator> | null = null;
@@ -24,16 +43,25 @@ function hasWasm() {
   return typeof WebAssembly !== "undefined";
 }
 
-async function loadPipeline<T>(task: "text-generation" | "automatic-speech-recognition", model: string, attempts: PipelineAttempt[]): Promise<T> {
+async function loadPipeline<T>(
+  task: "text-generation" | "automatic-speech-recognition",
+  model: string,
+  attempts: PipelineAttempt[],
+): Promise<T> {
   let lastError: unknown;
   for (const attempt of attempts) {
     try {
-      return (await pipeline(task, model, { device: attempt.device, dtype: attempt.dtype })) as unknown as T;
+      return (await pipeline(task, model, {
+        device: attempt.device,
+        dtype: attempt.dtype,
+      })) as unknown as T;
     } catch (error) {
       lastError = error;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("No working local AI backend could be initialized.");
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("No working local AI backend could be initialized.");
 }
 
 async function loadChat(): Promise<TextGenerator> {
@@ -44,10 +72,12 @@ async function loadChat(): Promise<TextGenerator> {
       attempts.push({ device: "wasm", dtype: "q4" });
       attempts.push({ device: "wasm", dtype: "q8" });
     }
-    chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch((error) => {
-      chatPromise = null;
-      throw error;
-    });
+    chatPromise = loadPipeline<TextGenerator>("text-generation", CHAT_MODEL, attempts).catch(
+      (error) => {
+        chatPromise = null;
+        throw error;
+      },
+    );
   }
   return chatPromise;
 }
@@ -60,7 +90,11 @@ async function loadSpeechToText(): Promise<Transcriber> {
       attempts.push({ device: "wasm", dtype: "q4" });
       attempts.push({ device: "wasm", dtype: "q8" });
     }
-    sttPromise = loadPipeline<Transcriber>("automatic-speech-recognition", STT_MODEL, attempts).catch((error) => {
+    sttPromise = loadPipeline<Transcriber>(
+      "automatic-speech-recognition",
+      STT_MODEL,
+      attempts,
+    ).catch((error) => {
       sttPromise = null;
       throw error;
     });

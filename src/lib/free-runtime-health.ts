@@ -42,13 +42,15 @@ function ensureLoaded() {
 
 export function runtimeHealth(id: string): Health {
   ensureLoaded();
-  return memory.get(id) ?? {
-    failures: 0,
-    successes: 0,
-    unavailableUntil: 0,
-    lastSuccessAt: 0,
-    lastCheckedAt: 0,
-  };
+  return (
+    memory.get(id) ?? {
+      failures: 0,
+      successes: 0,
+      unavailableUntil: 0,
+      lastSuccessAt: 0,
+      lastCheckedAt: 0,
+    }
+  );
 }
 
 export function isRuntimeAvailable(id: string, now = Date.now()) {
@@ -74,7 +76,8 @@ export function recordRuntimeFailure(id: string, error: unknown) {
   ensureLoaded();
   const previous = runtimeHealth(id);
   const message = error instanceof Error ? error.message : String(error);
-  const quota = /zero.?gpu|quota|capacity|rate.?limit|too many requests|resource exhausted|429/i.test(message);
+  const quota =
+    /zero.?gpu|quota|capacity|rate.?limit|too many requests|resource exhausted|429/i.test(message);
   const failures = previous.failures + 1;
   const cooldown = quota
     ? 30 * 60_000

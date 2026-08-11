@@ -33,5 +33,6 @@ export const SUPPORT_COPY = Object.freeze({
   coffee: "☕💕 Buy Me a Coffee — International",
   cashApp: "💚 Cash App — send a little love",
   youtube: "🎙️✨ YouTube — music, videos and channel love",
-  shoutout: "Special Thank You Shout-Outs are available to supporters who choose public recognition.",
+  shoutout:
+    "Special Thank You Shout-Outs are available to supporters who choose public recognition.",
 });

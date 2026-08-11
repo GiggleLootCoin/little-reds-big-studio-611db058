@@ -17,7 +17,13 @@ export async function saveToStudioVault(url: string, name: string) {
   const response = await fetch(url);
   if (!response.ok) throw new Error("The generated file could not be saved to Studio Vault.");
   const blob = await response.blob();
-  const asset: VaultAsset = { id: crypto.randomUUID(), name, type: blob.type || "application/octet-stream", createdAt: Date.now(), blob };
+  const asset: VaultAsset = {
+    id: crypto.randomUUID(),
+    name,
+    type: blob.type || "application/octet-stream",
+    createdAt: Date.now(),
+    blob,
+  };
   const db = await openVault();
   await new Promise<void>((resolve, reject) => {
     const request = db.transaction(STORE, "readwrite").objectStore(STORE).put(asset);

@@ -18,7 +18,9 @@ export function saveProjectSnapshot(snapshot: ProjectSnapshot): void {
   if (typeof window === "undefined") return;
   try {
     const existing = readProjectSnapshots().filter((item) => item.id !== snapshot.id);
-    const next = [snapshot, ...existing].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_SNAPSHOTS);
+    const next = [snapshot, ...existing]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, MAX_SNAPSHOTS);
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
   } catch {
     // Recovery is best-effort and never blocks creative work.
@@ -37,17 +39,32 @@ export function readProjectSnapshots(): ProjectSnapshot[] {
 
 export function removeProjectSnapshot(id: string): void {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(readProjectSnapshots().filter((item) => item.id !== id))); } catch { /* best effort */ }
+  try {
+    localStorage.setItem(
+      SNAPSHOT_KEY,
+      JSON.stringify(readProjectSnapshots().filter((item) => item.id !== id)),
+    );
+  } catch {
+    /* best effort */
+  }
 }
 
-export function shouldRetryRoute(route: string): boolean { return (cooldowns.get(route) ?? 0) <= Date.now(); }
+export function shouldRetryRoute(route: string): boolean {
+  return (cooldowns.get(route) ?? 0) <= Date.now();
+}
 export function coolDownRoute(route: string, failures = 1): void {
   const delay = Math.min(5 * 60_000, 2_000 * 2 ** Math.max(0, failures - 1));
   cooldowns.set(route, Date.now() + delay);
 }
-export function restoreRoute(route: string): void { cooldowns.delete(route); }
+export function restoreRoute(route: string): void {
+  cooldowns.delete(route);
+}
 
-export async function withRecovery<T>(route: string, attempts: JobAttempt<T>[], isUsable: (value: T) => boolean): Promise<T> {
+export async function withRecovery<T>(
+  route: string,
+  attempts: JobAttempt<T>[],
+  isUsable: (value: T) => boolean,
+): Promise<T> {
   let lastError: unknown = new Error("No recovery route succeeded.");
   let failures = 0;
   for (const attempt of attempts) {
@@ -74,7 +91,10 @@ export function inferMediaKind(url: string): "audio" | "image" | "video" | "unkn
   return "unknown";
 }
 
-export async function validateMediaOutput(url: string, expected: "audio" | "image" | "video"): Promise<boolean> {
+export async function validateMediaOutput(
+  url: string,
+  expected: "audio" | "image" | "video",
+): Promise<boolean> {
   if (!url || typeof window === "undefined") return false;
   const kind = inferMediaKind(url);
   if (kind === expected) return true;
@@ -82,8 +102,14 @@ export async function validateMediaOutput(url: string, expected: "audio" | "imag
     const response = await fetch(url, { method: "HEAD", cache: "no-store" });
     if (!response.ok) return false;
     const type = response.headers.get("content-type") ?? "";
-    return expected === "audio" ? type.startsWith("audio/") : expected === "image" ? type.startsWith("image/") : type.startsWith("video/");
-  } catch { return false; }
+    return expected === "audio"
+      ? type.startsWith("audio/")
+      : expected === "image"
+        ? type.startsWith("image/")
+        : type.startsWith("video/");
+  } catch {
+    return false;
+  }
 }
 
 export function registerSafeDownload(url: string, filename: string): void {
@@ -97,5 +123,9 @@ export function registerSafeDownload(url: string, filename: string): void {
 
 export async function requestPersistentStorage(): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.storage?.persist) return false;
-  try { return await navigator.storage.persist(); } catch { return false; }
+  try {
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
 }

@@ -94,7 +94,11 @@ export function newCreativeId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 
-export function rankMemories(memories: CreativeMemory[], query: string, limit = 12): CreativeMemory[] {
+export function rankMemories(
+  memories: CreativeMemory[],
+  query: string,
+  limit = 12,
+): CreativeMemory[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const now = Date.now();
   return [...memories]

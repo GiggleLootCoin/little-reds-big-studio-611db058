@@ -12,7 +12,9 @@ export type Profile = {
 const KEY = "little-reds-local-user";
 export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function trialKey(userId: string) { return `lrbgs-trial-start:${userId}`; }
+export function trialKey(userId: string) {
+  return `lrbgs-trial-start:${userId}`;
+}
 export function ensureTrialStarted(userId: string) {
   const key = trialKey(userId);
   const existing = Number(localStorage.getItem(key) || 0);
@@ -35,13 +37,17 @@ function readUser(): LocalUser | null {
       typeof value.user_metadata !== "object" ||
       typeof value.user_metadata.display_name !== "string" ||
       !value.user_metadata.display_name.trim()
-    ) return null;
+    )
+      return null;
     return value as LocalUser;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+    return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -64,12 +70,18 @@ function readProfile(id: string): Profile {
     if (parsed && typeof parsed === "object") {
       const value = parsed as Partial<Profile>;
       if (
-        typeof value.id === "string" && typeof value.handle === "string" && typeof value.display_name === "string" &&
-        typeof value.about === "string" && (value.avatar_url === null || typeof value.avatar_url === "string") &&
+        typeof value.id === "string" &&
+        typeof value.handle === "string" &&
+        typeof value.display_name === "string" &&
+        typeof value.about === "string" &&
+        (value.avatar_url === null || typeof value.avatar_url === "string") &&
         (value.banner_url === null || typeof value.banner_url === "string")
-      ) return value as Profile;
+      )
+        return value as Profile;
     }
-  } catch { /* rebuild below */ }
+  } catch {
+    /* rebuild below */
+  }
   return {
     id,
     handle: user?.user_metadata.display_name?.toLowerCase().replace(/\s+/g, "-") || "creator",
@@ -83,18 +95,37 @@ function readProfile(id: string): Profile {
 export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
-  const load = async (id: string) => { setLoading(true); setProfile(readProfile(id)); setLoading(false); };
-  useEffect(() => { if (userId) void load(userId); else setProfile(null); }, [userId]);
-  return { profile, loading, setProfile, reload: () => (userId ? load(userId) : Promise.resolve()) };
+  const load = async (id: string) => {
+    setLoading(true);
+    setProfile(readProfile(id));
+    setLoading(false);
+  };
+  useEffect(() => {
+    if (userId) void load(userId);
+    else setProfile(null);
+  }, [userId]);
+  return {
+    profile,
+    loading,
+    setProfile,
+    reload: () => (userId ? load(userId) : Promise.resolve()),
+  };
 }
 
 export function createLocalUser(displayName: string, email = "local@studio") {
   const cleanName = displayName.trim();
   if (!cleanName) throw new Error("A name is required.");
-  const user: LocalUser = { id: createId(), email: email.trim() || "local@studio", user_metadata: { display_name: cleanName } };
+  const user: LocalUser = {
+    id: createId(),
+    email: email.trim() || "local@studio",
+    user_metadata: { display_name: cleanName },
+  };
   localStorage.setItem(KEY, JSON.stringify(user));
   ensureTrialStarted(user.id);
   return user;
 }
 
-export function signOutLocal() { localStorage.removeItem(KEY); window.location.reload(); }
+export function signOutLocal() {
+  localStorage.removeItem(KEY);
+  window.location.reload();
+}

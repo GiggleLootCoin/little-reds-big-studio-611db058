@@ -71,7 +71,9 @@ export function BuddyLiveChatLite() {
       if (shouldResearch(text)) { setResearching(true); setStatus("Buddy is checking the live web…"); const results = await liveWebSearch(text); research = results.slice(0, 6).map((result, index) => `${index + 1}. ${result.title} — ${result.source}\n${result.snippet}\n${result.url}`).join("\n\n"); setResearching(false); }
       if (!brainRef.current) {
         const load = new Function("url", "return import(url)") as (url: string) => Promise<{ pipeline: (task: string, model: string, options: Record<string, string>) => Promise<unknown> }>;
-        const mod = await load("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm"); brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: "wasm", dtype: "q4" });
+        const mod = await load("https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/+esm");
+        const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
+        brainRef.current = await mod.pipeline("text-generation", "onnx-community/Qwen3-0.6B-ONNX", { device: hasGpu ? "webgpu" : "wasm", dtype: hasGpu ? "q4f16" : "q4" });
       }
       const brain = brainRef.current as (messages: Message[], options: Record<string, unknown>) => Promise<unknown>; const context: Message[] = [];
       if (memories) context.push({ role: "assistant", content: `Long-term memory that may matter:\n${memories}` }); if (research) context.push({ role: "assistant", content: `Fresh web research. Treat these as research notes, not as guaranteed truth:\n${research}` }); context.push(...next);

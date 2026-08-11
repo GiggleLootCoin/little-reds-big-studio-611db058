@@ -10,12 +10,33 @@ function extractArtifact(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
   if (Array.isArray(value)) { for (const item of value) { const found = extractArtifact(item); if (found) return found; } return null; }
   const record = value as Record<string, unknown>;
-  for (const key of ["url", "path", "blob", "data", "value", "file", "audio", "image", "video", "audio_url", "image_url", "video_url"]) { const found = extractArtifact(record[key]); if (found) return found; }
+  // Gradio FileData normally contains both `path` and a browser-usable `url`.
+  // Prefer the URL because `path` can be a private server filesystem path.
+  for (const key of ["url", "blob", "data", "value", "file", "audio", "image", "video", "audio_url", "image_url", "video_url"]) {
+    const found = extractArtifact(record[key]);
+    if (found) return found;
+  }
+  const path = record.path;
+  if (typeof path === "string" && /^(https?:|blob:|data:|\/gradio_api\/file=|\/file=|file=|\/tmp\/|\/home\/|\/data\/)/.test(path)) return path;
   return null;
 }
 
+/**
+ * Hugging Face Space hostnames use a DNS-safe slug: owner and space name are
+ * joined with hyphens and punctuation such as dots is also converted to '-'.
+ * Keeping this normalization in one place is critical for Spaces such as
+ * ACE-Step/Ace-Step-v1.5, where a literal dot produces an invalid host.
+ */
 export function freeSpaceOrigin(space: string) {
-  return `https://${space.replace(/\//g, "-").toLowerCase()}.hf.space`;
+  const slug = space
+    .replace(/^https?:\/\/huggingface\.co\/spaces\//, "")
+    .replace(/^spaces\//, "")
+    .replace(/\//g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  return `https://${slug}.hf.space`;
 }
 
 function normalizeArtifactSpace(space: string) {

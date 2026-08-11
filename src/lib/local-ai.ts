@@ -62,6 +62,14 @@ function cleanRemoteReply(value: unknown): string {
   return "";
 }
 
+function usableRemoteReply(reply: string, userText: string) {
+  const normalized = reply.replace(/\s+/g, " ").trim();
+  if (normalized.length < 2 || normalized === userText.trim()) return false;
+  const placeholder = /^(loading|processing|generating|thinking|please wait|starting|queued|running|done|success|hello[,!. ]*i'?m buddy|i'?m a demo|this is a demo)[.!… ]*$/i;
+  if (placeholder.test(normalized)) return false;
+  return true;
+}
+
 export function localAiCapabilities() {
   return { browser: typeof window !== "undefined", webgpu: hasWebGPU(), wasm: hasWasm(), localChat: hasWasm() || hasWebGPU(), localSpeechToText: hasWasm() || hasWebGPU(), localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window };
 }
@@ -83,7 +91,8 @@ export async function runLocalChat(messages: ChatMessage[]) {
         system_prompt: "You are Buddy, Little Red's creative studio partner. Be natural, specific, useful and conversational. Remember context. Help with music, lyrics, images, video, voice, production and creative decisions. Never claim you generated something unless an actual artifact exists. Do not sound like a canned demo.",
       });
       const reply = cleanRemoteReply(remote);
-      if (reply) return reply;
+      if (usableRemoteReply(reply, lastUser)) return reply;
+      throw new Error("Free chat route returned a placeholder response.");
     } catch {
       // Continue to the local fallback.
     }

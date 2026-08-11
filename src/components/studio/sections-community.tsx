@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { Clock3, ExternalLink, Heart, Plug, UserCircle2, Users } from "lucide-react";
-import { FREE_RUNNERS } from "@/lib/free-runners";
+import { Clock3, Heart, Plug, UserCircle2, Users } from "lucide-react";
 import { listPlugins } from "@/lib/plugins.functions";
 import { useAuth, useProfile, ensureTrialStarted, TRIAL_DURATION_MS } from "@/hooks/use-auth";
 import { Panel, Note, Readout, StudioButton } from "./ui";
 import { Field, TextArea } from "./AiOutput";
-import { FreeRunnerPanel } from "./FreeRunnerPanel";
 import type { PublicPlugin } from "@/lib/plugins.registry.server";
 
 export function SpotlightPanel() {
@@ -18,25 +16,19 @@ export function ProfilePanel() {
   return <Panel eyebrow="Module 13" title="Creator Profile" icon={<UserCircle2 className="size-5" />}><Field label="Display name" value={profile.display_name} onChange={(e) => { const p = { ...profile, display_name: e.target.value }; setProfile(p); localStorage.setItem(`little-reds-profile:${profile.id}`, JSON.stringify(p)); }} /><TextArea label="About" value={about} onChange={(e) => setAbout(e.target.value)} /><StudioButton className="w-full" onClick={() => { const p = { ...profile, about }; setProfile(p); localStorage.setItem(`little-reds-profile:${profile.id}`, JSON.stringify(p)); }}>Save locally</StudioButton></Panel>;
 }
 export function AccessPanel() {
-  return <Panel eyebrow="Privacy" title="Local-first access" icon={<Users className="size-5" />}><Readout label="Account requirement">Optional local account</Readout><Readout label="AI API keys">None</Readout><Readout label="Colab requirement">None</Readout><Note>Studio drafts, settings and creator profile stay in browser storage. Heavy AI uses public free runners when needed. Account-backed lifelong sync and verified memberships require the trusted deployment backend.</Note></Panel>;
+  return <Panel eyebrow="Privacy" title="Local-first access" icon={<Users className="size-5" />}><Readout label="Account requirement">Optional local account</Readout><Readout label="AI API keys">None</Readout><Readout label="Colab requirement">None</Readout><Note>Buddy manages the execution layer automatically. Provider names, external model pages and API details are intentionally hidden from creators. You stay inside Little Red's Big Studio.</Note></Panel>;
 }
 export function EnginePanel() {
-  return <Panel eyebrow="Execution" title="Free Execution Map" icon={<Plug className="size-5" />}><FreeRunnerPanel /><div className="grid gap-2">{FREE_RUNNERS.map((r) => <div key={r.id} className="flex items-center justify-between rounded-xl border border-border bg-background/40 p-3"><span className="text-sm">{r.name}</span><a href={r.url} target="_blank" rel="noreferrer" className="text-primary"><ExternalLink className="size-4" /></a></div>)}</div></Panel>;
+  return <Panel eyebrow="Execution" title="Buddy-managed AI" icon={<Plug className="size-5" />}><Note>Buddy automatically chooses the best available engine for each job, checks its health, silently fails over when needed, and returns the finished result here. You never need to open or manage an external AI service.</Note><div className="grid gap-2 sm:grid-cols-2"><Readout label="Image generation">Buddy managed</Readout><Readout label="Music generation">Buddy managed</Readout><Readout label="Voice & conversion">Buddy managed</Readout><Readout label="Video generation">Buddy managed</Readout></div></Panel>;
 }
 export function SeoPanel() {
-  return <Panel eyebrow="Module 15" title="YouTube SEO Workspace" icon={<Plug className="size-5" />}><Note>SEO generation is prepared as a free/open-model job. Buddy should execute it directly whenever a healthy no-key route is available.</Note></Panel>;
-}
-function runnerUrlForPlugin(plugin: PublicPlugin) {
-  if (plugin.slug === "ace-step-open") return FREE_RUNNERS.find((runner) => runner.id === "hf-ace-step")?.url;
-  if (plugin.runtime === "kaggle") return FREE_RUNNERS.find((runner) => runner.id === "kaggle")?.url;
-  if (plugin.runtime === "lightning") return FREE_RUNNERS.find((runner) => runner.id === "lightning")?.url;
-  const preferred = { voice: "hf-rvc", stems: "hf-audio", video: "hf-video", music: "hf-music", image: "android-local", text: "android-local" }[plugin.capability];
-  return FREE_RUNNERS.find((runner) => runner.id === preferred)?.url ?? plugin.projectUrl;
+  return <Panel eyebrow="Module 15" title="YouTube SEO Workspace" icon={<Plug className="size-5" />}><Note>SEO generation is prepared as a free/open-model job. Buddy executes it directly whenever a healthy route is available.</Note></Panel>;
 }
 export function PluginPanel() {
   const [plugins, setPlugins] = useState<PublicPlugin[]>([]);
   useEffect(() => { listPlugins().then(setPlugins).catch(() => setPlugins([])); }, []);
-  return <Panel eyebrow="Open Models" title="No-API Model Catalog" icon={<Plug className="size-5" />}><p className="text-sm text-muted-foreground">Only open models are listed. Commercial API providers and secret keys are intentionally absent. Buddy chooses the best available free execution route.</p><div className="grid gap-2">{plugins.map((p) => { const runnerUrl = runnerUrlForPlugin(p); return <div key={p.slug} className="rounded-xl border border-border bg-background/40 p-3"><div className="flex items-start justify-between gap-3"><div><div className="font-display text-sm">{p.name}</div><div className="text-xs text-muted-foreground">{p.capability} · {p.runtime}</div></div><span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{p.available ? "Ready" : "Free route"}</span></div>{runnerUrl && <a href={runnerUrl} target="_blank" rel="noreferrer" className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20"><ExternalLink className="size-3.5" aria-hidden />Open free runner</a>}</div>; })}</div></Panel>;
+  const readyCount = plugins.filter((plugin) => plugin.available).length;
+  return <Panel eyebrow="AI capabilities" title="Buddy's Toolkit" icon={<Plug className="size-5" />}><Note>Buddy manages the underlying models automatically. This panel shows capabilities, not providers, so creators never have to leave the Studio to run an AI job.</Note><div className="grid gap-2 sm:grid-cols-2">{["Writing & lyrics", "Images & covers", "Full songs", "Voice & vocal conversion", "Stem separation", "Video & animation"].map((capability) => <div key={capability} className="rounded-xl border border-border bg-background/40 p-3 text-sm font-semibold">{capability}<div className="mt-1 text-[11px] font-normal text-muted-foreground">Buddy-managed</div></div>)}</div><p className="text-[11px] text-muted-foreground">{readyCount > 0 ? "Buddy has free execution routes available and will choose among them automatically." : "Buddy is checking available execution routes automatically."}</p></Panel>;
 }
 function TrialCountdown() {
   const { user } = useAuth(); const [remaining, setRemaining] = useState<number | null>(null);

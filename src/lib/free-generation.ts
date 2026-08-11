@@ -1,3 +1,4 @@
+import { hordeImage } from "./ai-horde";
 import { runGradio } from "./gradio-free";
 import { freeArtifactUrl } from "./free-artifact";
 import { lastSuccessfulFreeSpace } from "./free-artifact-route";
@@ -15,6 +16,21 @@ export async function runFreeMedia(
   input: Record<string, unknown>,
   onStatus?: (message: string) => void,
 ) {
+  // AI Horde is a genuine no-key, community-compute fallback for images.
+  // It is deliberately preferred over exhausted ZeroGPU image Spaces.
+  if (logical === "image") {
+    try {
+      onStatus?.("Using the free community image engine…");
+      const prompt = String(input.prompt ?? input.description ?? input.text ?? "").trim();
+      if (!prompt) throw new Error("Enter an image prompt first.");
+      const url = await hordeImage(prompt);
+      onStatus?.("Image generated successfully.");
+      return { result: url, url, space: "AI Horde" };
+    } catch (error) {
+      onStatus?.(`AI Horde image generation unavailable; trying the next free engine…`);
+    }
+  }
+
   const result = await runGradio(logical, "", input, onStatus);
   const space = lastSuccessfulFreeSpace(logical, DEFAULT_SPACES[logical]);
   const url = freeArtifactUrl(result, space);

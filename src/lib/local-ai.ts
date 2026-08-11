@@ -20,20 +20,36 @@ function hasWasm() {
 
 async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
-    chatPromise = pipeline("text-generation", CHAT_MODEL, {
-      device: hasWebGPU() ? "webgpu" : "wasm",
-      dtype: hasWebGPU() ? "q4f16" : "q4",
-    }) as Promise<unknown> as Promise<TextGenerator>;
+    const promise = (async () => {
+      try {
+        return (await pipeline("text-generation", CHAT_MODEL, {
+          device: hasWebGPU() ? "webgpu" : "wasm",
+          dtype: hasWebGPU() ? "q4f16" : "q4",
+        })) as unknown as TextGenerator;
+      } catch (error) {
+        chatPromise = null;
+        throw error;
+      }
+    })();
+    chatPromise = promise;
   }
   return chatPromise;
 }
 
 async function loadSpeechToText(): Promise<Transcriber> {
   if (!sttPromise) {
-    sttPromise = pipeline("automatic-speech-recognition", STT_MODEL, {
-      device: hasWebGPU() ? "webgpu" : "wasm",
-      dtype: "q8",
-    }) as Promise<unknown> as Promise<Transcriber>;
+    const promise = (async () => {
+      try {
+        return (await pipeline("automatic-speech-recognition", STT_MODEL, {
+          device: hasWebGPU() ? "webgpu" : "wasm",
+          dtype: "q8",
+        })) as unknown as Transcriber;
+      } catch (error) {
+        sttPromise = null;
+        throw error;
+      }
+    })();
+    sttPromise = promise;
   }
   return sttPromise;
 }
@@ -51,17 +67,27 @@ export function localAiCapabilities() {
 
 export async function runLocalChat(messages: ChatMessage[]) {
   const generator = await loadChat();
-  return generator(messages, {
-    max_new_tokens: 220,
-    temperature: 0.7,
-    do_sample: true,
-    return_full_text: false,
-  });
+  try {
+    return await generator(messages, {
+      max_new_tokens: 220,
+      temperature: 0.7,
+      do_sample: true,
+      return_full_text: false,
+    });
+  } catch (error) {
+    chatPromise = null;
+    throw error;
+  }
 }
 
 export async function runLocalSpeechToText(audio: Blob) {
   const transcriber = await loadSpeechToText();
-  return transcriber(audio, { return_timestamps: false });
+  try {
+    return await transcriber(audio, { return_timestamps: false });
+  } catch (error) {
+    sttPromise = null;
+    throw error;
+  }
 }
 
 export function resetLocalAi() {

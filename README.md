@@ -9,9 +9,9 @@ The Studio is designed around one simple experience: bring in your idea, music, 
 - **Source:** this public GitHub repository
 - **Hosting:** provider-neutral static web app; GitHub Pages is configured as the zero-cost deployment path
 - **Live site:** `https://gigglelootcoin.github.io/little-reds-big-studio-611db058/`
-- **Cost target:** $0 / no paid hosting required
-- **AI policy:** no mandatory paid AI API, API key, provider account, or hosted AI service
-- **Storage:** browser-first project storage where supported
+- **Cost target:** $0 / no paid hosting required for the project owner
+- **AI policy:** no mandatory paid AI API, API key, provider account, or hosted AI subscription
+- **Storage:** browser-first project storage where supported; persistent cloud vault work remains provider-agnostic
 - **Device:** Android-first responsive web app
 
 ## Buddy orchestration
@@ -23,19 +23,23 @@ The normal user does **not** choose models or providers.
 ### Current free/open routes
 
 - Writing/reasoning: local Qwen-family models when the device can handle them
-- Voice: Applio/RVC, with browser and Qwen3-TTS fallbacks
-- Music: ACE-Step 1.5, with MusicGen Web for lighter jobs
-- Stems: Demucs, with BS-Roformer fallback
+- Voice: Qwen3-TTS for natural speech/voice cloning, with Seed-VC/RVC fallbacks for conversion
+- Music: ACE-Step 1.5, with DiffRhythm 2 fallback
+- Stems: Demucs
 - Artwork: Z Image Turbo, with SDXL fallback
-- Video: Wan 2.2 S2V / video routes, with LTX 2.3 fallback
+- Video: LTX 2.3 and other live free/open video fallbacks
 
-Public free GPU services can have queues or temporary outages; Buddy therefore keeps alternatives rather than presenting one provider as guaranteed.
+Public free GPU services can have queues or temporary outages; Buddy therefore keeps alternatives rather than presenting one provider as guaranteed. The runtime discovers live Gradio endpoints instead of hard-coding one provider's API contract.
 
 ## Visual identity
 
 The repository contains the uploaded visual-reference library under `assets/visual-references/` and the Studio uses the approved visual direction for its cinematic, glass, crimson/obsidian interface.
 
 Buddy's canonical visual reference is `file_0000000070e8824391d24367b5f22d59.png`. The normal Buddy animation path uses that source asset with lightweight browser/CSS runtime behavior rather than requiring repeated external AI image generation.
+
+## Privacy
+
+The Studio is designed around a privacy-first model: user creations and Buddy memory are not intended for advertising or resale, and the product should not claim that an external public AI service is private when a user explicitly sends a file to that service. Voice-cloning and other external generation requests therefore disclose that the selected public engine receives the requested input for that generation request.
 
 ## Creator support
 

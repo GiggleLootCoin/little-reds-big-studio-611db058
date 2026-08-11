@@ -8,11 +8,7 @@ type EndpointInfo = { parameters?: EndpointParam[]; returns?: unknown[]; descrip
 type ApiInfo = { named_endpoints?: Record<string, EndpointInfo>; unnamed_endpoints?: Record<string, EndpointInfo> };
 type GradioMessage = { type?: string; data?: unknown; status?: unknown; stage?: string; message?: string };
 type GradioJob = AsyncIterable<GradioMessage>;
-type GradioClient = {
-  predict?: (apiName: string, inputs?: unknown) => Promise<unknown>;
-  submit: (apiName: string, inputs?: unknown) => GradioJob;
-  view_api?: () => Promise<ApiInfo>;
-};
+type GradioClient = { predict?: (apiName: string, inputs?: unknown) => Promise<unknown>; submit: (apiName: string, inputs?: unknown) => GradioJob; view_api?: () => Promise<ApiInfo> };
 type LogicalId = keyof typeof FREE_SPACE_IDS;
 type RouteHealth = { failures: number; successes: number; nextRetryAt: number; lastSuccessAt: number; lastFailureAt: number; lastError?: string };
 
@@ -24,90 +20,44 @@ const FAILURE_BASE_TTL = 6_000;
 const FAILURE_MAX_TTL = 90_000;
 const MAX_ROUTE_RETRIES = 2;
 
-export const FREE_SPACE_IDS = {
-  speechToText: "speechToText", music: "music", image: "image", video: "video",
-  voiceClone: "voiceClone", voicePreset: "voicePreset", voiceSwap: "voiceSwap", vocalSeparation: "vocalSeparation",
-} as const;
+export const FREE_SPACE_IDS = { speechToText: "speechToText", music: "music", image: "image", video: "video", voiceClone: "voiceClone", voicePreset: "voicePreset", voiceSwap: "voiceSwap", vocalSeparation: "vocalSeparation" } as const;
 
 const capabilities: Record<LogicalId, string[]> = {
-  speechToText: ["speech-to-text", "realtime-asr", "transcription"],
-  music: ["music", "song", "lyrics-to-music", "audio-to-audio"],
-  image: ["image", "artwork", "cover", "image-edit"],
-  video: ["video", "image-to-video", "text-to-video", "audio-to-video", "music-video"],
-  voiceClone: ["voice-clone", "tts"],
-  voicePreset: ["tts", "multilingual-tts"],
-  voiceSwap: ["voice-swap", "singing-voice-conversion", "ai-cover"],
-  vocalSeparation: ["vocal-separation", "vocal-isolation", "stems"],
+  speechToText: ["speech-to-text", "realtime-asr", "transcription"], music: ["music", "song", "lyrics-to-music", "audio-to-audio"], image: ["image", "artwork", "cover", "image-edit"], video: ["video", "image-to-video", "text-to-video", "audio-to-video", "music-video"],
+  voiceClone: ["voice-clone", "tts"], voicePreset: ["tts", "multilingual-tts"], voiceSwap: ["voice-swap", "singing-voice-conversion", "ai-cover"], vocalSeparation: ["vocal-separation", "vocal-isolation", "stems"],
 };
 
 const clients = new Map<string, Promise<GradioClient>>();
 const apiCache = new Map<string, { info: ApiInfo; expires: number }>();
 const health = new Map<string, RouteHealth>();
 
-function timeout<T>(promise: Promise<T>, ms: number, message: string) {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  return Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); })]).finally(() => timer && clearTimeout(timer));
-}
+function timeout<T>(promise: Promise<T>, ms: number, message: string) { let timer: ReturnType<typeof setTimeout> | undefined; return Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); })]).finally(() => timer && clearTimeout(timer)); }
 function routeKey(logical: LogicalId, space: string) { return `${logical}:${space}`; }
-function stateFor(logical: LogicalId, space: string) {
-  const key = routeKey(logical, space); const existing = health.get(key);
-  if (existing) return existing;
-  const state = { failures: 0, successes: 0, nextRetryAt: 0, lastSuccessAt: 0, lastFailureAt: 0 };
-  health.set(key, state); return state;
-}
+function stateFor(logical: LogicalId, space: string): RouteHealth { const key = routeKey(logical, space); const existing = health.get(key); if (existing) return existing; const state: RouteHealth = { failures: 0, successes: 0, nextRetryAt: 0, lastSuccessAt: 0, lastFailureAt: 0 }; health.set(key, state); return state; }
 function healthy(logical: LogicalId, space: string) { const state = stateFor(logical, space); state.successes++; state.failures = 0; state.nextRetryAt = 0; state.lastSuccessAt = Date.now(); state.lastError = undefined; }
 function failed(logical: LogicalId, space: string, error: unknown) { const state = stateFor(logical, space); state.failures++; state.lastFailureAt = Date.now(); state.lastError = error instanceof Error ? error.message : String(error); state.nextRetryAt = Date.now() + Math.min(FAILURE_MAX_TTL, FAILURE_BASE_TTL * 2 ** Math.min(state.failures - 1, 4)); apiCache.delete(space); clients.delete(space); }
 
-function routesFor(logical: LogicalId) {
-  const wanted = new Set(capabilities[logical]);
-  return FREE_RUNNERS.filter((runner) => runner.kind === "public" && runner.capabilities.some((capability) => wanted.has(capability)))
-    .map((runner) => ({ space: runner.url.replace("https://huggingface.co/spaces/", "").replace(/\/$/, ""), priority: runner.priority }))
-    .sort((a, b) => b.priority - a.priority);
-}
-
-export function connectFreeSpace(space: string, onStatus?: (message: string) => void) {
-  let client = clients.get(space);
-  if (!client) {
-    client = Client.connect(space, { status_callback: (status: unknown) => {
-      const message = typeof status === "string" ? status : (status as { message?: string })?.message;
-      if (message) onStatus?.(message);
-    } }) as unknown as Promise<GradioClient>;
-    client.catch(() => clients.delete(space)); clients.set(space, client);
-  }
-  return client;
-}
+function routesFor(logical: LogicalId) { const wanted = new Set(capabilities[logical]); return FREE_RUNNERS.filter((runner) => runner.kind === "public" && runner.capabilities.some((capability) => wanted.has(capability))).map((runner) => ({ space: runner.url.replace("https://huggingface.co/spaces/", "").replace(/\/$/, ""), priority: runner.priority })).sort((a, b) => b.priority - a.priority); }
+export function connectFreeSpace(space: string, onStatus?: (message: string) => void) { let client = clients.get(space); if (!client) { client = Client.connect(space, { status_callback: (status: unknown) => { const message = typeof status === "string" ? status : (status as { message?: string })?.message; if (message) onStatus?.(message); } }) as unknown as Promise<GradioClient>; client.catch(() => clients.delete(space)); clients.set(space, client); } return client; }
 export function freeFile(file: FileLike) { return file; }
-
 function norm(value: unknown) { return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
 function paramName(param: EndpointParam) { return norm(param.parameter_name ?? param.label); }
 function endpoints(info: ApiInfo) { return { ...(info.named_endpoints ?? {}), ...(info.unnamed_endpoints ?? {}) }; }
 
 function sourceFor(logical: LogicalId, name: string, inputs: Record<string, unknown>) {
-  const n = norm(name);
-  const exact = Object.entries(inputs).find(([key]) => norm(key) === n)?.[1];
-  if (exact !== undefined) return exact;
+  const n = norm(name); const exact = Object.entries(inputs).find(([key]) => norm(key) === n)?.[1]; if (exact !== undefined) return exact;
   const aliases: Record<string, string[]> = {
-    audio: ["audio", "inputaudio", "sourceaudio", "sourceaudiopath", "audiofile"],
-    image: ["image", "inputimage", "sourceimage", "imagefile", "input"],
-    video: ["video", "inputvideo", "sourcevideo", "videofile"],
-    prompt: ["prompt", "description", "textprompt", "styleprompt", "text"],
-    text: ["text", "prompt", "targettext", "lyrics", "lrc"],
-    lyrics: ["lyrics", "lrc", "lyric", "text"],
-    lrc: ["lrc", "lyrics", "text"],
-    refaudio: ["refaudio", "referenceaudio", "targetaudio", "targetaudiopath"],
-    referenceaudio: ["referenceaudio", "refaudio", "targetaudio", "targetaudiopath"],
-    sourceaudio: ["sourceaudio", "sourceaudiopath", "audio"],
-    sourceaudiopath: ["sourceaudiopath", "sourceaudio", "audio"],
-    targetaudio: ["targetaudio", "targetaudiopath", "referenceaudio", "refaudio"],
-    targetaudiopath: ["targetaudiopath", "targetaudio", "referenceaudio", "refaudio"],
-    inputimage: ["inputimage", "image", "sourceimage"],
-    input: ["input", "audio", "image", "video"],
+    audio: ["audio", "inputaudio", "sourceaudio", "sourceaudiopath", "audiofile"], image: ["image", "inputimage", "sourceimage", "imagefile", "input"], video: ["video", "inputvideo", "sourcevideo", "videofile"],
+    prompt: ["prompt", "description", "textprompt", "styleprompt", "text", "captions", "caption"], text: ["text", "prompt", "targettext", "lyrics", "lrc", "captions", "caption"], lyrics: ["lyrics", "lrc", "lyric", "text"], lrc: ["lrc", "lyrics", "text"],
+    refaudio: ["refaudio", "referenceaudio", "targetaudio", "targetaudiopath"], referenceaudio: ["referenceaudio", "refaudio", "targetaudio", "targetaudiopath"], sourceaudio: ["sourceaudio", "sourceaudiopath", "audio"], sourceaudiopath: ["sourceaudiopath", "sourceaudio", "audio"],
+    targetaudio: ["targetaudio", "targetaudiopath", "referenceaudio", "refaudio"], targetaudiopath: ["targetaudiopath", "targetaudio", "referenceaudio", "refaudio"], inputimage: ["inputimage", "image", "sourceimage"], input: ["input", "audio", "image", "video"],
   };
   for (const alias of aliases[n] ?? []) { const value = Object.entries(inputs).find(([key]) => norm(key) === alias)?.[1]; if (value !== undefined) return value; }
   if (logical === "speechToText" && n.includes("audio")) return inputs.audio;
   if (logical === "video" && n.includes("image")) return inputs.input_image ?? inputs.image;
   if ((logical === "voiceClone" || logical === "voicePreset") && n.includes("text")) return inputs.text ?? inputs.target_text;
   if (n.includes("seed")) return inputs.seed;
+  if (n.includes("random") && n.includes("seed")) return inputs.randomize_seed;
   if (n.includes("duration")) return inputs.duration ?? inputs.audio_duration;
   if (n.includes("height")) return inputs.height;
   if (n.includes("width")) return inputs.width;
@@ -116,140 +66,26 @@ function sourceFor(logical: LogicalId, name: string, inputs: Record<string, unkn
   if (n.includes("instruct")) return inputs.instruct;
   if (n.includes("steps") || n.includes("inferstep")) return inputs.steps ?? inputs.diffusion_steps;
   if (n.includes("cfg") || n.includes("guidance")) return inputs.cfg_strength ?? inputs.guidance;
+  if (n.includes("audioformat") || n === "format") return inputs.file_type ?? inputs.audio_format;
+  if (n.includes("vocal") && n.includes("language")) return inputs.language;
+  if (n.includes("instrumental")) return inputs.instrumental ?? false;
   return undefined;
 }
 
-async function apiFor(space: string, force = false, onStatus?: (message: string) => void) {
-  const cached = apiCache.get(space);
-  if (!force && cached && cached.expires > Date.now()) return cached.info;
-  const client = await timeout(connectFreeSpace(space, onStatus), CONNECT_TIMEOUT, `Could not connect to free engine ${space}.`);
-  if (!client.view_api) throw new Error(`Free engine ${space} does not expose live API metadata.`);
-  const info = await timeout(client.view_api(), API_TIMEOUT, `Free engine ${space} did not expose its API in time.`);
-  if (!Object.keys(endpoints(info)).length) throw new Error(`Free engine ${space} exposed no callable endpoints.`);
-  apiCache.set(space, { info, expires: Date.now() + API_CACHE_TTL });
-  return info;
-}
-
-function scoreEndpoint(logical: LogicalId, endpoint: string, spec: EndpointInfo, inputs: Record<string, unknown>) {
-  const name = norm(`${endpoint} ${spec.fn ?? ""} ${spec.description ?? ""}`);
-  const keywords: Record<LogicalId, string[]> = {
-    speechToText: ["transcrib", "whisper", "asr", "speech", "stt"], music: ["music", "song", "generate", "create", "infer"], image: ["image", "txt2img", "text2image", "generate", "create"], video: ["video", "i2v", "image2video", "generate", "create", "infer"],
-    voiceClone: ["clone", "voice", "tts", "generate"], voicePreset: ["custom", "tts", "voice", "generate"], voiceSwap: ["convert", "voice", "rvc", "seed", "singing"], vocalSeparation: ["separat", "stem", "demucs", "vocal"],
-  };
-  let score = keywords[logical].reduce((s, word) => s + (name.includes(word) ? 14 : 0), 0);
-  for (const param of spec.parameters ?? []) {
-    const component = norm(`${param.component ?? ""} ${param.type ?? ""}`); const value = sourceFor(logical, paramName(param), inputs);
-    const hidden = component.includes("state") || component.includes("event") || component.includes("button");
-    if (value !== undefined || param.default !== undefined || param.parameter_has_default || param.optional || hidden) score += 8;
-    else score -= 40;
-    if (logical === "image" && component.includes("image")) score += 20;
-    if (logical === "video" && (component.includes("image") || component.includes("video"))) score += 20;
-    if (logical === "speechToText" && component.includes("audio")) score += 20;
-  }
-  for (const output of spec.returns ?? []) {
-    const out = norm(JSON.stringify(output));
-    if (logical === "image" && out.includes("image")) score += 25;
-    if (logical === "video" && out.includes("video")) score += 25;
-    if (["music", "voiceClone", "voicePreset", "voiceSwap", "vocalSeparation"].includes(logical) && out.includes("audio")) score += 25;
-    if (logical === "speechToText" && (out.includes("text") || out.includes("string"))) score += 20;
-  }
-  return score;
-}
-
-async function resolve(logical: LogicalId, space: string, inputs: Inputs, preferred: string | undefined, force: boolean, onStatus?: (message: string) => void) {
-  const client = await timeout(connectFreeSpace(space, onStatus), CONNECT_TIMEOUT, `Could not connect to ${space}.`);
-  const map = endpoints(await apiFor(space, force, onStatus));
-  if (preferred && map[preferred]) return { client, endpoint: preferred, spec: map[preferred] };
-  const record = Array.isArray(inputs) ? {} : inputs;
-  const ranked = Object.entries(map).map(([endpoint, spec]) => ({ endpoint, spec, score: scoreEndpoint(logical, endpoint, spec, record as Record<string, unknown>) })).sort((a, b) => b.score - a.score);
-  const best = ranked[0];
-  if (!best || best.score < 0) throw new Error(`No compatible live endpoint is exposed by ${space}.`);
-  return { client, endpoint: best.endpoint, spec: best.spec };
-}
-
-async function normalize(value: unknown): Promise<unknown> {
-  if (typeof Blob !== "undefined" && value instanceof Blob) return handle_file(value);
-  if (Array.isArray(value)) return Promise.all(value.map(normalize));
-  if (value && typeof value === "object") return Object.fromEntries(await Promise.all(Object.entries(value as Record<string, unknown>).map(async ([key, item]) => [key, await normalize(item)] as const)));
-  return value;
-}
-
-function payload(logical: LogicalId, spec: EndpointInfo, inputs: Inputs): unknown {
-  if (Array.isArray(inputs)) return inputs;
-  const record = inputs as Record<string, unknown>;
-  return (spec.parameters ?? []).map((param) => {
-    const value = sourceFor(logical, paramName(param), record);
-    if (value !== undefined) return value;
-    if (param.default !== undefined) return param.default;
-    if (param.optional || param.parameter_has_default || norm(param.component).includes("state")) return null;
-    throw new Error(`Required input "${param.parameter_name ?? param.label ?? "unknown"}" is missing.`);
-  });
-}
-
-function artifact(value: unknown): string | null {
-  if (typeof Blob !== "undefined" && value instanceof Blob) return URL.createObjectURL(value);
-  if (typeof value === "string") {
-    const text = value.trim();
-    if (/^(https?:|blob:|data:|\/gradio_api\/file=|\/file=|file=|\/tmp\/|\/home\/|\/data\/)/.test(text)) return text;
-    try { return text.startsWith("{") || text.startsWith("[") ? artifact(JSON.parse(text)) : null; } catch { return null; }
-  }
-  if (!value || typeof value !== "object") return null;
-  if (Array.isArray(value)) { for (const item of value) { const found = artifact(item); if (found) return found; } return null; }
-  const record = value as Record<string, unknown>;
-  for (const key of ["url", "path", "blob", "data", "value", "file", "audio", "image", "video", "audio_url", "image_url", "video_url"]) { const found = artifact(record[key]); if (found) return found; }
-  return null;
-}
+async function apiFor(space: string, force = false, onStatus?: (message: string) => void) { const cached = apiCache.get(space); if (!force && cached && cached.expires > Date.now()) return cached.info; const client = await timeout(connectFreeSpace(space, onStatus), CONNECT_TIMEOUT, `Could not connect to free engine ${space}.`); if (!client.view_api) throw new Error(`Free engine ${space} does not expose live API metadata.`); const info = await timeout(client.view_api(), API_TIMEOUT, `Free engine ${space} did not expose its API in time.`); if (!Object.keys(endpoints(info)).length) throw new Error(`Free engine ${space} exposed no callable endpoints.`); apiCache.set(space, { info, expires: Date.now() + API_CACHE_TTL }); return info; }
+function scoreEndpoint(logical: LogicalId, endpoint: string, spec: EndpointInfo, inputs: Record<string, unknown>) { const name = norm(`${endpoint} ${spec.fn ?? ""} ${spec.description ?? ""}`); const keywords: Record<LogicalId, string[]> = { speechToText: ["transcrib", "whisper", "asr", "speech", "stt"], music: ["music", "song", "generate", "create", "infer"], image: ["image", "txt2img", "text2image", "generate", "create"], video: ["video", "i2v", "image2video", "generate", "create", "infer"], voiceClone: ["clone", "voice", "tts", "generate"], voicePreset: ["custom", "tts", "voice", "generate"], voiceSwap: ["convert", "voice", "rvc", "seed", "singing"], vocalSeparation: ["separat", "stem", "demucs", "vocal"] }; let score = keywords[logical].reduce((s, word) => s + (name.includes(word) ? 14 : 0), 0); for (const param of spec.parameters ?? []) { const component = norm(`${param.component ?? ""} ${param.type ?? ""}`); const value = sourceFor(logical, paramName(param), inputs); const hidden = component.includes("state") || component.includes("event") || component.includes("button"); if (value !== undefined || param.default !== undefined || param.parameter_has_default || param.optional || hidden) score += 8; else score -= 40; if (logical === "image" && component.includes("image")) score += 20; if (logical === "video" && (component.includes("image") || component.includes("video"))) score += 20; if (logical === "speechToText" && component.includes("audio")) score += 20; } for (const output of spec.returns ?? []) { const out = norm(JSON.stringify(output)); if (logical === "image" && out.includes("image")) score += 25; if (logical === "video" && out.includes("video")) score += 25; if (["music", "voiceClone", "voicePreset", "voiceSwap", "vocalSeparation"].includes(logical) && out.includes("audio")) score += 25; if (logical === "speechToText" && (out.includes("text") || out.includes("string"))) score += 20; } return score; }
+async function resolve(logical: LogicalId, space: string, inputs: Inputs, preferred: string | undefined, force: boolean, onStatus?: (message: string) => void) { const client = await timeout(connectFreeSpace(space, onStatus), CONNECT_TIMEOUT, `Could not connect to ${space}.`); const map = endpoints(await apiFor(space, force, onStatus)); if (preferred && map[preferred]) return { client, endpoint: preferred, spec: map[preferred] }; const record = Array.isArray(inputs) ? {} : inputs; const ranked = Object.entries(map).map(([endpoint, spec]) => ({ endpoint, spec, score: scoreEndpoint(logical, endpoint, spec, record as Record<string, unknown>) })).sort((a, b) => b.score - a.score); const best = ranked[0]; if (!best || best.score < 0) throw new Error(`No compatible live endpoint is exposed by ${space}.`); return { client, endpoint: best.endpoint, spec: best.spec }; }
+async function normalize(value: unknown): Promise<unknown> { if (typeof Blob !== "undefined" && value instanceof Blob) return handle_file(value); if (Array.isArray(value)) return Promise.all(value.map(normalize)); if (value && typeof value === "object") return Object.fromEntries(await Promise.all(Object.entries(value as Record<string, unknown>).map(async ([key, item]) => [key, await normalize(item)] as const))); return value; }
+function payload(logical: LogicalId, spec: EndpointInfo, inputs: Inputs): unknown { if (Array.isArray(inputs)) return inputs; const record = inputs as Record<string, unknown>; return (spec.parameters ?? []).map((param) => { const value = sourceFor(logical, paramName(param), record); if (value !== undefined) return value; if (param.default !== undefined) return param.default; if (param.optional || param.parameter_has_default || norm(param.component).includes("state")) return null; throw new Error(`Required input "${param.parameter_name ?? param.label ?? "unknown"}" is missing.`); }); }
+function artifact(value: unknown): string | null { if (typeof Blob !== "undefined" && value instanceof Blob) return URL.createObjectURL(value); if (typeof value === "string") { const text = value.trim(); if (/^(https?:|blob:|data:|\/gradio_api\/file=|\/file=|file=|\/tmp\/|\/home\/|\/data\/)/.test(text)) return text; try { return text.startsWith("{") || text.startsWith("[") ? artifact(JSON.parse(text)) : null; } catch { return null; } } if (!value || typeof value !== "object") return null; if (Array.isArray(value)) { for (const item of value) { const found = artifact(item); if (found) return found; } return null; } const record = value as Record<string, unknown>; for (const key of ["url", "path", "blob", "data", "value", "file", "audio", "image", "video", "audio_url", "image_url", "video_url"]) { const found = artifact(record[key]); if (found) return found; } return null; }
 export function outputUrl(value: unknown) { return artifact(value); }
 export function firstOutput(value: unknown): unknown { if (Array.isArray(value)) return value.length === 1 ? value[0] : value; if (value && typeof value === "object" && "data" in value) return (value as Record<string, unknown>).data; return value; }
 function textResult(value: unknown): string | null { if (typeof value === "string" && value.trim()) return value.trim(); if (Array.isArray(value)) for (const item of value) { const found = textResult(item); if (found) return found; } if (value && typeof value === "object") { const record = value as Record<string, unknown>; for (const key of ["text", "generated_text", "transcript", "transcription", "value", "data"]) { const found = textResult(record[key]); if (found) return found; } } return null; }
 function usable(logical: LogicalId, result: unknown) { const value = firstOutput(result); return logical === "speechToText" ? Boolean(textResult(value)) : Boolean(artifact(value)); }
-
-async function execute(client: GradioClient, endpoint: string, spec: EndpointInfo, logical: LogicalId, inputs: Inputs) {
-  const data = await normalize(payload(logical, spec, inputs));
-  if (client.predict) {
-    try { return await timeout(client.predict(endpoint, data), JOB_TIMEOUT, "The free generation job timed out."); }
-    catch (error) { console.warn("Direct Gradio prediction failed; retrying through queue", error); }
-  }
-  const job = client.submit(endpoint, data); let latest: unknown = null;
-  for await (const message of job) {
-    if (message.type === "status" && message.message) console.debug(`[Little Red's Big Studio] ${message.message}`);
-    if (message.type === "data") latest = message.data;
-  }
-  if (latest == null) throw new Error("The free engine completed without returning data.");
-  return latest;
-}
-
-async function runRoute(logical: LogicalId, space: string, priority: number, inputs: Inputs, onStatus?: (message: string) => void, preferred?: string) {
-  const state = stateFor(logical, space); if (state.nextRetryAt > Date.now()) throw new Error(`${space} is temporarily cooling down after a failure.`);
-  let last: unknown;
-  for (let attempt = 0; attempt < MAX_ROUTE_RETRIES; attempt++) {
-    try {
-      onStatus?.(attempt ? "Retrying the live engine…" : "Connecting to the live free engine…");
-      const resolved = await resolve(logical, space, inputs, preferred, attempt > 0, onStatus);
-      const result = await execute(resolved.client, resolved.endpoint, resolved.spec, logical, inputs);
-      if (!usable(logical, result)) throw new Error("The engine returned no usable media/text result.");
-      healthy(logical, space); return logical === "speechToText" ? textResult(firstOutput(result)) ?? result : firstOutput(result);
-    } catch (error) { last = error; failed(logical, space, error); onStatus?.("That engine failed cleanly; trying the next best free engine…"); }
-  }
-  throw last instanceof Error ? last : new Error(`Free engine ${space} failed.`);
-}
-
-async function collect(logical: LogicalId, inputs: Inputs, onStatus?: (message: string) => void, preferred?: string) {
-  const now = Date.now();
-  const candidates = routesFor(logical).filter((route) => stateFor(logical, route.space).nextRetryAt <= now).sort((a, b) => {
-    const ah = stateFor(logical, a.space), bh = stateFor(logical, b.space);
-    return (b.priority - bh.failures * 15) - (a.priority - ah.failures * 15);
-  });
-  if (!candidates.length) throw new Error(`No healthy free public engine is available for ${logical} right now.`);
-  let last: unknown;
-  for (const route of candidates) { try { return await runRoute(logical, route.space, route.priority, inputs, onStatus, preferred); } catch (error) { last = error; } }
-  throw last instanceof Error ? last : new Error(`No free engine could complete ${logical}.`);
-}
-
-function logicalFor(space: string): LogicalId | "" {
-  if (space in FREE_SPACE_IDS) return space as LogicalId;
-  return (Object.keys(FREE_SPACE_IDS) as LogicalId[]).find((logical) => routesFor(logical).some((route) => route.space === space)) ?? "";
-}
+async function execute(client: GradioClient, endpoint: string, spec: EndpointInfo, logical: LogicalId, inputs: Inputs) { const data = await normalize(payload(logical, spec, inputs)); if (client.predict) { try { return await timeout(client.predict(endpoint, data), JOB_TIMEOUT, "The free generation job timed out."); } catch (error) { console.warn("Direct Gradio prediction failed; retrying through queue", error); } } const job = client.submit(endpoint, data); let latest: unknown = null; for await (const message of job) { if (message.type === "status" && message.message) console.debug(`[Little Red's Big Studio] ${message.message}`); if (message.type === "data") latest = message.data; } if (latest == null) throw new Error("The free engine completed without returning data."); return latest; }
+async function runRoute(logical: LogicalId, space: string, inputs: Inputs, onStatus?: (message: string) => void, preferred?: string) { const state = stateFor(logical, space); if (state.nextRetryAt > Date.now()) throw new Error(`${space} is temporarily cooling down after a failure.`); let last: unknown; for (let attempt = 0; attempt < MAX_ROUTE_RETRIES; attempt++) { try { onStatus?.(attempt ? "Retrying the live engine…" : "Connecting to the live free engine…"); const resolved = await resolve(logical, space, inputs, preferred, attempt > 0, onStatus); const result = await execute(resolved.client, resolved.endpoint, resolved.spec, logical, inputs); if (!usable(logical, result)) throw new Error("The engine returned no usable media/text result."); healthy(logical, space); return logical === "speechToText" ? textResult(firstOutput(result)) ?? result : firstOutput(result); } catch (error) { last = error; failed(logical, space, error); onStatus?.("That engine failed cleanly; trying the next best free engine…"); } } throw last instanceof Error ? last : new Error(`Free engine ${space} failed.`); }
+async function collect(logical: LogicalId, inputs: Inputs, onStatus?: (message: string) => void, preferred?: string) { const now = Date.now(); const candidates = routesFor(logical).filter((route) => stateFor(logical, route.space).nextRetryAt <= now).sort((a, b) => { const ah = stateFor(logical, a.space), bh = stateFor(logical, b.space); return (b.priority - bh.failures * 15) - (a.priority - ah.failures * 15); }); if (!candidates.length) throw new Error(`No healthy free public engine is available for ${logical} right now.`); let last: unknown; for (const route of candidates) { try { return await runRoute(logical, route.space, inputs, onStatus, preferred); } catch (error) { last = error; } } throw last instanceof Error ? last : new Error(`No free engine could complete ${logical}.`); }
+function logicalFor(space: string): LogicalId | "" { if (space in FREE_SPACE_IDS) return space as LogicalId; return (Object.keys(FREE_SPACE_IDS) as LogicalId[]).find((logical) => routesFor(logical).some((route) => route.space === space)) ?? ""; }
 export function getFreeRuntimeHealth() { return Object.fromEntries([...health.entries()].map(([route, state]) => [route, { ...state, available: state.nextRetryAt <= Date.now() }])); }
 export function resetFreeRuntimeHealth() { health.clear(); apiCache.clear(); clients.clear(); }
 export async function probeFreeRoute(logicalId: string) { if (!(logicalId in FREE_SPACE_IDS)) return false; for (const route of routesFor(logicalId as LogicalId)) { try { await apiFor(route.space, true); healthy(logicalId as LogicalId, route.space); return true; } catch (error) { failed(logicalId as LogicalId, route.space, error); } } return false; }

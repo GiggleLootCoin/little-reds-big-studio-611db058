@@ -15,9 +15,9 @@ function normalizeGradioFileUrl(url: string, space: string) {
   const origin = freeSpaceOrigin(normalizeArtifactSpace(space));
   if (trimmed.startsWith("/gradio_api/file=")) return `${origin}${trimmed}`;
   if (trimmed.startsWith("gradio_api/file=")) return `${origin}/${trimmed}`;
-  if (trimmed.startsWith("/tmp/") || trimmed.startsWith("/home/") || trimmed.startsWith("/data/")) {
-    return `${origin}/gradio_api/file=${trimmed}`;
-  }
+  if (trimmed.startsWith("/file=")) return `${origin}/gradio_api${trimmed}`;
+  if (trimmed.startsWith("file=")) return `${origin}/gradio_api/${trimmed}`;
+  if (trimmed.startsWith("/tmp/") || trimmed.startsWith("/home/") || trimmed.startsWith("/data/")) return `${origin}/gradio_api/file=${trimmed}`;
   if (trimmed.startsWith("/")) return `${origin}${trimmed}`;
   return `${origin}/gradio_api/file=/${trimmed}`;
 }

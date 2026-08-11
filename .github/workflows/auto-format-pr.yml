@@ -3,14 +3,15 @@ name: Auto-format PR
 on:
   push:
     branches:
-      - 'fix/live-voice-and-generation'
+      - "fix/live-voice-and-generation"
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   format:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != "github-actions[bot]"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

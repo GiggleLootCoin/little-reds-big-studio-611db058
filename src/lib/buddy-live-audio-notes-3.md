@@ -1,1 +1,0 @@
-Selected microphone routing is handled through MediaRecorder in hands-free mode.

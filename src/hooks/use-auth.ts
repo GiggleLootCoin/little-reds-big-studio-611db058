@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  adoptSessionFromAuthHash,
   getProfile,
   getStoredSession,
   refreshSession,
@@ -45,6 +46,13 @@ export function useAuth() {
     let cancelled = false;
     const boot = async () => {
       let session = getStoredSession();
+      if (!session) {
+        try {
+          session = await adoptSessionFromAuthHash();
+        } catch {
+          session = null;
+        }
+      }
       if (session?.expires_at && session.expires_at * 1000 < Date.now() + 60_000) {
         session = await refreshSession();
       }

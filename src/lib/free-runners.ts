@@ -19,6 +19,28 @@ export type FreeRunner = {
  */
 export const FREE_RUNNERS: FreeRunner[] = [
   {
+    id: "hf-qwen3-chat",
+    name: "Qwen3",
+    kind: "public",
+    description: "Current official Qwen3 conversational Space for Buddy's primary free cloud brain.",
+    capabilities: ["chat", "conversation", "text-generation", "text"],
+    url: "https://huggingface.co/spaces/Qwen/Qwen3-Demo",
+    notes:
+      "Official Qwen Space. The Studio discovers its live Gradio API and uses it only when a compatible conversational endpoint is available.",
+    priority: 170,
+  },
+  {
+    id: "hf-qwen3-omni-chat",
+    name: "Qwen3 Omni",
+    kind: "public",
+    description: "Current official Qwen3 Omni multimodal assistant fallback for text, audio, image and video conversation.",
+    capabilities: ["chat", "conversation", "text-generation"],
+    url: "https://huggingface.co/spaces/Qwen/Qwen3-Omni-Demo",
+    notes:
+      "Official Qwen multimodal Space. Live schema discovery is mandatory; incompatible endpoints are rejected automatically.",
+    priority: 160,
+  },
+  {
     id: "hf-llama-32-chat",
     name: "Llama 3.2 3B Instruct",
     kind: "public",
@@ -33,12 +55,10 @@ export const FREE_RUNNERS: FreeRunner[] = [
     id: "hf-ace-step-15",
     name: "ACE-Step 1.5",
     kind: "public",
-    description:
-      "Open full-song music generation with lyrics, vocals, backing and editing workflows.",
+    description: "Open full-song music generation with lyrics, vocals, backing and editing workflows.",
     capabilities: ["music", "song", "lyrics-to-music", "audio-to-audio"],
     url: "https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5",
-    notes:
-      "Current primary open music route. The runtime must inspect the live Gradio API rather than assuming endpoint names.",
+    notes: "Current primary open music route. The runtime must inspect the live Gradio API rather than assuming endpoint names.",
     priority: 140,
   },
   {
@@ -68,8 +88,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Local browser reasoning and writing on capable WebGPU devices.",
     capabilities: ["text", "writing", "lyrics"],
     url: "https://huggingface.co/spaces/webml-community/qwen3-webgpu",
-    notes:
-      "Optional local route; device capability determines speed. Never required for core Studio operation.",
+    notes: "Optional local route; device capability determines speed. Never required for core Studio operation.",
     priority: 110,
   },
   {
@@ -79,8 +98,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Natural multilingual speech, reference-voice cloning and predefined voices.",
     capabilities: ["voice", "voice-clone", "tts", "multilingual-tts"],
     url: "https://huggingface.co/spaces/Qwen/Qwen3-TTS",
-    notes:
-      "Official Qwen Space currently running on ZeroGPU; supports Voice Clone and CustomVoice.",
+    notes: "Official Qwen Space currently running on ZeroGPU; supports Voice Clone and CustomVoice.",
     priority: 145,
   },
   {
@@ -90,26 +108,17 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Zero-shot speech and singing voice conversion using source and reference audio.",
     capabilities: ["voice", "voice-swap", "singing-voice-conversion"],
     url: "https://huggingface.co/spaces/Plachta/Seed-VC",
-    notes:
-      "Primary no-training singing-voice conversion fallback; use only voices the user owns or is authorized to transform.",
+    notes: "Primary no-training singing-voice conversion fallback; use only voices the user owns or is authorized to transform.",
     priority: 142,
   },
   {
     id: "hf-ai-rvc",
     name: "AI-RVC",
     kind: "public",
-    description:
-      "One-click AI cover workflow that separates vocals, converts the singer and remixes the result.",
-    capabilities: [
-      "voice-swap",
-      "singing-voice-conversion",
-      "ai-cover",
-      "vocal-separation",
-      "audio-mix",
-    ],
+    description: "One-click AI cover workflow that separates vocals, converts the singer and remixes the result.",
+    capabilities: ["voice-swap", "singing-voice-conversion", "ai-cover", "vocal-separation", "audio-mix"],
     url: "https://huggingface.co/spaces/mason369/AI-RVC",
-    notes:
-      "Useful whole-song cover fallback. It is only selected when its live API advertises compatible inputs.",
+    notes: "Useful whole-song cover fallback. It is only selected when its live API advertises compatible inputs.",
     priority: 125,
   },
   {
@@ -119,8 +128,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Current RVC voice-conversion framework running on public ZeroGPU capacity.",
     capabilities: ["voice", "voice-swap", "singing-voice-conversion"],
     url: "https://huggingface.co/spaces/r3gm/RVC-ZERO",
-    notes:
-      "Fallback only; runtime capability discovery is mandatory because public RVC Spaces vary in exposed controls.",
+    notes: "Fallback only; runtime capability discovery is mandatory because public RVC Spaces vary in exposed controls.",
     priority: 118,
   },
   {
@@ -130,8 +138,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Simple public Gradio transcription endpoint for fast English speech recognition.",
     capabilities: ["speech-to-text", "transcription", "realtime-asr"],
     url: "https://huggingface.co/spaces/abidlabs/fast-whisper-en-api",
-    notes:
-      "Stable simple /transcribe endpoint; English-focused fallback for live Buddy speech input.",
+    notes: "Stable simple /transcribe endpoint; English-focused fallback for live Buddy speech input.",
     priority: 146,
   },
   {
@@ -141,8 +148,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Realtime browser-friendly speech recognition fallback for Buddy conversation.",
     capabilities: ["speech-to-text", "realtime-asr", "conversation"],
     url: "https://huggingface.co/spaces/KingNish/Realtime-whisper-large-v3-turbo",
-    notes:
-      "Use as a live-conversation fallback; do not depend exclusively on browser SpeechRecognition.",
+    notes: "Use as a live-conversation fallback; do not depend exclusively on browser SpeechRecognition.",
     priority: 138,
   },
   {
@@ -159,12 +165,10 @@ export const FREE_RUNNERS: FreeRunner[] = [
     id: "hf-z-image",
     name: "Z Image Turbo Stable API",
     kind: "public",
-    description:
-      "High-quality text-to-image generation through the stable hf-applications Gradio endpoint.",
+    description: "High-quality text-to-image generation through the stable hf-applications Gradio endpoint.",
     capabilities: ["image", "artwork", "cover"],
     url: "https://huggingface.co/spaces/hf-applications/Z-Image-Turbo",
-    notes:
-      "Uses the current public /generate_image endpoint documented by Hugging Face's Daggr examples, avoiding the newer workflow-only upstream variant.",
+    notes: "Uses the current public /generate_image endpoint documented by Hugging Face's Daggr examples, avoiding the newer workflow-only upstream variant.",
     priority: 150,
   },
   {
@@ -174,8 +178,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Upstream Z-Image-Turbo Space fallback.",
     capabilities: ["image", "artwork", "cover"],
     url: "https://huggingface.co/spaces/mrfakename/Z-Image-Turbo",
-    notes:
-      "Fallback only because the upstream Space has recently changed between standard Gradio and Workflow implementations.",
+    notes: "Fallback only because the upstream Space has recently changed between standard Gradio and Workflow implementations.",
     priority: 115,
   },
   {
@@ -195,20 +198,17 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Open image-to-video and text-to-video generation with native generated audio.",
     capabilities: ["video", "image-to-video", "text-to-video", "audio-to-video", "music-video"],
     url: "https://huggingface.co/spaces/Lightricks/LTX-2-3",
-    notes:
-      "Primary free video route. It runs the open LTX-2.3 model directly in ZeroGPU; no user API key or paid provider is required.",
+    notes: "Primary free video route. It runs the open LTX-2.3 model directly in ZeroGPU; no user API key or paid provider is required.",
     priority: 150,
   },
   {
     id: "hf-wan-22",
     name: "Wan 2.2",
     kind: "public",
-    description:
-      "Open text-to-video and image-to-video generation for cinematic shots, character motion and controllable visual sequences.",
+    description: "Open text-to-video and image-to-video generation for cinematic shots, character motion and controllable visual sequences.",
     capabilities: ["video", "image-to-video", "text-to-video", "animation", "music-video"],
     url: "https://huggingface.co/spaces/wan-ai/Wan2.2-T2V-A14B",
-    notes:
-      "Second production video route. The runtime must inspect the live Gradio API and use it only when the Space exposes a compatible endpoint; it is an alternate engine rather than a mandatory dependency.",
+    notes: "Second production video route. The runtime must inspect the live Gradio API and use it only when the Space exposes a compatible endpoint; it is an alternate engine rather than a mandatory dependency.",
     priority: 145,
   },
   {
@@ -238,8 +238,7 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Open vocal/instrument stem separation for the user's own songs.",
     capabilities: ["stems", "vocal-isolation", "vocal-separation"],
     url: "https://huggingface.co/spaces/nakas/demucs_playground",
-    notes:
-      "Used as a component of the song voice-swap pipeline when a whole-song cover engine is unsuitable.",
+    notes: "Used as a component of the song voice-swap pipeline when a whole-song cover engine is unsuitable.",
     priority: 105,
   },
   {
@@ -259,16 +258,13 @@ export const FREE_RUNNERS: FreeRunner[] = [
     description: "Lightweight browser speech synthesis fallback.",
     capabilities: ["tts", "voice"],
     url: "https://huggingface.co/spaces/webml-community/kokoro-webgpu",
-    notes:
-      "Fast local fallback when remote TTS is unavailable; quality is below the primary natural-voice route.",
+    notes: "Fast local fallback when remote TTS is unavailable; quality is below the primary natural-voice route.",
     priority: 80,
   },
 ];
 
 export function runnersFor(capability?: string) {
-  const runners = capability
-    ? FREE_RUNNERS.filter((runner) => runner.capabilities.includes(capability))
-    : FREE_RUNNERS;
+  const runners = capability ? FREE_RUNNERS.filter((runner) => runner.capabilities.includes(capability)) : FREE_RUNNERS;
   return [...runners].sort((a, b) => b.priority - a.priority);
 }
 

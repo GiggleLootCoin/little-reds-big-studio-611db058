@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  getProfile,
+  getStoredSession,
+  refreshSession,
+  signOut as signOutRemote,
+  type SupabaseUser,
+} from "@/lib/supabase-rest";
 
 export type LocalUser = { id: string; email: string; user_metadata: { display_name: string } };
 export type Profile = {
@@ -9,9 +16,8 @@ export type Profile = {
   avatar_url: string | null;
   banner_url: string | null;
 };
-const KEY = "little-reds-local-user";
-export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
+export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 export function trialKey(userId: string) {
   return `lrbgs-trial-start:${userId}`;
 }
@@ -24,81 +30,55 @@ export function ensureTrialStarted(userId: string) {
   return started;
 }
 
-function readUser(): LocalUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (!parsed || typeof parsed !== "object") return null;
-    const value = parsed as Partial<LocalUser>;
-    if (
-      typeof value.id !== "string" ||
-      typeof value.email !== "string" ||
-      !value.user_metadata ||
-      typeof value.user_metadata !== "object" ||
-      typeof value.user_metadata.display_name !== "string" ||
-      !value.user_metadata.display_name.trim()
-    )
-      return null;
-    return value as LocalUser;
-  } catch {
-    return null;
-  }
-}
-
-function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
-    return crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+function toLocalUser(user: SupabaseUser): LocalUser {
+  return {
+    id: user.id,
+    email: user.email || "",
+    user_metadata: { display_name: user.user_metadata?.display_name || "Creator" },
+  };
 }
 
 export function useAuth() {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const current = readUser();
-    setUser(current);
-    if (current) ensureTrialStarted(current.id);
-    setReady(true);
+    let cancelled = false;
+    const boot = async () => {
+      let session = getStoredSession();
+      if (session?.expires_at && session.expires_at * 1000 < Date.now() + 60_000) {
+        session = await refreshSession();
+      }
+      if (!cancelled && session?.user) {
+        const next = toLocalUser(session.user);
+        setUser(next);
+        ensureTrialStarted(next.id);
+      }
+      if (!cancelled) setReady(true);
+    };
+    void boot();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return { session: user ? { user } : null, user, ready };
-}
-
-function readProfile(id: string): Profile {
-  const user = readUser();
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(`little-reds-profile:${id}`) || "null");
-    if (parsed && typeof parsed === "object") {
-      const value = parsed as Partial<Profile>;
-      if (
-        typeof value.id === "string" &&
-        typeof value.handle === "string" &&
-        typeof value.display_name === "string" &&
-        typeof value.about === "string" &&
-        (value.avatar_url === null || typeof value.avatar_url === "string") &&
-        (value.banner_url === null || typeof value.banner_url === "string")
-      )
-        return value as Profile;
-    }
-  } catch {
-    /* rebuild below */
-  }
-  return {
-    id,
-    handle: user?.user_metadata.display_name?.toLowerCase().replace(/\s+/g, "-") || "creator",
-    display_name: user?.user_metadata.display_name || "Creator",
-    about: "",
-    avatar_url: null,
-    banner_url: null,
-  };
 }
 
 export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const load = async (id: string) => {
+    const session = getStoredSession();
+    if (!session?.access_token) {
+      setProfile(null);
+      return;
+    }
     setLoading(true);
-    setProfile(readProfile(id));
-    setLoading(false);
+    try {
+      const remote = await getProfile(id, session.access_token);
+      if (remote) setProfile(remote as Profile);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => {
     if (userId) void load(userId);
@@ -112,20 +92,7 @@ export function useProfile(userId: string | undefined) {
   };
 }
 
-export function createLocalUser(displayName: string, email = "local@studio") {
-  const cleanName = displayName.trim();
-  if (!cleanName) throw new Error("A name is required.");
-  const user: LocalUser = {
-    id: createId(),
-    email: email.trim() || "local@studio",
-    user_metadata: { display_name: cleanName },
-  };
-  localStorage.setItem(KEY, JSON.stringify(user));
-  ensureTrialStarted(user.id);
-  return user;
-}
-
-export function signOutLocal() {
-  localStorage.removeItem(KEY);
+export async function signOutLocal() {
+  await signOutRemote();
   window.location.reload();
 }

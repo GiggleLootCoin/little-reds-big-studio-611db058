@@ -78,6 +78,14 @@ export function BuddyLiveChatProduction() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speakingRef = useRef(false);
 
+  const restartListening = () => {
+    if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
+    window.setTimeout(() => {
+      if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
+      if (!startBrowserRecognition()) void startRecorder();
+    }, 350);
+  };
+
   const speak = async (text: string) => {
     if (muted || speakingRef.current) return;
     speakingRef.current = true;
@@ -101,7 +109,10 @@ export function BuddyLiveChatProduction() {
       if (!url) throw new Error("No usable natural voice artifact returned.");
       if (!audioRef.current) audioRef.current = new Audio();
       audioRef.current.src = url;
-      audioRef.current.onended = () => { speakingRef.current = false; };
+      audioRef.current.onended = () => {
+        speakingRef.current = false;
+        restartListening();
+      };
       await audioRef.current.play();
       return;
     } catch {
@@ -121,6 +132,7 @@ export function BuddyLiveChatProduction() {
       }
     } finally {
       speakingRef.current = false;
+      restartListening();
     }
   };
 
@@ -154,12 +166,7 @@ export function BuddyLiveChatProduction() {
       busyRef.current = false;
       setBusy(false);
       if (!liveRef.current) setStatus("Buddy is ready.");
-      if (liveRef.current) {
-        window.setTimeout(() => {
-          if (!liveRef.current || busyRef.current || speakingRef.current || recognitionRef.current || recorderRef.current) return;
-          if (!startBrowserRecognition()) void startRecorder();
-        }, 500);
-      }
+      if (liveRef.current && !speakingRef.current) restartListening();
     }
   };
 
@@ -202,7 +209,7 @@ export function BuddyLiveChatProduction() {
           } catch (error) {
             setStatus(error instanceof Error ? error.message : "Speech recognition failed. Try again.");
           }
-          if (liveRef.current && !busyRef.current && !speakingRef.current) window.setTimeout(() => { if (!startBrowserRecognition()) void startRecorder(); }, 400);
+          restartListening();
         })();
       };
       recorderRef.current = recorder;
@@ -233,7 +240,7 @@ export function BuddyLiveChatProduction() {
         if (transcript) void answer(transcript, true);
       };
       recognition.onerror = () => { recognitionRef.current = null; setListening(false); if (liveRef.current && !busyRef.current) void startRecorder(); };
-      recognition.onend = () => { recognitionRef.current = null; setListening(false); if (liveRef.current && !busyRef.current && !speakingRef.current) void startRecorder(); };
+      recognition.onend = () => { recognitionRef.current = null; setListening(false); if (liveRef.current && !busyRef.current && !speakingRef.current) restartListening(); };
       recognitionRef.current = recognition;
       recognition.start();
       return true;

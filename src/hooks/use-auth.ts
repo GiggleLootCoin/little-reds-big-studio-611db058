@@ -18,19 +18,6 @@ export type Profile = {
   banner_url: string | null;
 };
 
-export const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-export function trialKey(userId: string) {
-  return `lrbgs-trial-start:${userId}`;
-}
-export function ensureTrialStarted(userId: string) {
-  const key = trialKey(userId);
-  const existing = Number(localStorage.getItem(key) || 0);
-  if (existing > 0) return existing;
-  const started = Date.now();
-  localStorage.setItem(key, String(started));
-  return started;
-}
-
 function toLocalUser(user: SupabaseUser): LocalUser {
   return {
     id: user.id,
@@ -56,11 +43,7 @@ export function useAuth() {
       if (session?.expires_at && session.expires_at * 1000 < Date.now() + 60_000) {
         session = await refreshSession();
       }
-      if (!cancelled && session?.user) {
-        const next = toLocalUser(session.user);
-        setUser(next);
-        ensureTrialStarted(next.id);
-      }
+      if (!cancelled && session?.user) setUser(toLocalUser(session.user));
       if (!cancelled) setReady(true);
     };
     void boot();

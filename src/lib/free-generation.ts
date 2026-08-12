@@ -1,4 +1,3 @@
-import { hordeImage } from "./ai-horde";
 import { runGradio } from "./gradio-free";
 import { freeArtifactUrl } from "./free-artifact";
 import { lastSuccessfulFreeSpace } from "./free-artifact-route";
@@ -17,22 +16,9 @@ export async function runFreeMedia(
   input: Record<string, unknown>,
   onStatus?: (message: string) => void,
 ) {
-  if (logical === "image") {
-    try {
-      onStatus?.("Using the free community image engine…");
-      const prompt = String(input.prompt ?? input.description ?? input.text ?? "").trim();
-      if (!prompt) throw new Error("Enter an image prompt first.");
-      const url = await hordeImage(prompt);
-      onStatus?.("Image generated successfully.");
-      return { result: url, url, space: "AI Horde" };
-    } catch {
-      onStatus?.("AI Horde image generation unavailable; trying the next free engine…");
-    }
-  }
-
-  // A Gradio endpoint can technically return a non-empty status/message without
-  // returning the requested media. Treat that as a failed provider and retry so
-  // a dead endpoint cannot block the rest of the free runner pool.
+  // Always let the quality-ranked live Gradio pool choose the strongest
+  // currently compatible engine first. Do not put a weaker generic image
+  // service ahead of the Z-Image/other live quality-ranked routes.
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -43,7 +29,7 @@ export async function runFreeMedia(
       const providerId = `${logical}:${space}`;
       markProviderFailure(providerId, new Error("Provider returned no usable media artifact."));
       lastError = new Error(`${space} returned no usable ${logical} artifact.`);
-      onStatus?.("That route returned no usable media; Buddy is trying another free engine…");
+      onStatus?.("That route returned no usable media; Buddy is trying the next quality-ranked free engine…");
     } catch (error) {
       lastError = error;
     }

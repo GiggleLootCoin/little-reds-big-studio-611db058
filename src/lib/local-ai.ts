@@ -2,9 +2,8 @@ import { pipeline } from "@huggingface/transformers";
 import { runGradio } from "@/lib/gradio-free";
 
 // Android-first local fallbacks. Remote free inference is preferred for Buddy
-// conversation because heavyweight public models can provide much stronger
-// answers. The local model exists as an emergency no-network path and should
-// still be a real instruction-following model rather than a tiny demo model.
+// conversation and speech because heavyweight public models can provide much
+// stronger answers and transcription. Local models remain real emergency paths.
 const CHAT_MODEL = "onnx-community/Qwen3-0.6B-Instruct-ONNX";
 const STT_MODEL = "onnx-community/whisper-tiny.en";
 
@@ -34,8 +33,6 @@ async function loadPipeline<T>(task: "text-generation" | "automatic-speech-recog
 async function loadChat(): Promise<TextGenerator> {
   if (!chatPromise) {
     const attempts: PipelineAttempt[] = [];
-    // Qwen3 0.6B has an official ONNX/Transformers.js build and q4f16 is the
-    // best practical Android/WebGPU balance for an emergency local brain.
     if (hasWebGPU()) attempts.push({ device: "webgpu", dtype: "q4f16" });
     if (hasWasm()) {
       attempts.push({ device: "wasm", dtype: "q4" });
@@ -80,11 +77,6 @@ export function localAiCapabilities() {
   return { browser: typeof window !== "undefined", webgpu: hasWebGPU(), wasm: hasWasm(), localChat: hasWasm() || hasWebGPU(), localSpeechToText: hasWasm() || hasWebGPU(), localTextToSpeech: typeof window !== "undefined" && "speechSynthesis" in window };
 }
 
-/**
- * Buddy's conversational brain. Use a real public model first; only fall back
- * to the Qwen3 local model when every free cloud route is unavailable.
- * The local model is an emergency offline path, not the primary experience.
- */
 export async function runLocalChat(messages: ChatMessage[]) {
   const lastUser = [...messages].reverse().find((message) => message.role === "user")?.content?.trim() || "";
   const history = messages.slice(-12);
@@ -116,7 +108,19 @@ export async function runLocalChat(messages: ChatMessage[]) {
   }
 }
 
+/**
+ * Prefer high-quality free remote Whisper-compatible Spaces for recorded
+ * microphone audio. If every public route is unavailable, use the on-device
+ * Whisper fallback so live conversation can still function without a network.
+ */
 export async function runLocalSpeechToText(audio: Blob) {
+  try {
+    const remote = await runGradio("speechToText", "", { audio, input_audio: audio, file: audio });
+    const text = cleanRemoteReply(remote);
+    if (text && text.length > 1) return text;
+  } catch {
+    // Fall through to the local Whisper emergency path.
+  }
   const transcriber = await loadSpeechToText();
   try { return await transcriber(audio, { return_timestamps: false }); }
   catch (error) { sttPromise = null; throw error; }
